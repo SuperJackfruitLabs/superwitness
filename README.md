@@ -18,7 +18,7 @@ is the Matrix client that puts agents in the conversation. superwitness records 
 whether it was any good.
 
 > **Status: v0.0.3** ([changelog](CHANGELOG.md)). Run documents cover superpipeline runs, with attempts read from the
-> AgentPod hub, and a run registry lists the runs sources report, and a web app to read and judge them. To try it without either product, `SW_FAKE_SOURCES=1` serves one development run
+> AgentPod hub, and a run registry lists the runs sources report; a web app reads and judges them. To try it without either product, `SW_FAKE_SOURCES=1` serves one development run
 > on loopback.
 
 ## What it is for
@@ -86,7 +86,7 @@ curl -H 'Authorization: Bearer dev:prn_human01:human' localhost:8790/v1/runs
 
 A fourth segment of a development token lists its scopes, comma-separated.
 
-To sign in to the app in fake mode, run `make e2e`'s pieces: `web/e2e/stub-hub.mjs` stands in for AgentPod and `web/e2e/serve.sh` shows the settings.
+To sign in to the app in fake mode, use the pieces `make e2e` uses: `web/e2e/stub-hub.mjs` stands in for AgentPod and `web/e2e/serve.sh` shows the settings.
 
 | Surface | Path |
 |---|---|
