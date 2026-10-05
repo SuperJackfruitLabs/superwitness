@@ -15,39 +15,42 @@ export function RunsPage({ query }: { query: string }) {
   const [error, setError] = useState<ApiError | null>(null);
   const [loading, setLoading] = useState(true);
   const sentinel = useRef<HTMLDivElement>(null);
+  // Every request belongs to one filter; a result that arrives after the filter changed is dropped.
+  const generation = useRef(0);
 
   useEffect(() => {
-    let live = true;
+    const mine = ++generation.current;
+    const live = () => generation.current === mine;
     setPages([]);
     setError(null);
     setLoading(true);
     getJSON<RunPage>(`/v1/runs${api ? `?${api}` : ""}`).then(
-      (p) => live && (setPages([p]), setLoading(false)),
-      (e: ApiError) => live && (setError(e), setLoading(false)),
+      (p) => live() && (setPages([p]), setLoading(false)),
+      (e: ApiError) => live() && (setError(e), setLoading(false)),
     );
-    return () => {
-      live = false;
-    };
   }, [api]);
 
   const next = pages.length ? pages[pages.length - 1].next_cursor : null;
   const loadMore = useCallback(() => {
     if (!next || loading) return;
+    const mine = generation.current;
+    setError(null);
     setLoading(true);
     getJSON<RunPage>(`/v1/runs?${api ? `${api}&` : ""}cursor=${encodeURIComponent(next)}`).then(
-      (p) => (setPages((ps) => [...ps, p]), setLoading(false)),
-      (e: ApiError) => (setError(e), setLoading(false)),
+      (p) => mine === generation.current && (setPages((ps) => [...ps, p]), setLoading(false)),
+      (e: ApiError) => mine === generation.current && (setError(e), setLoading(false)),
     );
   }, [api, next, loading]);
 
-  // Scrolling near the end loads the next page.
+  // Scrolling near the end loads the next page. After an error nothing retries by itself: the
+  // button does.
   useEffect(() => {
     const el = sentinel.current;
-    if (!el || !next || typeof IntersectionObserver === "undefined") return;
+    if (!el || !next || error || typeof IntersectionObserver === "undefined") return;
     const io = new IntersectionObserver((es) => es.some((e) => e.isIntersecting) && loadMore(), { rootMargin: "400px" });
     io.observe(el);
     return () => io.disconnect();
-  }, [loadMore, next]);
+  }, [loadMore, next, error]);
 
   if (error && pages.length === 0) return <ErrorView error={error} />;
   const runs = pages.flatMap((p) => p.runs);

@@ -33,4 +33,10 @@ describe("day grouping", () => {
       [dayLabel("2026-10-04", now, "UTC"), "d"],
     ]);
   });
+
+  it("puts a malformed timestamp in an Unknown date group instead of throwing", () => {
+    expect(dayKey("not a time", "UTC")).toBe("unknown");
+    const g = groupByDay([run("a", "2026-10-06T03:00:00Z"), run("b", "garbage")], now, "UTC");
+    expect(g.map((x) => x.label)).toEqual(["Today", "Unknown date"]);
+  });
 });

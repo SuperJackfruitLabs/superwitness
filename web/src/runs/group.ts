@@ -4,11 +4,15 @@ import type { RegistryRun } from "../types";
 export const runTime = (r: RegistryRun) => r.started_at ?? r.first_seen_at;
 
 // dayKey is the calendar day of iso in timeZone (the viewer's own when undefined), as YYYY-MM-DD.
+export const UNKNOWN_DAY = "unknown";
+
 export function dayKey(iso: string, timeZone?: string): string {
+  if (Number.isNaN(Date.parse(iso))) return UNKNOWN_DAY;
   return new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(iso));
 }
 
 export function dayLabel(key: string, now: Date, timeZone?: string): string {
+  if (key === UNKNOWN_DAY) return "Unknown date";
   const today = dayKey(now.toISOString(), timeZone);
   if (key === today) return "Today";
   const [y, m, d] = today.split("-").map(Number);
