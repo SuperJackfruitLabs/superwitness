@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -15,7 +16,7 @@ import (
 )
 
 // The runtime role, with README's grants only: it can manage sessions, and nothing it could
-// not before. (Task 4 adds the Manager issue/resolve round trip to this test.)
+// not before.
 func TestPGStoreAsRuntimeRole(t *testing.T) {
 	ctx := context.Background()
 	roles := testutil.StartPostgresWithRoles(t)
@@ -29,6 +30,15 @@ func TestPGStoreAsRuntimeRole(t *testing.T) {
 	}
 	t.Cleanup(pool.Close)
 	storeContract(t, &PGStore{Pool: pool})
+
+	m := &Manager{Store: &PGStore{Pool: pool}, Allowed: map[string]bool{"prn_human01": true}, Now: func() time.Time { return t0 }}
+	tok, err := m.Issue(ctx, human)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p, err := m.Resolve(ctx, tok); err != nil || p.Email != "human01@example.com" {
+		t.Errorf("resolve: %+v %v", p, err)
+	}
 
 	for _, stmt := range []string{
 		`TRUNCATE sessions`,
