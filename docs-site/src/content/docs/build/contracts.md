@@ -179,6 +179,13 @@ What `POST /v1/verdicts` and the `record_verdict` tool return:
 The database allows a fourth judge kind, `rule`, which no principal records in this release.
 [Verdicts](/use/verdicts/) has the rules for each field.
 
+## Run reports
+
+What a source sends to `POST /v1/runs` is described by a JSON Schema at
+[`/schemas/run-report.schema.json`](/schemas/run-report.schema.json), also in the repository at
+`internal/contracts/run-report.schema.json`. A source can vendor it and validate its own output in
+its tests. [Run registry API](/build/run-registry/) explains each field.
+
 ## Spans
 
 The span fields that matter to a run document are `run.id`, `attempt.id` and the root span name

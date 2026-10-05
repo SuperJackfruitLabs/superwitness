@@ -1,6 +1,6 @@
 ---
 title: MCP tools
-description: The MCP server for agents, with tools for runs, spans, logs and verdicts; the by-attempt lookup stays HTTP-only.
+description: The MCP server for agents, with tools for runs, spans, logs, the run registry and verdicts; the by-attempt lookup stays HTTP-only.
 ---
 
 superwitness serves an MCP server at `/mcp` on its own address, over MCP's streamable HTTP
@@ -17,9 +17,10 @@ Point an MCP client at it with the token as a header, for example:
 }
 ```
 
-The server names itself `superwitness`, with the running release as its version. It has four
-tools, thin layers over the HTTP operations for runs, spans, logs and verdicts. The fifth
-route, `GET /v1/runs/by-attempt/{attempt}`, is HTTP-only and has no tool.
+The server names itself `superwitness`, with the running release as its version. It has five
+tools, thin layers over the HTTP operations for runs, spans, logs, the run registry and verdicts. Four
+routes are HTTP-only and have no tool: `GET /v1/runs/by-attempt/{attempt}`, `POST /v1/runs` and the two
+rubric reads.
 
 ## The tools
 
@@ -67,6 +68,22 @@ same as `GET /v1/runs/superpipeline/{board}/{run}/logs`.
 | `limit` | no | page size from 1 to 500; default 100 |
 
 Result: `{"logs": [...], "next_cursor": "…" or null, "trace_join": "<status>"}`.
+
+### `list_runs`
+
+Runs reported to the run registry, newest first, with per-status counts and each run's latest
+verdict. The same as `GET /v1/runs` ([Run registry API](/build/run-registry/#listing-runs)).
+
+| Argument | Required | Description |
+|---|---|---|
+| `source` | no | only runs from this source |
+| `scope` | no | only runs in this scope id |
+| `status` | no | a list of statuses |
+| `executor` | no | only runs this principal executed |
+| `since`, `until` | no | RFC 3339 bounds on the run's start, or first sighting |
+| `needs_verdict` | no | `true` for finished runs no verdict names yet |
+| `cursor` | no | `next_cursor` from the previous page |
+| `limit` | no | page size from 1 to 200; default 50 |
 
 ### `record_verdict`
 

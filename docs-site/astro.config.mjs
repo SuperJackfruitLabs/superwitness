@@ -62,6 +62,7 @@ export default defineConfig({
           label: 'Build on it',
           items: [
             { label: 'HTTP API', slug: 'build/api' },
+            { label: 'Run registry API', slug: 'build/run-registry' },
             { label: 'MCP tools', slug: 'build/mcp' },
             { label: 'Contracts', slug: 'build/contracts' },
             { label: 'Licences', slug: 'build/licences' },

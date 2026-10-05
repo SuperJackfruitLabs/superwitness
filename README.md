@@ -17,8 +17,8 @@ cards, runs and approval gates; [supermessage](https://github.com/SuperJackfruit
 is the Matrix client that puts agents in the conversation. superwitness records what happened and
 whether it was any good.
 
-> **Status: v0.0.1** ([changelog](CHANGELOG.md)). Run documents cover superpipeline runs, with attempts read from the
-> AgentPod hub. To try it without either product, `SW_FAKE_SOURCES=1` serves one development run
+> **Status: v0.0.2** ([changelog](CHANGELOG.md)). Run documents cover superpipeline runs, with attempts read from the
+> AgentPod hub, and a run registry lists the runs sources report. To try it without either product, `SW_FAKE_SOURCES=1` serves one development run
 > on loopback.
 
 ## What it is for
@@ -74,13 +74,28 @@ curl -H 'Authorization: Bearer dev:prn_human01:human' localhost:8790/v1/runs/sup
 Fake mode serves one development run (`brd_01/run_01`) and accepts `dev:<principal>:<human|agent|service>`
 tokens. It refuses to listen on anything but loopback.
 
+To try the run registry in fake mode, bind a development reporter and report a run:
+
+```bash
+SW_RUN_SOURCES=prn_reporter01=superpipeline SW_FAKE_SOURCES=1 SW_DATABASE_URL=… ./bin/superwitness &
+curl -H 'Authorization: Bearer dev:prn_reporter01:service:runs:write' -d '{"source":"superpipeline",
+  "external_ref":"brd_01/run_01","status":"running","source_status":"in_progress","reported_at":"2026-10-06T10:00:00Z"}' \
+  localhost:8790/v1/runs
+curl -H 'Authorization: Bearer dev:prn_human01:human' localhost:8790/v1/runs
+```
+
+A fourth segment of a development token lists its scopes, comma-separated.
+
 | Surface | Path |
 |---|---|
 | Run document | `GET /v1/runs/superpipeline/{board}/{run}` |
 | Spans, logs (paged) | `GET …/spans?cursor=&limit=`, `GET …/logs?cursor=&level=&limit=` |
 | Attempt → run | `GET /v1/runs/by-attempt/{attempt}` (302) |
 | Record a verdict | `POST /v1/verdicts` |
-| MCP (streamable HTTP) | `/mcp`: `get_run`, `list_run_spans`, `list_run_logs`, `record_verdict` |
+| Report runs (service principals with `runs:write`) | `POST /v1/runs` |
+| List runs | `GET /v1/runs?source=&scope=&status=&executor=&since=&until=&needs_verdict=&cursor=&limit=` |
+| Rubrics | `GET /v1/rubrics`, `GET /v1/rubrics/{id}/{version}` |
+| MCP (streamable HTTP) | `/mcp`: `get_run`, `list_run_spans`, `list_run_logs`, `list_runs`, `record_verdict` |
 | Run page | `/runs/superpipeline/{board}/{run}` |
 | Health | `GET /health` (no auth; always 200 while alive, per-source status in the body) |
 
@@ -102,7 +117,7 @@ own the tables. superwitness takes two DSNs:
 - `SW_MIGRATE_DATABASE_URL` connects as `superwitness_owner`, which owns the database and the
   tables. It is used only to run migrations.
 - `SW_DATABASE_URL` connects as `superwitness_app`, the runtime role. It can insert and read
-  verdicts and rubrics and nothing else.
+  verdicts and rubrics, insert, read and update registry runs, and nothing else.
 
 If `SW_MIGRATE_DATABASE_URL` is unset, migrations run over `SW_DATABASE_URL`, which must then
 be the owner. That suits development only. superwitness never logs either DSN.
@@ -143,15 +158,22 @@ Then grant the runtime role, connected to the `superwitness` database as `superw
 ```sql
 GRANT USAGE ON SCHEMA public TO superwitness_app;
 GRANT SELECT, INSERT ON TABLE verdicts, rubrics TO superwitness_app;
+GRANT SELECT, INSERT, UPDATE ON TABLE runs TO superwitness_app;
 ```
 
-That is the whole runtime grant set. The tables have no sequences (ids are text), and the
+That is the whole runtime grant set. The tables have no sequences (keys are text), and the
 runtime pool never reads goose's `goose_db_version` table, so it needs no grant on it (unless
 serve migrates as the runtime role, above). Nothing is
 granted through `ALTER DEFAULT PRIVILEGES`: a later migration that adds a table must add that
-table's grant here. The runtime role cannot update, delete, truncate, alter or drop the tables
-or their triggers, and cannot create tables; `TestRuntimeRoleCanAppendButNotRewrite` runs both
-blocks above verbatim against Postgres 17 and checks all of this.
+table's grant here. The runtime role cannot update, delete, truncate, alter or drop `verdicts`
+and `rubrics` or their triggers; it can update registry rows in `runs` but never delete them;
+and it cannot create tables. `TestRuntimeRoleCanAppendButNotRewrite` and
+`TestRuntimeRoleRegistryGrants` run both blocks above verbatim against Postgres 17 and check
+all of this.
+
+Upgrading from 0.0.1: after `superwitness migrate`, run only the new line,
+`GRANT SELECT, INSERT, UPDATE ON TABLE runs TO superwitness_app;`, as the owner. Until then the
+run registry answers 503 `store_unavailable`; verdicts are unaffected.
 
 On Postgres 14 or older, schema `public` belongs to the bootstrap superuser and every role may
 create tables in it. There, after the provision block and before `superwitness migrate`, run

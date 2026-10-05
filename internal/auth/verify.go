@@ -69,6 +69,7 @@ type hubClaims struct {
 	jwt.RegisteredClaims
 	PrincipalKind string `json:"principalKind"`
 	Tenant        string `json:"tenant"`
+	Scope         string `json:"scope"` // OAuth's space-delimited list; absent when the grant holds none
 	Act           *struct {
 		Sub string `json:"sub"`
 	} `json:"act,omitempty"`
@@ -100,7 +101,7 @@ func (v *Verifier) Verify(ctx context.Context, raw string) (Principal, error) {
 	if kind != KindHuman && kind != KindAgent && kind != KindService {
 		return Principal{}, ErrUnauthenticated
 	}
-	p := Principal{ID: c.Subject, Kind: kind, Tenant: c.Tenant}
+	p := Principal{ID: c.Subject, Kind: kind, Tenant: c.Tenant, Scopes: strings.Fields(c.Scope)}
 	if c.Act != nil {
 		p.Actor = c.Act.Sub
 	}

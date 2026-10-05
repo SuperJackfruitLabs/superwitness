@@ -101,7 +101,7 @@ Rubrics are recorded with the binary, against the same database:
 
 ```sh
 superwitness rubric-add -id press -version 1 -name Press \
-  -scale '{"min":0,"max":1}' -body-file press.md -created-by prn_human01
+  -scale '{"kind":"decision","options":["pass","fail"]}' -body-file press.md -created-by prn_human01
 ```
 
 All six flags are required: `-id`, `-version` (1 or more), `-name`, `-scale` (valid JSON),
@@ -114,6 +114,24 @@ prints `rubric:press@1 recorded`. Give rubrics ids that a standard can name: let
 Rubrics are append-only, like verdicts. A version, once recorded, cannot be changed or
 recorded again; `rubric-add` fails with `rubric version already exists`. To change a rubric,
 record the next version and judge against `rubric:press@2`.
+
+### Rubric scales
+
+A rubric's scale is JSON. These shapes are recognised, and the superwitness app will offer an
+input for each:
+
+| Scale | Input | Value recorded |
+|---|---|---|
+| `{"kind":"decision","options":["pass","fail"]}` (2 to 20 options) | one button per option | `{"decision": "pass"}` |
+| `{"kind":"score"}` | a slider from 0 to 1 in steps of 0.05 | `{"score": 0.75}` |
+| `{"kind":"label","labels":["clear","muddled"]}` (1 to 50 labels) | a pick list | `{"label": "clear"}` |
+| `{"kind":"text"}` | a text area | `{"text": "…"}` |
+| `{"min":0,"max":1}` (any range, the older form) | a slider over the range | `{"score": …}`, rescaled to 0 to 1 |
+
+Each shape allows no other key. Options and labels must be unique, non-blank and at most 64
+characters each. `rubric-add` records a rubric in any other shape but prints a
+warning, and `GET /v1/rubrics` shows its `recognised_scale` as `null`. `GET /v1/rubrics` and
+`GET /v1/rubrics/{id}/{version}` read rubrics back ([HTTP API](/build/api/#get-v1rubrics-and-get-v1rubricsidversion)).
 
 ## Subjects and who may judge them
 

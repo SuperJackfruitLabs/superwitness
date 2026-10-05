@@ -121,7 +121,7 @@ func rubricAdd(args []string, getenv func(string) string, stderr io.Writer) int 
 	id := fs.String("id", "", "rubric id, e.g. press")
 	ver := fs.Int("version", 0, "rubric version, 1 or more")
 	name := fs.String("name", "", "human-readable name")
-	scale := fs.String("scale", "", `scale as JSON, e.g. {"min":0,"max":1}`)
+	scale := fs.String("scale", "", `scale as JSON, e.g. {"kind":"decision","options":["pass","fail"]}`)
 	bodyFile := fs.String("body-file", "", "file holding the rubric text")
 	createdBy := fs.String("created-by", "", "principal id of the author (prn_…)")
 	if err := fs.Parse(args); err != nil {
@@ -130,6 +130,11 @@ func rubricAdd(args []string, getenv func(string) string, stderr io.Writer) int 
 	if *id == "" || *ver < 1 || *name == "" || *scale == "" || *bodyFile == "" || *createdBy == "" || !json.Valid([]byte(*scale)) {
 		fmt.Fprintln(stderr, "rubric-add: -id, -version (>=1), -name, -scale (JSON), -body-file and -created-by are required")
 		return 2
+	}
+	if _, ok := verdicts.RecogniseScale(json.RawMessage(*scale)); !ok {
+		fmt.Fprintln(stderr, `rubric-add: warning: the scale matches none of the recognised shapes `+
+			`({"kind":"decision","options":[...]}, {"kind":"score"}, {"kind":"label","labels":[...]}, {"kind":"text"}, `+
+			`or a legacy {"min":...,"max":...}); the rubric is recorded, but the app lists it without offering it`)
 	}
 	dsn := getenv("SW_DATABASE_URL")
 	if dsn == "" {

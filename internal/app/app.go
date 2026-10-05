@@ -18,6 +18,7 @@ import (
 	"github.com/SuperJackfruitLabs/superwitness/internal/config"
 	"github.com/SuperJackfruitLabs/superwitness/internal/join"
 	"github.com/SuperJackfruitLabs/superwitness/internal/mcp"
+	"github.com/SuperJackfruitLabs/superwitness/internal/runs"
 	"github.com/SuperJackfruitLabs/superwitness/internal/source"
 	"github.com/SuperJackfruitLabs/superwitness/internal/source/agentpod"
 	errsrc "github.com/SuperJackfruitLabs/superwitness/internal/source/errors"
@@ -95,10 +96,13 @@ func Build(ctx context.Context, cfg config.Config, version string, logger *slog.
 		Verdicts: store, Principals: w.principals, Timeout: cfg.SourceTimeout, Observe: telemetry.SourceObserver(logger)}
 	subjects := &join.Subjects{Superpipeline: w.sp, AgentPod: w.ap, Attempts: w.attempts, Timeout: cfg.SourceTimeout}
 	ops := &api.Ops{Join: joiner, Spans: w.spans, Logs: w.logLister, Attempts: w.attempts, Timeout: cfg.SourceTimeout,
-		Verdicts: &verdicts.Service{Store: store, Subjects: subjects}}
+		Verdicts:   &verdicts.Service{Store: store, Subjects: subjects},
+		Runs:       &runs.PGStore{Pool: pool, Ready: store.Ready}, // same database, same migration gate
+		RunSources: cfg.RunSources,
+		Rubrics:    store}
 	// api.Server only sends non-API GETs to Web (never /v1/* or /mcp), so an unknown /v1/foo is the API's JSON 404.
 	srv := &api.Server{Ops: ops, Auth: w.authn, Health: &api.Health{Version: version, Pingers: w.pingers},
-		MCP: mcp.NewHandler(ops, version), Web: web.Handler()}
+		MCP: mcp.NewHandler(ops, version), Web: web.Handler(), Logger: logger}
 	handler, err := instrument(srv.Handler(), cfg.PublicURL)
 	if err != nil {
 		pool.Close()

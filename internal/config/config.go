@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -15,6 +16,17 @@ const (
 	DefaultListen        = ":8790"
 	DefaultFakeListen    = "127.0.0.1:8790"
 	DefaultSourceTimeout = 2 * time.Second
+)
+
+// SourceNamePattern is what a run source may be called, in SW_RUN_SOURCES and in run reports.
+const SourceNamePattern = `^[a-z][a-z0-9-]{0,31}$`
+
+// PrincipalIDPattern is a hub principal id.
+const PrincipalIDPattern = `^prn_[A-Za-z0-9_-]{1,64}$`
+
+var (
+	sourceName  = regexp.MustCompile(SourceNamePattern)
+	principalID = regexp.MustCompile(PrincipalIDPattern)
 )
 
 type Config struct {
@@ -33,6 +45,7 @@ type Config struct {
 	SourceTimeout       time.Duration
 	OTLPEndpoint        string
 	FakeSources         bool
+	RunSources          map[string]string // SW_RUN_SOURCES: reporting principal (prn_…) → the one source it may report for
 }
 
 func Load(getenv func(string) string) (Config, error) {
@@ -66,6 +79,12 @@ func Load(getenv func(string) string) (Config, error) {
 		}
 		c.SourceTimeout = d
 	}
+
+	rs, err := parseRunSources(getenv("SW_RUN_SOURCES"))
+	if err != nil {
+		return Config{}, fmt.Errorf("SW_RUN_SOURCES: %w", err)
+	}
+	c.RunSources = rs
 
 	var missing []string
 	need := func(name, v string) {
@@ -163,4 +182,24 @@ func isLoopback(listen string) bool {
 	}
 	ip := net.ParseIP(host)
 	return ip != nil && ip.IsLoopback()
+}
+
+// parseRunSources reads "prn_<id>=<source>,…". Each principal is bound to exactly one source.
+func parseRunSources(s string) (map[string]string, error) {
+	out := map[string]string{}
+	if strings.TrimSpace(s) == "" {
+		return out, nil
+	}
+	for _, item := range strings.Split(s, ",") {
+		prn, src, ok := strings.Cut(strings.TrimSpace(item), "=")
+		prn, src = strings.TrimSpace(prn), strings.TrimSpace(src)
+		if !ok || !principalID.MatchString(prn) || !sourceName.MatchString(src) {
+			return nil, fmt.Errorf("want prn_<id>=<source>, comma-separated, with a source of lowercase letters, digits and -; got %q", strings.TrimSpace(item))
+		}
+		if _, dup := out[prn]; dup {
+			return nil, fmt.Errorf("%s is bound to more than one source", prn)
+		}
+		out[prn] = src
+	}
+	return out, nil
 }

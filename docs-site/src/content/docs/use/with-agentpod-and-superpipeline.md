@@ -99,6 +99,11 @@ when:
 
 Both URLs are compared as configured, less any trailing `/`.
 
+If the token has a `scope` claim, superwitness reads it as a space-separated list. Only
+`POST /v1/runs` needs a scope today: `runs:write`, from a service principal
+([Run registry API](/build/run-registry/#who-may-report)). A `scope` claim that is not a string
+makes the token invalid.
+
 Every such principal is admitted; which principals can get a token for superwitness's audience
 is decided at the hub. The principal kind decides how its verdicts are recorded: their
 `judge_kind`, their default `kind`, and whether it may judge work it executed

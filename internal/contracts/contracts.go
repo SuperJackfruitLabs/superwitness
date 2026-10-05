@@ -1,6 +1,7 @@
 // Package contracts embeds the recorded payloads superwitness consumes (superpipeline's
 // run evidence route, the hub's evidence and principal routes, and VictoriaTraces' Jaeger
-// API). Producers validate the same files in their own CI.
+// API), and the run report schema that sources validate their reports against.
+// Producers validate the same files in their own CI.
 package contracts
 
 import _ "embed"
@@ -23,4 +24,6 @@ var (
 	JaegerTraceHub []byte
 	//go:embed jaeger_trace_workers.json
 	JaegerTraceWorkers []byte
+	//go:embed run-report.schema.json
+	RunReportSchema []byte
 )

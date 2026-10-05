@@ -79,10 +79,11 @@ func TestRegistriesAreNotEmpty(t *testing.T) {
 	if env := realEnvVars(); !env["SW_DATABASE_URL"] || !env["SW_MIGRATE_DATABASE_URL"] || len(env) < 10 {
 		t.Fatalf("env registry looks wrong: %v", env)
 	}
-	if r := realRoute(t); !r("/v1/verdicts") || !r("/v1/runs/by-attempt/x") || r("/v1/nope") {
+	if r := realRoute(t); !r("/v1/verdicts") || !r("/v1/runs/by-attempt/x") || !r("/v1/runs") ||
+		!r("/v1/rubrics/press/1") || r("/v1/nope") {
 		t.Fatal("route registry looks wrong")
 	}
-	if tools := realTools(t); len(tools) != 4 || !tools["record_verdict"] {
+	if tools := realTools(t); len(tools) != 5 || !tools["record_verdict"] || !tools["list_runs"] {
 		t.Fatalf("tool registry looks wrong: %v", tools)
 	}
 }

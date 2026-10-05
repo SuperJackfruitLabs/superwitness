@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/SuperJackfruitLabs/superwitness/internal/join"
+	"github.com/SuperJackfruitLabs/superwitness/internal/runs"
 	"github.com/SuperJackfruitLabs/superwitness/internal/source"
 	"github.com/SuperJackfruitLabs/superwitness/internal/verdicts"
 )
@@ -17,12 +18,23 @@ const (
 )
 
 type Ops struct {
-	Join     *join.Joiner
-	Spans    source.SpanLister
-	Logs     source.LogLister
-	Attempts source.AttemptResolver
-	Verdicts *verdicts.Service
-	Timeout  time.Duration
+	Join       *join.Joiner
+	Spans      source.SpanLister
+	Logs       source.LogLister
+	Attempts   source.AttemptResolver
+	Verdicts   *verdicts.Service
+	Timeout    time.Duration
+	Runs       runs.Store
+	RunSources map[string]string // SW_RUN_SOURCES: reporting principal -> its one source
+	Rubrics    verdicts.RubricReader
+	Now        func() time.Time
+}
+
+func (o *Ops) now() time.Time {
+	if o.Now != nil {
+		return o.Now()
+	}
+	return time.Now()
 }
 
 type SpanPage struct {

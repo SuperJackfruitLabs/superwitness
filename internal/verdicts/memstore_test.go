@@ -63,6 +63,23 @@ func storeContract(t *testing.T, s Store) {
 	if ok, _ := s.RubricExists(ctx, "press", 1); !ok {
 		t.Error("rubric missing after insert")
 	}
+	r2 := r
+	r2.Version, r2.Scale = 2, json.RawMessage(`{"kind":"text"}`)
+	if err := s.InsertRubric(ctx, r2); err != nil {
+		t.Fatal(err)
+	}
+	rr := s.(RubricReader)
+	all, err := rr.ListRubrics(ctx)
+	if err != nil || len(all) != 2 || all[0].Version != 2 || all[1].Version != 1 || all[0].ID != "press" {
+		t.Errorf("ListRubrics = %+v %v; want press@2 then press@1", all, err)
+	}
+	got, err := rr.GetRubric(ctx, "press", 1)
+	if err != nil || got.Name != "Press" || !jsonEqual(got.Scale, json.RawMessage(`{"min":0,"max":1}`)) || got.Body != "…" {
+		t.Errorf("GetRubric = %+v %v", got, err)
+	}
+	if _, err := rr.GetRubric(ctx, "press", 9); !errors.Is(err, ErrRubricNotFound) {
+		t.Errorf("GetRubric missing: %v", err)
+	}
 }
 
 func TestMemStoreContract(t *testing.T) { storeContract(t, NewMemStore()) }

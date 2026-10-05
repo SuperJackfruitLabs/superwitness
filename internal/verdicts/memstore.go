@@ -139,3 +139,20 @@ func (m *MemStore) InsertRubric(_ context.Context, r Rubric) error {
 	m.rubrics[k] = r
 	return nil
 }
+
+// All returns every verdict, oldest first. The run registry's in-memory store reads it.
+func (m *MemStore) All() []Verdict {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	out := make([]Verdict, 0, len(m.byID))
+	for _, v := range m.byID {
+		out = append(out, v)
+	}
+	sort.Slice(out, func(i, j int) bool {
+		if !out[i].CreatedAt.Equal(out[j].CreatedAt) {
+			return out[i].CreatedAt.Before(out[j].CreatedAt)
+		}
+		return out[i].ID < out[j].ID
+	})
+	return out
+}

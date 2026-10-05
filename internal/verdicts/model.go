@@ -58,6 +58,12 @@ type Rubric struct {
 	CreatedAt time.Time
 }
 
+// RubricReader reads rubrics for the API.
+type RubricReader interface {
+	ListRubrics(ctx context.Context) ([]Rubric, error)
+	GetRubric(ctx context.Context, id string, version int) (Rubric, error)
+}
+
 var (
 	ErrNotFound          = errors.New("verdict not found")
 	ErrAlreadySuperseded = errors.New("verdict already superseded")

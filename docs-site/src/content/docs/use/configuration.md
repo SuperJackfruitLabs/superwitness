@@ -25,6 +25,7 @@ are trimmed from every value.
 | `SW_TRACES_TOKEN_FILE` | no / no | none | a file holding a bearer token to send to VictoriaTraces. |
 | `SW_LOGS_URL` | yes / no | none | VictoriaLogs. |
 | `SW_LOGS_TOKEN_FILE` | no / no | none | a file holding a bearer token to send to VictoriaLogs. |
+| `SW_RUN_SOURCES` | no / no | none: nobody may report runs | the run reporters, as `prn_<id>=<source>,…`. Each service principal named may `POST /v1/runs` for its one source ([Run registry API](/build/run-registry/#who-may-report)). |
 | `SW_SOURCE_TIMEOUT` | no / no | `2s` | how long each source has to answer, as a Go duration such as `2s` or `1500ms`; it must be positive. |
 | `SW_OTLP_ENDPOINT` | no / no | none: superwitness sends no telemetry of its own | the OTLP/HTTP endpoint for superwitness's own traces and metrics ([Sending telemetry](/use/telemetry/#superwitnesss-own-telemetry)). |
 | `SW_FAKE_SOURCES` | no / – | `false` | `1` or `true` serves the built-in development run and accepts development tokens ([Install](/install/#try-it-without-the-other-products)). Accepts `true`/`false`/`1`/`0`; empty is false. |
@@ -44,6 +45,8 @@ finds:
   and `SW_OTLP_ENDPOINT`, when set, must be absolute `http` or `https` URLs with a host. A
   trailing `/` is removed.
 - **`SW_SOURCE_TIMEOUT`** must parse as a positive duration.
+- **`SW_RUN_SOURCES`** must be comma-separated `prn_<id>=<source>` pairs, a source being
+  lowercase letters, digits and `-`, and no principal bound twice.
 - **`SW_FAKE_SOURCES`** must parse as a boolean.
 - **Fake mode** refuses a `SW_LISTEN` that is not loopback.
 
