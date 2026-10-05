@@ -84,6 +84,12 @@ test("sign in, browse, record a verdict and revise it", async ({ page, request }
     await page.getByRole("link", { name: "All", exact: true }).click();
     await expect(page.getByRole("link", { name: /Write the release note/ })).toContainText("verdict: fail");
   });
+
+  await test.step("sign out", async () => {
+    await page.getByRole("button", { name: "Sign out" }).click();
+    await expect(page.getByRole("link", { name: "Sign in with AgentPod" })).toBeVisible();
+    await expect(page.getByRole("alert")).toHaveCount(0);
+  });
 });
 
 test("on a phone the sidebar folds into a menu", async ({ page, request }) => {
