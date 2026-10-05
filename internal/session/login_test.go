@@ -92,7 +92,7 @@ func (r *rig) sessionCookie() string {
 	return ""
 }
 
-// stepTo follows redirects by hand until the next hop is the callback, and returns its URL.
+// callbackURL follows redirects by hand until the next hop is the callback, and returns its URL.
 func (r *rig) callbackURL(t *testing.T) string {
 	t.Helper()
 	stop := *r.client
@@ -283,6 +283,7 @@ func TestLogout(t *testing.T) {
 	r := newRig(t)
 	r.signIn(t, "/")
 	tok := r.sessionCookie()
+	var lastType, lastBody string
 	post := func(origin string) int {
 		req, _ := http.NewRequest("POST", r.sw.URL+"/auth/logout", nil)
 		if origin != "" {
@@ -292,11 +293,16 @@ func TestLogout(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		b, _ := io.ReadAll(resp.Body)
 		resp.Body.Close()
+		lastType, lastBody = resp.Header.Get("Content-Type"), string(b)
 		return resp.StatusCode
 	}
 	if code := post("https://evil.example"); code != 403 || r.store.Len() != 1 {
 		t.Errorf("cross-site sign-out: %d, sessions %d", code, r.store.Len())
+	}
+	if lastType != "application/json" || !strings.Contains(lastBody, `"code":"origin_mismatch"`) {
+		t.Errorf("the 403 is %q %s; want auth's JSON error", lastType, lastBody)
 	}
 	if code := post(r.sw.URL); code != 204 || r.store.Len() != 0 || r.sessionCookie() != "" {
 		t.Errorf("sign-out: %d, sessions %d, cookie %q", code, r.store.Len(), r.sessionCookie())
@@ -330,5 +336,31 @@ func TestCallbackWithoutCodeOrCookieIsLoggedWithItsReason(t *testing.T) {
 		if !strings.Contains(rg.logs.String(), `"reason":"`+name+`"`) {
 			t.Errorf("%s not logged: %s", name, rg.logs)
 		}
+	}
+}
+
+// A sign-out the store cannot complete must not claim success: the server session may still be
+// valid. The cookie goes anyway, and the log never holds the token.
+func TestLogoutWhenStoreFails(t *testing.T) {
+	r := newRig(t)
+	r.signIn(t, "/")
+	tok := r.sessionCookie()
+	r.store.Fail = ErrUnavailable
+	req, _ := http.NewRequest("POST", r.sw.URL+"/auth/logout", nil)
+	req.Header.Set("Origin", r.sw.URL)
+	resp, err := r.client.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if resp.StatusCode != 503 || !strings.Contains(string(b), `"code":"store_unavailable"`) {
+		t.Errorf("failed sign-out: %d %s", resp.StatusCode, b)
+	}
+	if r.sessionCookie() != "" {
+		t.Error("the cookie survived a failed sign-out")
+	}
+	if !strings.Contains(r.logs.String(), `"msg":"auth.signout_failed"`) || strings.Contains(r.logs.String(), tok) {
+		t.Errorf("logs = %s", r.logs)
 	}
 }

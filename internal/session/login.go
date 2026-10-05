@@ -277,14 +277,25 @@ func (l *Login) exchange(ctx context.Context, code, verifier string) (string, er
 
 func (l *Login) logout(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Origin") != l.PublicURL {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusForbidden)
-		_, _ = io.WriteString(w, `{"error":{"code":"origin_mismatch","message":"sign out from the app"}}`+"\n")
+		auth.WriteError(w, http.StatusForbidden, "origin_mismatch", "sign out from the app")
 		return
 	}
 	if c, err := r.Cookie(l.Cookies.SessionName()); err == nil {
-		if s, err := l.Sessions.Revoke(r.Context(), c.Value); err == nil {
+		s, err := l.Sessions.Revoke(r.Context(), c.Value)
+		switch {
+		case err == nil:
 			l.log().Info("auth.signout", "principal", s.Principal)
+		case errors.Is(err, ErrNotFound): // already gone, or never a session: signed out either way
+		default:
+			// The server-side session may still be valid, so do not say 204; the cookie goes anyway.
+			l.Cookies.Clear(w, l.Cookies.SessionName())
+			attrs := []any{}
+			if s.Principal != "" { // known only when the store answered the read and failed the delete
+				attrs = append(attrs, "principal", s.Principal)
+			}
+			l.log().Warn("auth.signout_failed", attrs...)
+			auth.WriteError(w, http.StatusServiceUnavailable, "store_unavailable", "could not end the session; try again")
+			return
 		}
 	}
 	l.Cookies.Clear(w, l.Cookies.SessionName())
