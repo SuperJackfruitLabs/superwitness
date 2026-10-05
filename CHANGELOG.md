@@ -35,9 +35,11 @@ sources report, read a run and record verdicts against rubrics.
 
 ### Changed
 
-- A person's bearer token is resolved to their `prn_` principal id, so a person is the same judge
-  whether they use the app or a token. Verdicts recorded with a person's token before 0.0.3 keep
-  the account id as their judge.
+- A person's bearer token is now resolved through AgentPod to their `prn_` principal id, so a
+  person is the same judge whether they use the app or a token. When the hub cannot be reached
+  and the principal is not already cached, such a request answers 503 `principal_unresolved`
+  (retryable), even with sign-in off. Agent and service tokens are not looked up. Verdicts
+  recorded with a person's token before 0.0.3 keep the account id as their judge.
 - `/mcp` and `POST /v1/runs` refuse session cookies.
 - The token-paste run page is gone; the app replaces it.
 
@@ -45,6 +47,8 @@ sources report, read a run and record verdicts against rubrics.
 
 - Migration `00003` adds the `sessions` table. After `superwitness migrate`, grant the runtime
   role as the owner: `GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE sessions TO superwitness_app;`.
+  Upgrading straight from 0.0.1, also run 0.0.2's
+  `GRANT SELECT, INSERT, UPDATE ON TABLE runs TO superwitness_app;`.
 - The app is off until `SW_ALLOWED_PRINCIPALS` names someone; it then needs an https
   `SW_PUBLIC_URL`, `SW_APP_CLIENT_ID` and `SW_SESSION_SECRET_FILE`.
 

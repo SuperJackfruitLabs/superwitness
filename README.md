@@ -176,9 +176,13 @@ and it cannot create tables. `TestRuntimeRoleCanAppendButNotRewrite` and
 `TestRuntimeRoleRegistryGrants` run both blocks above verbatim against Postgres 17 and check
 all of this.
 
-Upgrading from 0.0.1: after `superwitness migrate`, run only the new line,
-`GRANT SELECT, INSERT, UPDATE ON TABLE runs TO superwitness_app;`, as the owner. Until then the
-run registry answers 503 `store_unavailable`; verdicts are unaffected. Upgrading from 0.0.2, run only `GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE sessions TO superwitness_app;` as the owner after `superwitness migrate`; until then sign-in shows the "Can't reach the database" page.
+Upgrading: after `superwitness migrate`, run as the owner only the grants your starting version
+lacks. From 0.0.2, that is
+`GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE sessions TO superwitness_app;`. From 0.0.1, it is
+both `GRANT SELECT, INSERT, UPDATE ON TABLE runs TO superwitness_app;` (added in 0.0.2) and the
+`sessions` grant (added in 0.0.3). Until the `runs` grant is in place the run registry answers
+503 `store_unavailable` (verdicts are unaffected); until the `sessions` grant is, sign-in shows
+the "Can't reach the database" page.
 
 On Postgres 14 or older, schema `public` belongs to the bootstrap superuser and every role may
 create tables in it. There, after the provision block and before `superwitness migrate`, run

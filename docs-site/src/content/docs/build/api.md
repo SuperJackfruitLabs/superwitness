@@ -35,7 +35,7 @@ A browser signed in to [the app](/use/the-app/) is authenticated by its session 
 | `GET` | `/v1/rubrics` | 200 with every rubric version, without bodies |
 | `GET` | `/v1/rubrics/{id}/{version}` | 200 with one rubric version and its body |
 | `GET` | `/v1/me` | 200 with `{"principal", "kind", "email", "via"}`: who the caller is, and whether by `session` or `bearer` |
-| `GET` | `/v1/verdicts` | 200 with every verdict on one subject (`subject_kind`, `subject_ref`), oldest first, each with `superseded_by` |
+| `GET` | `/v1/verdicts` | 200 with every verdict on one subject (`subject_kind`, `subject_ref`), oldest first, each with `superseded_by`; past 500, the newest 500 |
 | `GET` | `/v1/scopes` | 200 with every scope runs were reported in: `{"scopes": [{"source", "id", "name", "runs"}]}` |
 | `POST` | `/v1/verdicts` | 201 with a new verdict, or 200 with the one already recorded under the key |
 
@@ -167,8 +167,6 @@ Every error from `/v1` is one JSON object:
 | 404 | `rubric_not_found` | no such rubric version |
 | 404 | `not_found` | no such route |
 | 405 | `method_not_allowed` | the route exists, but not with this method |
-| 429 | `rate_limited` | over a [rate limit](/use/the-app/#rate-limits); `Retry-After` says when to retry |
-| 503 | `principal_unresolved` | AgentPod could not say which principal a person's token names (retryable) |
 | 409 | `idempotency_conflict` | the key was already used for a different verdict |
 | 409 | `already_superseded` | the verdict named in `supersedes` already has a successor |
 | 413 | `body_too_large` | a run report body over 256 KiB |
@@ -178,10 +176,12 @@ Every error from `/v1` is one JSON object:
 | 422 | `unknown_rubric` | the rubric version does not exist |
 | 422 | `supersedes_not_found` | the verdict named in `supersedes` does not exist |
 | 422 | `supersedes_mismatch` | the correction names a different subject or standard |
+| 429 | `rate_limited` | over a [rate limit](/use/the-app/#rate-limits); `Retry-After` says when to retry |
 | 500 | `internal` | an unexpected failure |
 | 502 | `<source>_unauthorized` | a source refused superwitness's credential |
 | 503 | `<source>_unavailable` | a source could not be reached or failed (retryable) |
 | 503 | `store_unavailable` | the database is unavailable (retryable) |
+| 503 | `principal_unresolved` | AgentPod could not say which principal a person's token names (retryable) |
 | 503 | `subject_unresolved` | superwitness could not confirm the subject or who executed it (retryable) |
 | 504 | `<source>_timeout` | a source did not answer in time (retryable) |
 
