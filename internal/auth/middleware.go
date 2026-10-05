@@ -41,6 +41,11 @@ func unauthorized(w http.ResponseWriter, msg string) {
 	writeAuthError(w, http.StatusUnauthorized, "unauthenticated", msg)
 }
 
+// WriteError answers with the API's JSON error shape, for handlers outside the gate (sign-out).
+func WriteError(w http.ResponseWriter, status int, code, msg string) {
+	writeAuthError(w, status, code, msg)
+}
+
 func writeAuthError(w http.ResponseWriter, status int, code, msg string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)

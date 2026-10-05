@@ -12,7 +12,9 @@ import (
 //go:embed all:dist
 var dist embed.FS
 
-const csp = "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-ancestors 'none'"
+// CSP is the Content-Security-Policy every page superwitness serves carries; session's sign-in
+// pages reuse it.
+const CSP = "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-ancestors 'none'"
 
 func Handler() http.Handler {
 	sub, err := fs.Sub(dist, "dist")
@@ -21,7 +23,7 @@ func Handler() http.Handler {
 	}
 	files := http.FileServerFS(sub)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Security-Policy", csp)
+		w.Header().Set("Content-Security-Policy", CSP)
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		p := strings.TrimPrefix(path.Clean(r.URL.Path), "/")
 		if p == "" || p == "." {
