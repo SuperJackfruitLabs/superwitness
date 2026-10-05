@@ -1,0 +1,39 @@
+name: Bug report
+description: Something in superwitness doesn't work as documented.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. **Security issues don't belong here**: please use the Security tab → "Report a vulnerability" (see SECURITY.md).
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `superwitness --version`.
+      placeholder: v0.0.1
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you saw, and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How to reproduce
+      description: The smallest steps, request or configuration that shows the problem.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or responses
+      description: Relevant log lines or API responses. Remove tokens and other secrets first.
+      render: text
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS and architecture, how superwitness is run (systemd, container, local), Postgres version, and which sources are configured.
