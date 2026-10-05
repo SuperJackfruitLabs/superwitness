@@ -69,22 +69,3 @@ export function verdictSummary(value: Record<string, unknown> | null | undefined
   if (typeof value.text === "string") return value.text.length > 40 ? value.text.slice(0, 39) + "…" : value.text;
   return JSON.stringify(value);
 }
-
-// The helpers below serve the old token-paste run page only, and go when the app replaces it.
-
-export const tokenKey = "superwitness.token";
-
-export function parseRunPath(pathname: string): { board: string; run: string } | null {
-  const m = /^\/runs\/superpipeline\/([A-Za-z0-9_-]+)\/([A-Za-z0-9_-]+)\/?$/.exec(pathname);
-  return m ? { board: m[1], run: m[2] } : null;
-}
-
-export function emptyNote(sources: Record<string, string> | null | undefined, names: string[]): string {
-  const bad = names.filter((n) => (sources ?? {})[n] !== "ok");
-  if (bad.length === 0) return "none";
-  return `unknown (${bad.map((n) => `source ${n}: ${display((sources ?? {})[n])}`).join(", ")})`;
-}
-
-export function isAuthStatus(status: number): boolean {
-  return status === 401 || status === 403;
-}
