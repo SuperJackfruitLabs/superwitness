@@ -132,3 +132,41 @@ func TestLoadMigrateNeedsOnlyADatabaseURL(t *testing.T) {
 		t.Errorf("neither set: %v", err)
 	}
 }
+
+func TestRunSources(t *testing.T) {
+	m := full()
+	m["SW_RUN_SOURCES"] = " prn_reporter01=superpipeline , prn_reporter02=canary-runner "
+	c, err := Load(env(m))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(c.RunSources) != 2 || c.RunSources["prn_reporter01"] != "superpipeline" || c.RunSources["prn_reporter02"] != "canary-runner" {
+		t.Errorf("RunSources = %v", c.RunSources)
+	}
+	for _, bad := range []string{
+		"prn_reporter01",               // no source
+		"prn_reporter01=",              // empty source
+		"=superpipeline",               // no principal
+		"usr_01=superpipeline",         // not a principal id
+		"prn_reporter01=Superpipeline", // not a source name
+		"prn_reporter01=superpipeline,prn_reporter01=canary", // bound twice
+	} {
+		m["SW_RUN_SOURCES"] = bad
+		if _, err := Load(env(m)); err == nil || !strings.Contains(err.Error(), "SW_RUN_SOURCES") {
+			t.Errorf("%q: err = %v; want one naming SW_RUN_SOURCES", bad, err)
+		}
+	}
+	delete(m, "SW_RUN_SOURCES")
+	c, err = Load(env(m))
+	if err != nil || c.RunSources == nil || len(c.RunSources) != 0 {
+		t.Errorf("unset: %v %v; want an empty, non-nil map (nobody may report)", c.RunSources, err)
+	}
+}
+
+func TestRunSourcesInFakeMode(t *testing.T) {
+	c, err := Load(env(map[string]string{"SW_FAKE_SOURCES": "1", "SW_DATABASE_URL": "postgres://x",
+		"SW_RUN_SOURCES": "prn_reporter01=superpipeline"}))
+	if err != nil || c.RunSources["prn_reporter01"] != "superpipeline" {
+		t.Errorf("fake mode: %v %v", c.RunSources, err)
+	}
+}
