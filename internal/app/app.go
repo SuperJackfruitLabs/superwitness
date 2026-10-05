@@ -99,7 +99,8 @@ func Build(ctx context.Context, cfg config.Config, version string, logger *slog.
 		Verdicts:   &verdicts.Service{Store: store, Subjects: subjects},
 		Runs:       &runs.PGStore{Pool: pool, Ready: store.Ready}, // same database, same migration gate
 		RunSources: cfg.RunSources,
-		Rubrics:    store}
+		Rubrics:    store,
+		History:    store}
 	// api.Server only sends non-API GETs to Web (never /v1/* or /mcp), so an unknown /v1/foo is the API's JSON 404.
 	srv := &api.Server{Ops: ops, Auth: w.authn, Health: &api.Health{Version: version, Pingers: w.pingers},
 		MCP: mcp.NewHandler(ops, version), Web: web.Handler(), Logger: logger, TrustedProxies: cfg.TrustedProxies}
