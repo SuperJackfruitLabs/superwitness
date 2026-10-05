@@ -4,7 +4,7 @@ description: The HTTP routes superwitness serves, their parameters and their err
 ---
 
 superwitness serves a small JSON API under `/v1`. The [MCP tools](/build/mcp/) are a thin layer
-over the same operations. One route, `GET /v1/runs/by-attempt/{attempt}`, is HTTP-only and has no tool.
+over the same operations. Two routes have no tool: `GET /v1/runs/by-attempt/{attempt}` and the rubric reads.
 
 ## Authentication
 
@@ -27,6 +27,10 @@ mode, tokens are `dev:<principal>:<human|agent|service>`.
 | `GET` | `/v1/runs/superpipeline/{board}/{run}/spans` | 200 with one page of spans |
 | `GET` | `/v1/runs/superpipeline/{board}/{run}/logs` | 200 with one page of log lines |
 | `GET` | `/v1/runs/by-attempt/{attempt}` | 302 to the run document |
+| `POST` | `/v1/runs` | 200 with one result per report ([Run registry API](/build/run-registry/)) |
+| `GET` | `/v1/runs` | 200 with one page of registry runs ([Run registry API](/build/run-registry/#listing-runs)) |
+| `GET` | `/v1/rubrics` | 200 with every rubric version, without bodies |
+| `GET` | `/v1/rubrics/{id}/{version}` | 200 with one rubric version and its body |
 | `POST` | `/v1/verdicts` | 201 with a new verdict, or 200 with the one already recorded under the key |
 
 Path parameters:
@@ -74,6 +78,14 @@ id only. [Read a run](/use/read-a-run/#logs-one-page-at-a-time).
 302 with `Location: /v1/runs/superpipeline/{board}/{run}` for the run the attempt belongs to,
 and no body.
 
+### GET /v1/rubrics and GET /v1/rubrics/{id}/{version}
+
+`GET /v1/rubrics` answers `{"rubrics": [...]}`, ordered by id and then newest version first.
+Each has `id`, `version`, `standard` (`rubric:<id>@<version>`, what a verdict names), `name`,
+`scale` as recorded, `recognised_scale`, `created_by` and `created_at`. The single-rubric route
+adds `body`. `recognised_scale` is the scale in one of the shapes on
+[Verdicts](/use/verdicts/#rubric-scales), or `null` when it is in none of them.
+
 ### POST /v1/verdicts
 
 Body: one JSON verdict request, at most 64 KiB, with no unknown fields. Answers the stored
@@ -115,7 +127,12 @@ Every error from `/v1` is one JSON object:
 | 400 | `invalid_limit` | `limit` is not a whole number of 1 or more |
 | 400 | `invalid_cursor` | `cursor` is not one superwitness issued |
 | 400 | `invalid_level` | `level` is not `debug`, `info`, `warn` or `error` |
-| 400 | `invalid_json` | the verdict body is not exactly one JSON object of known fields, or is over 64 KiB |
+| 400 | `invalid_source` | `source` is not a source name |
+| 400 | `invalid_status` | a `status` is not one of the six |
+| 400 | `invalid_time` | `since` or `until` is not RFC 3339 |
+| 400 | `invalid_needs_verdict` | `needs_verdict` is not `true` or `false` |
+| 400 | `invalid_rubric_ref` | the rubric id or version is malformed |
+| 400 | `invalid_json` | the body is not exactly one JSON object of known fields, or is over 64 KiB (verdicts); not one report or a batch of 1 to 100 (runs) |
 | 400 | `invalid_idempotency_key` | the key is missing, over 200 bytes, or holds NUL |
 | 400 | `invalid_kind` | `kind` is not `grader`, `review`, `eval` or `calibration` |
 | 400 | `invalid_subject_kind` | `subject_kind` is not `run`, `attempt` or `eval_case_run` |
@@ -128,16 +145,22 @@ Every error from `/v1` is one JSON object:
 | 400 | `judge_mismatch` | `judge` is set to someone other than the caller |
 | 400 | `judge_kind_not_accepted` | `judge_kind` is set; it comes from the caller's principal record |
 | 401 | `unauthenticated` | the bearer token is missing or not valid for this service |
+| 403 | `service_principal_required` | a run report from a principal that is not a service |
+| 403 | `insufficient_scope` | a run report whose token lacks `runs:write` |
+| 403 | `source_not_allowed` | a run report for a source the reporter is not bound to |
 | 403 | `self_judgement` | a non-human judge's verdict on a run or attempt it executed |
 | 403 | `not_original_judge` | superseding someone else's verdict |
 | 404 | `run_not_found` | neither superpipeline nor the hub knows the run |
 | 404 | `attempt_not_found` | the hub does not know the attempt |
 | 404 | `attempt_has_no_run` | the attempt was not dispatched from a superpipeline run |
 | 404 | `subject_not_found` | the verdict's run or attempt does not exist |
+| 404 | `rubric_not_found` | no such rubric version |
 | 404 | `not_found` | no such route |
 | 405 | `method_not_allowed` | the route exists, but not with this method |
 | 409 | `idempotency_conflict` | the key was already used for a different verdict |
 | 409 | `already_superseded` | the verdict named in `supersedes` already has a successor |
+| 413 | `body_too_large` | a run report body over 256 KiB |
+| 422 | `invalid_report` | a run report breaks a rule; a batch's error has `index` |
 | 422 | `missing_standard` | the verdict names no standard |
 | 422 | `invalid_standard` | the standard is not `rubric:<id>@<version>`, `stage:<key>` or `case:<id>` |
 | 422 | `unknown_rubric` | the rubric version does not exist |
@@ -146,7 +169,7 @@ Every error from `/v1` is one JSON object:
 | 500 | `internal` | an unexpected failure |
 | 502 | `<source>_unauthorized` | a source refused superwitness's credential |
 | 503 | `<source>_unavailable` | a source could not be reached or failed (retryable) |
-| 503 | `store_unavailable` | the verdict database is unavailable (retryable) |
+| 503 | `store_unavailable` | the database is unavailable (retryable) |
 | 503 | `subject_unresolved` | superwitness could not confirm the subject or who executed it (retryable) |
 | 504 | `<source>_timeout` | a source did not answer in time (retryable) |
 
