@@ -102,7 +102,7 @@ own the tables. superwitness takes two DSNs:
 - `SW_MIGRATE_DATABASE_URL` connects as `superwitness_owner`, which owns the database and the
   tables. It is used only to run migrations.
 - `SW_DATABASE_URL` connects as `superwitness_app`, the runtime role. It can insert and read
-  verdicts and rubrics and nothing else.
+  verdicts and rubrics, insert, read and update registry runs, and nothing else.
 
 If `SW_MIGRATE_DATABASE_URL` is unset, migrations run over `SW_DATABASE_URL`, which must then
 be the owner. That suits development only. superwitness never logs either DSN.
@@ -143,15 +143,22 @@ Then grant the runtime role, connected to the `superwitness` database as `superw
 ```sql
 GRANT USAGE ON SCHEMA public TO superwitness_app;
 GRANT SELECT, INSERT ON TABLE verdicts, rubrics TO superwitness_app;
+GRANT SELECT, INSERT, UPDATE ON TABLE runs TO superwitness_app;
 ```
 
-That is the whole runtime grant set. The tables have no sequences (ids are text), and the
+That is the whole runtime grant set. The tables have no sequences (keys are text), and the
 runtime pool never reads goose's `goose_db_version` table, so it needs no grant on it (unless
 serve migrates as the runtime role, above). Nothing is
 granted through `ALTER DEFAULT PRIVILEGES`: a later migration that adds a table must add that
-table's grant here. The runtime role cannot update, delete, truncate, alter or drop the tables
-or their triggers, and cannot create tables; `TestRuntimeRoleCanAppendButNotRewrite` runs both
-blocks above verbatim against Postgres 17 and checks all of this.
+table's grant here. The runtime role cannot update, delete, truncate, alter or drop `verdicts`
+and `rubrics` or their triggers; it can update registry rows in `runs` but never delete them;
+and it cannot create tables. `TestRuntimeRoleCanAppendButNotRewrite` and
+`TestRuntimeRoleRegistryGrants` run both blocks above verbatim against Postgres 17 and check
+all of this.
+
+Upgrading from 0.0.1: after `superwitness migrate`, run only the new line,
+`GRANT SELECT, INSERT, UPDATE ON TABLE runs TO superwitness_app;`, as the owner. Until then the
+run registry answers 503 `store_unavailable`; verdicts are unaffected.
 
 On Postgres 14 or older, schema `public` belongs to the bootstrap superuser and every role may
 create tables in it. There, after the provision block and before `superwitness migrate`, run

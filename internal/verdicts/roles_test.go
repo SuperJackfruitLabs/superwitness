@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -97,5 +98,49 @@ func TestRuntimeRoleMigrationPass(t *testing.T) {
 	}
 	if err := Migrate(ctx, roles.AppDSN); err == nil {
 		t.Error("runtime role applied a pending migration")
+	}
+}
+
+// README's runtime grants let the running service add and update registry rows, never delete
+// them, and leave verdicts as append-only as before.
+func TestRuntimeRoleRegistryGrants(t *testing.T) {
+	ctx := context.Background()
+	roles := testutil.StartPostgresWithRoles(t)
+	if err := Migrate(ctx, roles.OwnerDSN); err != nil {
+		t.Fatalf("migrate as owner: %v", err)
+	}
+	roles.GrantRuntime(t)
+	pool, err := pgxpool.New(ctx, roles.AppDSN)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(pool.Close)
+
+	now := time.Now().UTC()
+	if _, err := pool.Exec(ctx, `INSERT INTO runs (source, external_ref, status, source_status, reported_at, first_seen_at, updated_at)
+		VALUES ('superpipeline', 'brd_01/run_01', 'running', 'in_progress', $1, $1, $1)`, now); err != nil {
+		t.Fatalf("insert a run as the runtime role: %v", err)
+	}
+	if _, err := pool.Exec(ctx, `UPDATE runs SET status = 'succeeded', reported_at = $1 WHERE source = 'superpipeline'`,
+		now.Add(time.Second)); err != nil {
+		t.Fatalf("update a run as the runtime role: %v", err)
+	}
+	var status string
+	if err := pool.QueryRow(ctx, `SELECT status FROM runs`).Scan(&status); err != nil || status != "succeeded" {
+		t.Errorf("status = %q %v", status, err)
+	}
+	for _, stmt := range []string{
+		`DELETE FROM runs`,
+		`TRUNCATE runs`,
+		`ALTER TABLE runs ADD COLUMN sneaky int`,
+		`DROP TABLE runs`,
+		`UPDATE verdicts SET comment = 'edited'`,
+		`DELETE FROM verdicts`,
+	} {
+		_, err := pool.Exec(ctx, stmt)
+		var pgErr *pgconn.PgError
+		if !errors.As(err, &pgErr) || pgErr.Code != "42501" {
+			t.Errorf("%q as runtime role: err = %v; want SQLSTATE 42501", stmt, err)
+		}
 	}
 }
