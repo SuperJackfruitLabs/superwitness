@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getJSON } from "../api";
+import { type ApiError, getJSON } from "../api";
 import { ErrorView } from "../Edge";
 import { list } from "../format";
 import { useJSON } from "../hooks";
@@ -8,7 +8,7 @@ import { StatusPill } from "../runs/RunCard";
 import type { Doc, HistoryVerdict, Me } from "../types";
 import { VerdictDrawer } from "../verdict/Drawer";
 import { facts, TAB_LABEL, TAB_SOURCE, TABS, type Tab, tabOf } from "./facts";
-import { AttemptsPanel, ErrorsPanel, LogsPanel, TracePanel, Unavailable, VerdictList } from "./Panels";
+import { AttemptsPanel, ErrorsPanel, type Failure, LogsPanel, TracePanel, Unavailable, VerdictList } from "./Panels";
 
 export function Facts({ doc }: { doc: Doc }) {
   return (
@@ -35,32 +35,58 @@ export function Tabs({ current, base }: { current: Tab; base: string }) {
   );
 }
 
-// useHistory reads every verdict on the run and on each of its attempts.
-function useHistory(doc: Doc | null, reloadKey: number): HistoryVerdict[] {
-  const [all, setAll] = useState<HistoryVerdict[]>([]);
+interface History {
+  verdicts: HistoryVerdict[];
+  failures: Failure[];
+  loading: boolean;
+  retry: () => void;
+}
+
+// useHistory reads every verdict on the run and on each of its attempts. A subject whose read failed
+// is reported in failures; it is never folded into an empty list.
+function useHistory(doc: Doc | null, reloadKey: number): History {
+  const [state, setState] = useState<{ verdicts: HistoryVerdict[]; failures: Failure[]; loading: boolean }>({ verdicts: [], failures: [], loading: true });
+  const [tries, setTries] = useState(0);
   const ref: string | undefined = doc?.run?.ref;
   const attempts = list<Doc>(doc?.attempts).map((a) => a.id as string).filter(Boolean);
   const key = [ref, ...attempts].join(",");
   useEffect(() => {
     if (!ref) return;
     let live = true;
+    setState((s) => ({ ...s, loading: true }));
     const subjects = [["run", ref], ...attempts.map((a) => ["attempt", a])];
     Promise.all(
       subjects.map(([k, r]) =>
         getJSON<{ verdicts: HistoryVerdict[] }>(`/v1/verdicts?subject_kind=${k}&subject_ref=${encodeURIComponent(r)}`).then(
-          (p) => p.verdicts,
-          () => [] as HistoryVerdict[],
+          (p) => ({ ok: list(p.verdicts) }),
+          (e: ApiError) => ({ fail: { subject: k === "run" ? "this run" : `attempt ${r}`, message: e.message } }),
         ),
       ),
-    ).then((vs) => live && setAll(vs.flat().sort((a, b) => a.created_at.localeCompare(b.created_at))));
+    ).then((rs) => {
+      if (!live) return;
+      const verdicts: HistoryVerdict[] = [];
+      const failures: Failure[] = [];
+      for (const r of rs) {
+        if ("ok" in r) verdicts.push(...r.ok);
+        else failures.push(r.fail);
+      }
+      verdicts.sort((a, b) => a.created_at.localeCompare(b.created_at));
+      setState({ verdicts, failures, loading: false });
+    });
     return () => {
       live = false;
     };
-  }, [key, reloadKey]);
-  return all;
+  }, [key, reloadKey, tries]);
+  return { ...state, retry: () => setTries((n) => n + 1) };
 }
 
-export function RunViewPage({ board, run, query, me }: { board: string; run: string; query: string; me: Me }) {
+// A run view belongs to one run: keyed by it, so nothing ticked or typed on one run (evidence, an
+// open drawer) can reach another.
+export function RunViewPage(props: { board: string; run: string; query: string; me: Me }) {
+  return <RunView key={`${props.board}/${props.run}`} {...props} />;
+}
+
+function RunView({ board, run, query, me }: { board: string; run: string; query: string; me: Me }) {
   const base = `/runs/superpipeline/${board}/${run}`;
   const api = `/v1${base}`;
   const doc = useJSON<Doc>(api);
@@ -88,7 +114,7 @@ export function RunViewPage({ board, run, query, me }: { board: string; run: str
     panel = <ErrorsPanel doc={d} />;
   } else if (tab === "verdicts") {
     panel = (
-      <VerdictList verdicts={history} gates={list<Doc>(d.verdicts).filter((v) => v.kind === "gate")} me={me} onRevise={(v) => setDrawer({ revising: v })} />
+      <VerdictList verdicts={history.verdicts} failures={history.failures} loading={history.loading} onRetry={history.retry} gates={list<Doc>(d.verdicts).filter((v) => v.kind === "gate")} me={me} onRevise={(v) => setDrawer({ revising: v })} />
     );
   } else {
     panel = <AttemptsPanel doc={d} />;

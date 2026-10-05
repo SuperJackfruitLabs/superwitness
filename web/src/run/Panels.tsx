@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ApiError, getJSON } from "../api";
 import { display, list } from "../format";
 import type { Doc, HistoryVerdict, LogLine, Me, Span } from "../types";
@@ -16,23 +16,89 @@ export function Unavailable({ source, status }: { source: string; status: string
   );
 }
 
-// TracePanel is the span waterfall, 500 spans a page. Ticked spans become the verdict's evidence.
-export function TracePanel({ base, evidence, setEvidence }: { base: string; evidence: string[]; setEvidence: (ids: string[]) => void }) {
-  const [spans, setSpans] = useState<Span[]>([]);
+interface Page<T> {
+  items: T[];
+  next: string | null;
+}
+
+// usePages loads a cursor-paged list. Every first load and every load-more carries a generation;
+// when key changes (another run, another filter) or the panel unmounts the generation moves on, and
+// a response from an older one is dropped. A first-load failure is `error`; a load-more failure is
+// `moreError` and leaves what was already loaded in place.
+function usePages<T>(key: string, fetchPage: (cursor: string | null) => Promise<Page<T>>) {
+  const [items, setItems] = useState<T[]>([]);
   const [next, setNext] = useState<string | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
-  const load = (cursor: string | null) =>
-    getJSON<{ spans: Span[]; next_cursor?: string }>(`${base}/spans?limit=500${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`).then(
-      (p) => {
-        setSpans((s) => (cursor ? [...s, ...list(p.spans)] : list(p.spans)));
-        setNext(p.next_cursor ?? null);
-      },
-      setError,
-    );
+  const [moreError, setMoreError] = useState<ApiError | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [tries, setTries] = useState(0);
+  const gen = useRef(0);
+  const busy = useRef(false);
+  const fetchRef = useRef(fetchPage);
+  fetchRef.current = fetchPage;
   useEffect(() => {
-    load(null);
-  }, [base]);
-  if (error) return <p className="refusal">{error.message}</p>;
+    const mine = ++gen.current;
+    busy.current = false;
+    setItems([]);
+    setNext(null);
+    setError(null);
+    setMoreError(null);
+    setLoading(true);
+    fetchRef.current(null).then(
+      (p) => {
+        if (gen.current !== mine) return;
+        setItems(p.items);
+        setNext(p.next);
+        setLoading(false);
+      },
+      (e: ApiError) => {
+        if (gen.current !== mine) return;
+        setError(e);
+        setLoading(false);
+      },
+    );
+    return () => {
+      gen.current++;
+    };
+  }, [key, tries]);
+  const more = () => {
+    if (!next || busy.current) return;
+    const mine = gen.current;
+    busy.current = true;
+    setMoreError(null);
+    fetchRef.current(next).then(
+      (p) => {
+        if (gen.current !== mine) return;
+        busy.current = false;
+        setItems((l) => [...l, ...p.items]);
+        setNext(p.next);
+      },
+      (e: ApiError) => {
+        if (gen.current !== mine) return;
+        busy.current = false;
+        setMoreError(e);
+      },
+    );
+  };
+  return { items, next, error, moreError, loading, more, retry: () => setTries((n) => n + 1) };
+}
+
+// TracePanel is the span waterfall, 500 spans a page. Ticked spans become the verdict's evidence.
+export function TracePanel({ base, evidence, setEvidence }: { base: string; evidence: string[]; setEvidence: (ids: string[]) => void }) {
+  const { items: spans, next, error, moreError, loading, more, retry } = usePages<Span>(base, (cursor) =>
+    getJSON<{ spans: Span[]; next_cursor?: string }>(`${base}/spans?limit=500${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`).then((p) => ({
+      items: list(p.spans),
+      next: p.next_cursor ?? null,
+    })),
+  );
+  if (error)
+    return (
+      <>
+        <p className="refusal">{error.message}</p>
+        <button onClick={retry}>Try again</button>
+      </>
+    );
+  if (loading) return <p className="loading">Loading spans…</p>;
   if (spans.length === 0) return <p className="muted">No spans.</p>;
   const full = evidence.length >= MAX_EVIDENCE;
   return (
@@ -63,7 +129,8 @@ export function TracePanel({ base, evidence, setEvidence }: { base: string; evid
           );
         })}
       </ul>
-      {next && <button onClick={() => load(next)}>Load more spans</button>}
+      {moreError && <p className="refusal">{moreError.message}</p>}
+      {next && <button onClick={more}>{moreError ? "Try loading more spans again" : "Load more spans"}</button>}
     </>
   );
 }
@@ -72,20 +139,11 @@ const LEVELS = ["", "debug", "info", "warn", "error"];
 
 export function LogsPanel({ base }: { base: string }) {
   const [level, setLevel] = useState("");
-  const [lines, setLines] = useState<LogLine[]>([]);
-  const [next, setNext] = useState<string | null>(null);
-  const [error, setError] = useState<ApiError | null>(null);
-  const load = (cursor: string | null) =>
+  const { items: lines, next, error, moreError, loading, more, retry } = usePages<LogLine>(`${base}|${level}`, (cursor) =>
     getJSON<{ logs: LogLine[]; next_cursor: string | null }>(
       `${base}/logs?limit=100${level ? `&level=${level}` : ""}${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`,
-    ).then((p) => {
-      setLines((l) => (cursor ? [...l, ...list(p.logs)] : list(p.logs)));
-      setNext(p.next_cursor);
-    }, setError);
-  useEffect(() => {
-    setError(null);
-    load(null);
-  }, [base, level]);
+    ).then((p) => ({ items: list(p.logs), next: p.next_cursor ?? null })),
+  );
   return (
     <>
       <label>
@@ -98,7 +156,12 @@ export function LogsPanel({ base }: { base: string }) {
           ))}
         </select>
       </label>
-      {error && <p className="refusal">{error.message}</p>}
+      {error && (
+        <>
+          <p className="refusal">{error.message}</p>
+          <button onClick={retry}>Try again</button>
+        </>
+      )}
       <div className="scroll">
         <table>
           <tbody>
@@ -113,8 +176,10 @@ export function LogsPanel({ base }: { base: string }) {
           </tbody>
         </table>
       </div>
-      {!error && lines.length === 0 && <p className="muted">No log lines.</p>}
-      {next && <button onClick={() => load(next)}>Load more</button>}
+      {loading && <p className="loading">Loading logs…</p>}
+      {!error && !loading && lines.length === 0 && <p className="muted">No log lines.</p>}
+      {moreError && <p className="refusal">{moreError.message}</p>}
+      {next && <button onClick={more}>{moreError ? "Try loading more again" : "Load more"}</button>}
     </>
   );
 }
@@ -174,9 +239,36 @@ export function AttemptsPanel({ doc }: { doc: Doc }) {
 
 // VerdictList shows supersede chains as history: a superseded verdict is struck through and
 // links to its successor. Revise is offered on the viewer's own latest rubric verdicts.
-export function VerdictList({ verdicts, gates, me, onRevise }: { verdicts: HistoryVerdict[]; gates: Doc[]; me: Me; onRevise: (v: HistoryVerdict) => void }) {
-  if (verdicts.length === 0 && gates.length === 0) return <p className="muted">No verdicts yet.</p>;
+export interface Failure {
+  subject: string;
+  message: string;
+}
+
+export function VerdictList({ verdicts, gates, me, onRevise, failures = [], loading = false, onRetry }: {
+  verdicts: HistoryVerdict[];
+  gates: Doc[];
+  me: Me;
+  onRevise: (v: HistoryVerdict) => void;
+  failures?: Failure[];
+  loading?: boolean;
+  onRetry?: () => void;
+}) {
+  const failed =
+    failures.length > 0 ? (
+      <div className="unavailable" role="alert">
+        {failures.map((f) => (
+          <p key={f.subject}>
+            unavailable: the verdict history for {f.subject} could not be read ({f.message}).
+          </p>
+        ))}
+        {onRetry && <button onClick={onRetry}>Try again</button>}
+      </div>
+    ) : null;
+  if (loading && verdicts.length === 0 && gates.length === 0 && !failed) return <p className="loading">Loading verdicts…</p>;
+  if (verdicts.length === 0 && gates.length === 0) return failed ?? <p className="muted">No verdicts yet.</p>;
   return (
+    <>
+    {failed}
     <ul className="verdicts">
       {gates.map((g) => (
         <li key={g.id} className="verdict">
@@ -209,5 +301,6 @@ export function VerdictList({ verdicts, gates, me, onRevise }: { verdicts: Histo
         </li>
       ))}
     </ul>
+    </>
   );
 }
