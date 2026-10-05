@@ -16,8 +16,9 @@ review. Each check is a job in `.github/workflows/ci.yml`:
 | `web` | the embedded run page's tests and build, and a check that the committed bundle is current |
 | `landing` | the superwitness.dev build |
 | `docs` | the docs.superwitness.dev build |
+| `e2e` | the app in Chromium against fake mode, a stand-in hub and Postgres |
 
-Branch protection requires all five to pass and the branch to be up to date
+Branch protection requires all six to pass and the branch to be up to date
 with `main`, so rebase before merging. Security issues don't go through pull
 requests; see [SECURITY.md](SECURITY.md).
 
@@ -32,6 +33,7 @@ make lint test          # vet and unit tests, including the guards
 make test-integration   # needs Docker
 make web-check          # rebuilds the run page and checks the committed bundle
 make licenses           # dependency licence allowlist
+make e2e                # needs Docker, and npx playwright install chromium once
 ```
 
 To run either site locally:

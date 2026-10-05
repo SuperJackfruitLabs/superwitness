@@ -8,3 +8,6 @@ target/
 bin/
 # The embedded web page is committed so `go build` needs no Node toolchain.
 !internal/web/dist/
+# Playwright output
+web/test-results/
+web/playwright-report/
