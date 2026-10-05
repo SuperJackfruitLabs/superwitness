@@ -53,11 +53,11 @@ func RecogniseScale(raw json.RawMessage) (Scale, bool) {
 }
 
 func legacyScore(m map[string]json.RawMessage) (Scale, bool) {
-	var lo, hi float64
-	if len(m) != 2 || json.Unmarshal(m["min"], &lo) != nil || json.Unmarshal(m["max"], &hi) != nil || !(lo < hi) {
+	var lo, hi *float64
+	if len(m) != 2 || json.Unmarshal(m["min"], &lo) != nil || json.Unmarshal(m["max"], &hi) != nil || lo == nil || hi == nil || !(*lo < *hi) {
 		return Scale{}, false
 	}
-	return Scale{Kind: "score", Min: &lo, Max: &hi}, true
+	return Scale{Kind: "score", Min: lo, Max: hi}, true
 }
 
 func stringList(m map[string]json.RawMessage, key string, minN, maxN int) ([]string, bool) {

@@ -28,6 +28,8 @@ func TestRecogniseScale(t *testing.T) {
 		{`{"kind":"vibes"}`, nil},
 		{`{"min":1,"max":1}`, nil},
 		{`{"min":"0","max":1}`, nil},
+		{`{"min":null,"max":5}`, nil},
+		{`{"min":0,"max":null}`, nil},
 		{`{"min":0,"max":1,"step":0.1}`, nil},
 		{`[]`, nil},
 		{`"score"`, nil},
