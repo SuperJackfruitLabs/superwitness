@@ -74,13 +74,28 @@ curl -H 'Authorization: Bearer dev:prn_human01:human' localhost:8790/v1/runs/sup
 Fake mode serves one development run (`brd_01/run_01`) and accepts `dev:<principal>:<human|agent|service>`
 tokens. It refuses to listen on anything but loopback.
 
+To try the run registry in fake mode, bind a development reporter and report a run:
+
+```bash
+SW_RUN_SOURCES=prn_reporter01=superpipeline SW_FAKE_SOURCES=1 SW_DATABASE_URL=… ./bin/superwitness &
+curl -H 'Authorization: Bearer dev:prn_reporter01:service:runs:write' -d '{"source":"superpipeline",
+  "external_ref":"brd_01/run_01","status":"running","source_status":"in_progress","reported_at":"2026-10-06T10:00:00Z"}' \
+  localhost:8790/v1/runs
+curl -H 'Authorization: Bearer dev:prn_human01:human' localhost:8790/v1/runs
+```
+
+A fourth segment of a development token lists its scopes, comma-separated.
+
 | Surface | Path |
 |---|---|
 | Run document | `GET /v1/runs/superpipeline/{board}/{run}` |
 | Spans, logs (paged) | `GET …/spans?cursor=&limit=`, `GET …/logs?cursor=&level=&limit=` |
 | Attempt → run | `GET /v1/runs/by-attempt/{attempt}` (302) |
 | Record a verdict | `POST /v1/verdicts` |
-| MCP (streamable HTTP) | `/mcp`: `get_run`, `list_run_spans`, `list_run_logs`, `record_verdict` |
+| Report runs (service principals with `runs:write`) | `POST /v1/runs` |
+| List runs | `GET /v1/runs?source=&scope=&status=&executor=&since=&until=&needs_verdict=&cursor=&limit=` |
+| Rubrics | `GET /v1/rubrics`, `GET /v1/rubrics/{id}/{version}` |
+| MCP (streamable HTTP) | `/mcp`: `get_run`, `list_run_spans`, `list_run_logs`, `list_runs`, `record_verdict` |
 | Run page | `/runs/superpipeline/{board}/{run}` |
 | Health | `GET /health` (no auth; always 200 while alive, per-source status in the body) |
 
