@@ -3,7 +3,7 @@
 All notable changes to superwitness are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## 0.0.2 — unreleased
+## 0.0.2 — 2026-10-05
 
 superwitness keeps its own list of runs. Sources report runs to a published contract, and
 people and agents list them with filters, counts and each run's latest verdict.
