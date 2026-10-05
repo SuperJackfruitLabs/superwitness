@@ -258,3 +258,36 @@ func (s slowTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	time.Sleep(100 * time.Millisecond)
 	return s.next.RoundTrip(r)
 }
+
+func TestVerifyReadsScope(t *testing.T) {
+	is := newIssuer(t)
+	is.addKey(t, "k1")
+	now := time.Now()
+	v := newTestVerifier(is, &now)
+
+	p, err := v.Verify(context.Background(), is.sign(t, "k1", now, func(c jwt.MapClaims) {
+		c["principalKind"] = "service"
+		c["scope"] = "evidence:read runs:write"
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !p.HasScope("runs:write") || !p.HasScope("evidence:read") || p.HasScope("runs") || p.HasScope("") {
+		t.Errorf("scopes = %q", p.Scopes)
+	}
+
+	p, err = v.Verify(context.Background(), is.sign(t, "k1", now, nil))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.HasScope("runs:write") {
+		t.Errorf("a token without a scope claim granted runs:write: %q", p.Scopes)
+	}
+
+	// The hub sends one space-delimited string. Anything else is not a token it minted.
+	if _, err := v.Verify(context.Background(), is.sign(t, "k1", now, func(c jwt.MapClaims) {
+		c["scope"] = []string{"runs:write"}
+	})); err == nil {
+		t.Error("a scope claim that is an array was accepted")
+	}
+}

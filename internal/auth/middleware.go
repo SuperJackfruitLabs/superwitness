@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"slices"
 	"strings"
 )
 
@@ -39,18 +40,26 @@ func writeAuthError(w http.ResponseWriter, status int, code, msg string) {
 	_ = json.NewEncoder(w).Encode(map[string]any{"error": map[string]string{"code": code, "message": msg}})
 }
 
-// DevAuthenticator accepts "dev:<principal id>:<kind>". Only SW_FAKE_SOURCES mode wires
+// DevAuthenticator accepts "dev:<principal id>:<kind>" with an optional fourth segment of
+// comma-separated scopes, "dev:<id>:<kind>:<scope>,<scope>". Only SW_FAKE_SOURCES mode wires
 // it, and config refuses that mode on a non-loopback listen address.
 type DevAuthenticator struct{}
 
 func (DevAuthenticator) Verify(_ context.Context, tok string) (Principal, error) {
-	parts := strings.Split(tok, ":")
-	if len(parts) != 3 || parts[0] != "dev" || parts[1] == "" {
+	parts := strings.SplitN(tok, ":", 4)
+	if len(parts) < 3 || parts[0] != "dev" || parts[1] == "" {
 		return Principal{}, ErrUnauthenticated
 	}
 	k := PrincipalKind(parts[2])
 	if k != KindHuman && k != KindAgent && k != KindService {
 		return Principal{}, ErrUnauthenticated
 	}
-	return Principal{ID: parts[1], Kind: k, Tenant: "dev"}, nil
+	p := Principal{ID: parts[1], Kind: k, Tenant: "dev"}
+	if len(parts) == 4 {
+		p.Scopes = strings.Split(parts[3], ",")
+		if slices.Contains(p.Scopes, "") {
+			return Principal{}, ErrUnauthenticated
+		}
+	}
+	return p, nil
 }

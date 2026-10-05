@@ -5,6 +5,7 @@ package auth
 import (
 	"context"
 	"errors"
+	"slices"
 )
 
 type PrincipalKind string
@@ -21,8 +22,12 @@ type Principal struct {
 	ID     string
 	Kind   PrincipalKind
 	Tenant string
-	Actor  string // RFC 8693 act.sub when a service spoke for the subject; recorded, never trusted for reach
+	Actor  string   // RFC 8693 act.sub when a service spoke for the subject; recorded, never trusted for reach
+	Scopes []string // the hub's space-delimited scope claim, split; empty when the token carries none
 }
+
+// HasScope reports whether the token was granted scope s. Scopes compare exactly.
+func (p Principal) HasScope(s string) bool { return s != "" && slices.Contains(p.Scopes, s) }
 
 // PrincipalRecord is the hub's principal record as superwitness needs it.
 type PrincipalRecord struct {

@@ -46,9 +46,24 @@ func TestMiddleware(t *testing.T) {
 }
 
 func TestDevAuthenticatorRejectsMalformed(t *testing.T) {
-	for _, tok := range []string{"", "dev", "dev::agent", "dev:prn_a:robot", "prod:prn_a:agent", "dev:prn_a:agent:x"} {
+	for _, tok := range []string{"", "dev", "dev::agent", "dev:prn_a:robot", "prod:prn_a:agent",
+		"dev:prn_a:agent:", "dev:prn_a:agent:runs:write,,x"} {
 		if _, err := (DevAuthenticator{}).Verify(t.Context(), tok); err == nil {
 			t.Errorf("%q accepted", tok)
 		}
+	}
+}
+
+func TestDevAuthenticatorScopes(t *testing.T) {
+	p, err := (DevAuthenticator{}).Verify(t.Context(), "dev:prn_reporter01:service:runs:write,evidence:read")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.ID != "prn_reporter01" || p.Kind != KindService || !p.HasScope("runs:write") || !p.HasScope("evidence:read") {
+		t.Errorf("got %+v", p)
+	}
+	p, err = (DevAuthenticator{}).Verify(t.Context(), "dev:prn_reporter01:service")
+	if err != nil || p.HasScope("runs:write") {
+		t.Errorf("no scopes segment: %+v %v", p, err)
 	}
 }
