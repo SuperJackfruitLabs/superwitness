@@ -4,8 +4,8 @@ import type { RegistryRun } from "./types";
 
 describe("display", () => {
   it("never shows a missing value as zero or blank", () => {
-    expect(display(null)).toBe("—");
-    expect(display(undefined)).toBe("—");
+    expect(display(null)).toBe("unknown");
+    expect(display(undefined)).toBe("unknown");
     expect(display("unknown")).toBe("unknown");
     expect(display(0)).toBe("0");
   });

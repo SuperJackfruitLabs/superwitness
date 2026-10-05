@@ -19,8 +19,8 @@ describe("RunView with nulls and unknowns", () => {
 
   it("does not throw on null arrays and shows nullable fields as a dash", () => {
     const html = renderToStaticMarkup(<RunView doc={doc} logs={null} logsError={null} onLoadLogs={noop} />);
-    expect(html).toContain("stage <b>—</b>");
-    expect(html).toContain("<td>—</td>");
+    expect(html).toContain("stage <b>unknown</b>");
+    expect(html).toContain("<td>unknown</td>");
   });
 
   it("does not claim 'none' when the errors source failed", () => {
@@ -59,7 +59,7 @@ describe("helpers", () => {
   it("emptyNote says none only when sources are ok", () => {
     expect(emptyNote({ errors: "ok" }, ["errors"])).toBe("none");
     expect(emptyNote({ errors: "timeout" }, ["errors"])).toBe("unknown (source errors: timeout)");
-    expect(emptyNote({}, ["errors"])).toBe("unknown (source errors: —)");
+    expect(emptyNote({}, ["errors"])).toBe("unknown (source errors: unknown)");
   });
   it("isAuthStatus", () => {
     expect(isAuthStatus(401)).toBe(true);

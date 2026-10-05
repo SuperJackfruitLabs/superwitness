@@ -5,6 +5,8 @@ export class ApiError extends Error {
     readonly status: number,
     readonly code: string,
     message: string,
+    readonly retryable: boolean = false,
+    readonly retryAfter: number | null = null,
   ) {
     super(message);
   }
@@ -26,7 +28,14 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   const data = await r.json().catch(() => null);
   if (!r.ok) {
     const e = data?.error ?? {};
-    throw new ApiError(r.status, e.code ?? `http_${r.status}`, e.message ?? `HTTP ${r.status}`);
+    const ra = Number(r.headers.get("Retry-After"));
+    throw new ApiError(
+      r.status,
+      e.code ?? `http_${r.status}`,
+      e.message ?? `HTTP ${r.status}`,
+      e.retryable === true,
+      Number.isFinite(ra) && ra > 0 ? ra : null,
+    );
   }
   return data as T;
 }

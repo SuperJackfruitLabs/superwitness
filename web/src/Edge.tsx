@@ -62,6 +62,31 @@ export function ErrorView({ error, next = "/" }: { error: ApiError; next?: strin
   if (error.code === "not_authorised") return <NotAuthorised />;
   if (error.code === "store_unavailable") return <DatabaseDown />;
   if (error.code === "run_not_found") return <RunNotFound />;
+  if (error.code === "rate_limited") {
+    const wait = error.retryAfter !== null ? ` in ${error.retryAfter} s` : " shortly";
+    return (
+      <section>
+        <h1>Too many requests</h1>
+        <p className="refusal">{`Too many requests — try again${wait}.`}</p>
+      </section>
+    );
+  }
+  if (error.code === "principal_unresolved") {
+    return (
+      <section>
+        <h1>Can’t confirm who you are</h1>
+        <p className="refusal">AgentPod can’t be reached to confirm who you are. Try again shortly.</p>
+      </section>
+    );
+  }
+  if (error.code === "origin_mismatch") {
+    return (
+      <section>
+        <h1>Request refused</h1>
+        <p className="refusal">This request didn’t come from the app. Reload the page and try again.</p>
+      </section>
+    );
+  }
   return (
     <section>
       <h1>Something went wrong</h1>
