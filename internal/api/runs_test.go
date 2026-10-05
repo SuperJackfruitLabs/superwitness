@@ -291,3 +291,22 @@ func TestListRunsRefusals(t *testing.T) {
 		t.Errorf("store down: %d %s", resp.StatusCode, b)
 	}
 }
+
+// A timestamp the schema accepts can fall outside the years JSON can encode once converted to UTC;
+// stored, it would make every listing fail.
+func TestReportRunRefusesYearOutsideJSONRange(t *testing.T) {
+	r := newRegistryServer(t)
+	for name, edit := range map[string][2]string{
+		"year 10000": {"2026-10-06T09:00:00Z", "9999-12-31T23:59:59-23:59"},
+		"year -1":    {"2026-10-06T09:00:01Z", "0000-01-01T00:00:00+00:01"},
+	} {
+		body := strings.Replace(runReport, edit[0], edit[1], 1)
+		if body == runReport {
+			t.Fatalf("%s: fixture has no timestamp to replace", name)
+		}
+		resp, b := do(t, r.srv, "POST", "/v1/runs", reporterTok, body)
+		if resp.StatusCode != 422 || !strings.Contains(string(b), `"invalid_report"`) {
+			t.Errorf("%s: %d %s; want 422 invalid_report", name, resp.StatusCode, b)
+		}
+	}
+}

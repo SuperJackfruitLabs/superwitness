@@ -4,7 +4,8 @@ description: The HTTP routes superwitness serves, their parameters and their err
 ---
 
 superwitness serves a small JSON API under `/v1`. The [MCP tools](/build/mcp/) are a thin layer
-over the same operations. Two routes have no tool: `GET /v1/runs/by-attempt/{attempt}` and the rubric reads.
+over the same operations. Four routes have no tool: `GET /v1/runs/by-attempt/{attempt}`, `POST /v1/runs` and the two rubric
+reads. (`GET /v1/runs` is the `list_runs` tool.)
 
 ## Authentication
 

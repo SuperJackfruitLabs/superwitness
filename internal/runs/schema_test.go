@@ -172,9 +172,10 @@ func TestRulesOutsideTheSchema(t *testing.T) {
 	s := compiledSchema(t)
 	now := time.Date(2026, 10, 6, 10, 0, 0, 0, time.UTC)
 	for name, body := range map[string]string{
-		"reported_at 6 minutes ahead": report(map[string]any{"reported_at": "2026-10-06T10:06:00Z"}),
-		"a title holding NUL":         report(map[string]any{"title": "a\u0000b"}),
-		"a leap second":               report(map[string]any{"ended_at": "2016-12-31T23:59:60Z"}),
+		"reported_at 6 minutes ahead":     report(map[string]any{"reported_at": "2026-10-06T10:06:00Z"}),
+		"a title holding NUL":             report(map[string]any{"title": "a\u0000b"}),
+		"a leap second":                   report(map[string]any{"ended_at": "2016-12-31T23:59:60Z"}),
+		"a year outside 0 to 9999 in UTC": report(map[string]any{"started_at": "9999-12-31T23:59:59-23:59"}),
 	} {
 		if !schemaAccepts(s, body) {
 			t.Errorf("%s: the schema refuses it; it should be a superwitness-only rule", name)

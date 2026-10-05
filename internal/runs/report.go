@@ -327,5 +327,10 @@ func (o obj) instant(key string, required, nullable bool) (*time.Time, *Validati
 		return nil, invalid(o.name(key), "an RFC 3339 timestamp such as 2026-10-06T10:00:00Z; got %q", s)
 	}
 	t = t.UTC().Truncate(time.Microsecond)
+	// A zone offset can push the instant outside the years JSON can encode; stored, it would
+	// make every listing fail.
+	if y := t.Year(); y < 0 || y > 9999 {
+		return nil, invalid(o.name(key), "the year in UTC must be 0 to 9999; got %q", s)
+	}
 	return &t, nil
 }

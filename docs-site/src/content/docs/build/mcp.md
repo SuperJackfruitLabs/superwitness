@@ -18,8 +18,9 @@ Point an MCP client at it with the token as a header, for example:
 ```
 
 The server names itself `superwitness`, with the running release as its version. It has five
-tools, thin layers over the HTTP operations for runs, spans, logs, the run registry and verdicts. The fifth
-route, `GET /v1/runs/by-attempt/{attempt}`, is HTTP-only and has no tool.
+tools, thin layers over the HTTP operations for runs, spans, logs, the run registry and verdicts. Four
+routes are HTTP-only and have no tool: `GET /v1/runs/by-attempt/{attempt}`, `POST /v1/runs` and the two
+rubric reads.
 
 ## The tools
 

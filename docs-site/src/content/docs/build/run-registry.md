@@ -88,8 +88,9 @@ The body is described by a JSON Schema (draft 2020-12), published at
 repository at `internal/contracts/run-report.schema.json`. superwitness's own tests run the same
 bodies through the schema and through its handler and require the same answer from both.
 
-superwitness keeps three rules beyond the schema: `reported_at` may be at most 5 minutes ahead
-of its clock, no string may contain NUL (`\u0000`), and a timestamp may not be a leap second.
+superwitness keeps four rules beyond the schema: `reported_at` may be at most 5 minutes ahead
+of its clock, no string may contain NUL (`\u0000`), a timestamp may not be a leap second, and a
+timestamp's year in UTC must be 0 to 9999.
 
 ## Listing runs
 
