@@ -34,6 +34,8 @@ func pgStore(t *testing.T) *PGStore {
 
 func TestPGStoreContract(t *testing.T) { storeContract(t, pgStore(t)) }
 
+func TestPGStoreHistoryKeepsTheNewest(t *testing.T) { historyContract(t, pgStore(t)) }
+
 func TestPGStoreIsAppendOnly(t *testing.T) {
 	s := pgStore(t)
 	ctx := context.Background()

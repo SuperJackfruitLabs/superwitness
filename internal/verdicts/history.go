@@ -9,6 +9,7 @@ import (
 const MaxHistory = 500
 
 // HistoryReader reads every verdict on one subject, superseded ones included, oldest first.
+// Past MaxHistory it keeps the newest MaxHistory, still oldest first.
 type HistoryReader interface {
 	ListSubject(ctx context.Context, subject SubjectKey) ([]Verdict, error)
 }
@@ -32,14 +33,16 @@ func (m *MemStore) ListSubject(_ context.Context, k SubjectKey) ([]Verdict, erro
 		return out[i].ID < out[j].ID
 	})
 	if len(out) > MaxHistory {
-		out = out[:MaxHistory]
+		out = out[len(out)-MaxHistory:]
 	}
 	return out, nil
 }
 
 func (s *PGStore) ListSubject(ctx context.Context, k SubjectKey) ([]Verdict, error) {
-	rows, err := s.Pool.Query(ctx, `SELECT `+cols+` FROM verdicts WHERE subject_kind = $1 AND subject_ref = $2
-		ORDER BY created_at, id LIMIT $3`, string(k.Kind), k.Ref, MaxHistory)
+	// The newest MaxHistory, returned oldest first.
+	rows, err := s.Pool.Query(ctx, `SELECT `+cols+` FROM (SELECT `+cols+` FROM verdicts
+		WHERE subject_kind = $1 AND subject_ref = $2 ORDER BY created_at DESC, id DESC LIMIT $3) newest
+		ORDER BY created_at, id`, string(k.Kind), k.Ref, MaxHistory)
 	if err != nil {
 		return nil, unavailable(err)
 	}
