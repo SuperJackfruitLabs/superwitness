@@ -33,6 +33,9 @@ var (
 	executorID = regexp.MustCompile(`^prn_[0-9a-f]{20}$`)
 	reportKeys = []string{"source", "external_ref", "scope", "title", "executor", "status", "source_status", "started_at", "ended_at", "reported_at"}
 	namedKeys  = []string{"id", "name"}
+	// instantShape is RFC 3339 date-time as the published schema asserts it. Go's parser also
+	// takes a comma before the fraction and offsets such as +24:00, which the schema refuses.
+	instantShape = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}[Tt]\d{2}:\d{2}:\d{2}(\.\d+)?([Zz]|[+-]([01]\d|2[0-3]):[0-5]\d)$`)
 )
 
 // Run is one registry row. FirstSeenAt and UpdatedAt are superwitness's own; LatestVerdict is
@@ -320,7 +323,7 @@ func (o obj) instant(key string, required, nullable bool) (*time.Time, *Validati
 	}
 	// RFC 3339 allows a lowercase t and z; Go's parser wants them uppercase.
 	t, err := time.Parse(time.RFC3339Nano, strings.ToUpper(s))
-	if err != nil {
+	if err != nil || !instantShape.MatchString(s) {
 		return nil, invalid(o.name(key), "an RFC 3339 timestamp such as 2026-10-06T10:00:00Z; got %q", s)
 	}
 	t = t.UTC().Truncate(time.Microsecond)
