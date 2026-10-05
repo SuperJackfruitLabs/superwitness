@@ -364,3 +364,22 @@ func TestMCPEdgeTrustDefaultsToThisHost(t *testing.T) {
 		t.Errorf("loopback without the header: %d", rec.Code)
 	}
 }
+
+func TestEmptyTrustedProxiesIsTheHostDefault(t *testing.T) {
+	// A non-nil empty list must not switch the edge guard off: it means this host's own addresses.
+	h, calls := edgeServer(t, []netip.Prefix{})
+	if rec := raw(h, "POST", "/mcp", "127.0.0.1:40000", "198.51.100.7", agentTok); rec.Code != 404 || *calls != 0 {
+		t.Errorf("edge request with an empty TrustedProxies: %d (calls %d); want 404", rec.Code, *calls)
+	}
+}
+
+func TestAuthLimitAlwaysKeysOnAClientIP(t *testing.T) {
+	l := ratelimit.PerMinute(1, 1)
+	a := newAppServer(t, &api.Limits{Auth: l}) // no ClientIP configured
+	if resp, _ := a.call(t, "GET", "/auth/login", "", "", "", ""); resp.StatusCode != 204 {
+		t.Fatalf("first sign-in: %d", resp.StatusCode)
+	}
+	if resp, _ := a.call(t, "GET", "/auth/login", "", "", "", ""); resp.StatusCode != 429 {
+		t.Errorf("second sign-in with a limit but no ClientIP: %d; want 429", resp.StatusCode)
+	}
+}

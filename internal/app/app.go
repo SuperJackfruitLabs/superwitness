@@ -7,7 +7,9 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"net/netip"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -18,7 +20,9 @@ import (
 	"github.com/SuperJackfruitLabs/superwitness/internal/config"
 	"github.com/SuperJackfruitLabs/superwitness/internal/join"
 	"github.com/SuperJackfruitLabs/superwitness/internal/mcp"
+	"github.com/SuperJackfruitLabs/superwitness/internal/ratelimit"
 	"github.com/SuperJackfruitLabs/superwitness/internal/runs"
+	"github.com/SuperJackfruitLabs/superwitness/internal/session"
 	"github.com/SuperJackfruitLabs/superwitness/internal/source"
 	"github.com/SuperJackfruitLabs/superwitness/internal/source/agentpod"
 	errsrc "github.com/SuperJackfruitLabs/superwitness/internal/source/errors"
@@ -95,29 +99,92 @@ func Build(ctx context.Context, cfg config.Config, version string, logger *slog.
 	joiner := &join.Joiner{Superpipeline: w.sp, AgentPod: w.ap, Traces: w.tr, Logs: w.lg, Errors: w.er,
 		Verdicts: store, Principals: w.principals, Timeout: cfg.SourceTimeout, Observe: telemetry.SourceObserver(logger)}
 	subjects := &join.Subjects{Superpipeline: w.sp, AgentPod: w.ap, Attempts: w.attempts, Timeout: cfg.SourceTimeout}
+	// Every bearer token names its caller by prn_ id, whatever the hub put in sub.
+	authn := auth.Resolving{Inner: w.authn, Principals: w.principals}
 	ops := &api.Ops{Join: joiner, Spans: w.spans, Logs: w.logLister, Attempts: w.attempts, Timeout: cfg.SourceTimeout,
 		Verdicts:   &verdicts.Service{Store: store, Subjects: subjects},
 		Runs:       &runs.PGStore{Pool: pool, Ready: store.Ready}, // same database, same migration gate
 		RunSources: cfg.RunSources,
 		Rubrics:    store,
 		History:    store}
+	// One trust list for the edge guard and for the rate limits' client IP.
+	trusted := cfg.TrustedProxies
+	if len(trusted) == 0 {
+		if trusted, err = ratelimit.HostPrefixes(); err != nil {
+			pool.Close()
+			return nil, fmt.Errorf("SW_TRUSTED_PROXIES: reading this host's addresses: %w", err)
+		}
+	}
 	// api.Server only sends non-API GETs to Web (never /v1/* or /mcp), so an unknown /v1/foo is the API's JSON 404.
-	srv := &api.Server{Ops: ops, Auth: w.authn, Health: &api.Health{Version: version, Pingers: w.pingers},
-		MCP: mcp.NewHandler(ops, version), Web: web.Handler(), Logger: logger, TrustedProxies: cfg.TrustedProxies}
-	handler, err := instrument(srv.Handler(), cfg.PublicURL)
+	srv := &api.Server{Ops: ops, Auth: authn, Health: &api.Health{Version: version, Pingers: w.pingers},
+		MCP: mcp.NewHandler(ops, version), Web: web.Handler(), Logger: logger, PublicURL: cfg.PublicURL,
+		TrustedProxies: trusted}
+	sessions, err := signIn(cfg, srv, w, store, pool, hc, trusted, logger)
+	if err != nil {
+		pool.Close()
+		return nil, err
+	}
+	built, err := srv.Build()
+	if err != nil {
+		pool.Close()
+		return nil, err
+	}
+	handler, err := instrument(built, cfg.PublicURL)
 	if err != nil {
 		pool.Close()
 		return nil, err
 	}
 
 	mctx, cancel := context.WithCancel(ctx)
-	migrated := make(chan struct{})
+	migrated, swept := make(chan struct{}), make(chan struct{})
 	go func() {
 		defer close(migrated)
 		store.OpenWhenMigrated(mctx, func(c context.Context) error { return verdicts.Migrate(c, cfg.MigrateDSN()) },
 			migrateMinWait, migrateMaxWait, logger)
 	}()
-	return &App{Handler: handler, Close: func() { cancel(); <-migrated; pool.Close() }}, nil
+	go func() {
+		defer close(swept)
+		if sessions != nil {
+			sessions.Sweep(mctx, session.SweepEvery, logger)
+		}
+	}()
+	return &App{Handler: handler, Close: func() { cancel(); <-migrated; <-swept; pool.Close() }}, nil
+}
+
+// signIn sets the rate limits, and turns on browser sign-in when SW_ALLOWED_PRINCIPALS names
+// anyone. It returns the session manager, or nil when sign-in is off.
+func signIn(cfg config.Config, srv *api.Server, w wiring, store *verdicts.Gated, pool *pgxpool.Pool,
+	hc *http.Client, trusted []netip.Prefix, logger *slog.Logger) (*session.Manager, error) {
+	srv.Limits = &api.Limits{
+		Auth:          ratelimit.PerMinute(api.AuthPerMinute, api.AuthBurst),
+		SessionWrites: ratelimit.PerMinute(api.SessionWritesPerMinute, api.SessionWriteBurst),
+		Reports:       ratelimit.PerMinute(api.ReportsPerMinute, api.ReportBurst),
+		ClientIP:      func(r *http.Request) string { return ratelimit.ClientIP(r, trusted) },
+	}
+	if !cfg.AppEnabled() {
+		srv.Login = session.Off()
+		return nil, nil
+	}
+	secret, err := auth.ReadSecretFile(cfg.SessionSecretFile)
+	if err != nil {
+		return nil, fmt.Errorf("SW_SESSION_SECRET_FILE: %w", err)
+	}
+	key, err := session.DeriveLoginKey([]byte(secret))
+	if err != nil {
+		return nil, fmt.Errorf("SW_SESSION_SECRET_FILE: %w", err)
+	}
+	allowed := map[string]bool{}
+	for _, p := range cfg.AllowedPrincipals {
+		allowed[p] = true
+	}
+	m := &session.Manager{Store: &session.PGStore{Pool: pool, Ready: store.Ready}, Allowed: allowed}
+	cookies := session.Cookies{Secure: strings.HasPrefix(cfg.PublicURL, "https://")}
+	login := &session.Login{HubURL: cfg.HubURL, ClientID: cfg.AppClientID, PublicURL: cfg.PublicURL, Key: key,
+		Tokens: auth.NewVerifier(cfg.HubURL, cfg.PublicURL, hc), Principals: w.principals, Sessions: m,
+		Cookies: cookies, HTTP: hc, Logger: logger}
+	srv.Sessions, srv.SessionCookie, srv.Login = m, cookies.SessionName(), login.Handler()
+	logger.Info("browser sign-in on", "allowed", len(allowed), "secure_cookies", cookies.Secure)
+	return m, nil
 }
 
 // instrument wraps h in otelhttp with a fixed server name and port taken from SW_PUBLIC_URL.

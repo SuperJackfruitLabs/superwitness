@@ -32,7 +32,7 @@ type Server struct {
 
 	// TrustedProxies (SW_TRUSTED_PROXIES) say which peers are the public edge's tunnel connector.
 	// A request from one that carries CF-Connecting-IP came in over the internet, and /mcp is not
-	// served to it. nil means this host's own addresses, as for the rate limits' client IP.
+	// served to it. nil or empty means this host's own addresses, as for the rate limits' client IP.
 	TrustedProxies []netip.Prefix
 }
 
@@ -53,10 +53,16 @@ func (s *Server) Build() (http.Handler, error) {
 		return nil, err
 	}
 	trusted := s.TrustedProxies
-	if trusted == nil {
+	if len(trusted) == 0 { // nil or empty: this host's own addresses, never "nobody is the edge"
 		if trusted, err = ratelimit.HostPrefixes(); err != nil {
 			return nil, fmt.Errorf("SW_TRUSTED_PROXIES: reading this host's addresses: %w", err)
 		}
+	}
+	if l := s.Limits; l != nil && l.Auth != nil && l.ClientIP == nil {
+		// A configured /auth limit always keys on the client IP, from the same trust list as the edge guard.
+		lc := *l
+		lc.ClientIP = func(r *http.Request) string { return ratelimit.ClientIP(r, trusted) }
+		s.Limits = &lc
 	}
 	r := chi.NewRouter()
 	r.Use(s.hideMCPFromEdge(trusted), middleware.Recoverer)
