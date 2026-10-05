@@ -1,21 +1,18 @@
+import "@fontsource/fraunces/latin-600.css";
+import "@fontsource/ibm-plex-sans/latin-400.css";
+import "@fontsource/ibm-plex-sans/latin-500.css";
+import "@fontsource/ibm-plex-sans/latin-600.css";
+import "@fontsource/ibm-plex-mono/latin-400.css";
+import "@fontsource/ibm-plex-mono/latin-500.css";
+import "./theme.css";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { RunPage } from "./RunPage";
-import { parseRunPath } from "./format";
+import { App } from "./App";
+import { applyTheme, readTheme } from "./theme";
 
-function Home() {
-  return (
-    <main>
-      <h1>superwitness</h1>
-      <p>
-        Open <code>/runs/superpipeline/&lt;board&gt;/&lt;run&gt;</code>. Agents and scripts use <code>/v1</code> or{" "}
-        <code>/mcp</code>.
-      </p>
-    </main>
-  );
-}
-
-const ref = parseRunPath(window.location.pathname);
+applyTheme(readTheme());
 createRoot(document.getElementById("root")!).render(
-  <StrictMode>{ref ? <RunPage board={ref.board} run={ref.run} /> : <Home />}</StrictMode>,
+  <StrictMode>
+    <App />
+  </StrictMode>,
 );

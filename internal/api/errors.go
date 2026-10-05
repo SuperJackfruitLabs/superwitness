@@ -5,7 +5,10 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"math"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/SuperJackfruitLabs/superwitness/internal/source"
 	"github.com/SuperJackfruitLabs/superwitness/internal/verdicts"
@@ -17,6 +20,7 @@ type APIError struct {
 	Message   string `json:"message"`
 	Retryable bool   `json:"retryable,omitempty"`
 	Index     *int   `json:"index,omitempty"` // the refused report's position in a POST /v1/runs batch
+	RetryIn   int    `json:"-"`               // seconds for Retry-After on a 429
 }
 
 func (e *APIError) Error() string { return e.Code + ": " + e.Message }
@@ -44,7 +48,10 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 
 func writeError(w http.ResponseWriter, err error) {
 	ae := AsAPIError(err)
-	if ae.Retryable && ae.Status == http.StatusServiceUnavailable {
+	switch {
+	case ae.RetryIn > 0:
+		w.Header().Set("Retry-After", strconv.Itoa(ae.RetryIn))
+	case ae.Retryable && ae.Status == http.StatusServiceUnavailable:
 		w.Header().Set("Retry-After", "5")
 	}
 	writeJSON(w, ae.Status, map[string]any{"error": ae})
@@ -66,4 +73,10 @@ func sourceError(name source.Name, st source.SourceStatus) *APIError {
 
 func badRequest(code, msg string) *APIError {
 	return &APIError{Status: http.StatusBadRequest, Code: code, Message: msg}
+}
+
+// retryAfterSeconds is a wait as Retry-After sends it: whole seconds, rounded up, and never 0,
+// so a client that waits exactly that long finds a token back.
+func retryAfterSeconds(wait time.Duration) int {
+	return max(1, int(math.Ceil(wait.Seconds())))
 }

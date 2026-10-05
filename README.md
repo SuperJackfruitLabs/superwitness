@@ -17,8 +17,8 @@ cards, runs and approval gates; [supermessage](https://github.com/SuperJackfruit
 is the Matrix client that puts agents in the conversation. superwitness records what happened and
 whether it was any good.
 
-> **Status: v0.0.2** ([changelog](CHANGELOG.md)). Run documents cover superpipeline runs, with attempts read from the
-> AgentPod hub, and a run registry lists the runs sources report. To try it without either product, `SW_FAKE_SOURCES=1` serves one development run
+> **Status: v0.0.3** ([changelog](CHANGELOG.md)). Run documents cover superpipeline runs, with attempts read from the
+> AgentPod hub, and a run registry lists the runs sources report; a web app reads and judges them. To try it without either product, `SW_FAKE_SOURCES=1` serves one development run
 > on loopback.
 
 ## What it is for
@@ -86,6 +86,8 @@ curl -H 'Authorization: Bearer dev:prn_human01:human' localhost:8790/v1/runs
 
 A fourth segment of a development token lists its scopes, comma-separated.
 
+To sign in to the app in fake mode, use the pieces `make e2e` uses: `web/e2e/stub-hub.mjs` stands in for AgentPod and `web/e2e/serve.sh` shows the settings.
+
 | Surface | Path |
 |---|---|
 | Run document | `GET /v1/runs/superpipeline/{board}/{run}` |
@@ -96,7 +98,8 @@ A fourth segment of a development token lists its scopes, comma-separated.
 | List runs | `GET /v1/runs?source=&scope=&status=&executor=&since=&until=&needs_verdict=&cursor=&limit=` |
 | Rubrics | `GET /v1/rubrics`, `GET /v1/rubrics/{id}/{version}` |
 | MCP (streamable HTTP) | `/mcp`: `get_run`, `list_run_spans`, `list_run_logs`, `list_runs`, `record_verdict` |
-| Run page | `/runs/superpipeline/{board}/{run}` |
+| The app (sign in with AgentPod) | `/`, `/runs/superpipeline/{board}/{run}`, `/rubrics` |
+| Who am I, verdict history, scopes | `GET /v1/me`, `GET /v1/verdicts?subject_kind=&subject_ref=`, `GET /v1/scopes` |
 | Health | `GET /health` (no auth; always 200 while alive, per-source status in the body) |
 
 Rubrics are append-only: `superwitness rubric-add -id press -version 1 -name Press -scale '{"min":0,"max":1}' -body-file press.md -created-by prn_…`.
@@ -159,6 +162,7 @@ Then grant the runtime role, connected to the `superwitness` database as `superw
 GRANT USAGE ON SCHEMA public TO superwitness_app;
 GRANT SELECT, INSERT ON TABLE verdicts, rubrics TO superwitness_app;
 GRANT SELECT, INSERT, UPDATE ON TABLE runs TO superwitness_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE sessions TO superwitness_app;
 ```
 
 That is the whole runtime grant set. The tables have no sequences (keys are text), and the
@@ -167,13 +171,18 @@ serve migrates as the runtime role, above). Nothing is
 granted through `ALTER DEFAULT PRIVILEGES`: a later migration that adds a table must add that
 table's grant here. The runtime role cannot update, delete, truncate, alter or drop `verdicts`
 and `rubrics` or their triggers; it can update registry rows in `runs` but never delete them;
+`sessions` holds browser sign-ins and is the one table the runtime role may delete from;
 and it cannot create tables. `TestRuntimeRoleCanAppendButNotRewrite` and
 `TestRuntimeRoleRegistryGrants` run both blocks above verbatim against Postgres 17 and check
 all of this.
 
-Upgrading from 0.0.1: after `superwitness migrate`, run only the new line,
-`GRANT SELECT, INSERT, UPDATE ON TABLE runs TO superwitness_app;`, as the owner. Until then the
-run registry answers 503 `store_unavailable`; verdicts are unaffected.
+Upgrading: after `superwitness migrate`, run as the owner only the grants your starting version
+lacks. From 0.0.2, that is
+`GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE sessions TO superwitness_app;`. From 0.0.1, it is
+both `GRANT SELECT, INSERT, UPDATE ON TABLE runs TO superwitness_app;` (added in 0.0.2) and the
+`sessions` grant (added in 0.0.3). Until the `runs` grant is in place the run registry answers
+503 `store_unavailable` (verdicts are unaffected); until the `sessions` grant is, sign-in shows
+the "Can't reach the database" page.
 
 On Postgres 14 or older, schema `public` belongs to the bootstrap superuser and every role may
 create tables in it. There, after the provision block and before `superwitness migrate`, run

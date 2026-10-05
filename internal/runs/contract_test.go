@@ -153,6 +153,16 @@ func storeContract(t *testing.T, s Store, addVerdict func(verdicts.Verdict)) {
 		t.Errorf("page 3 = %v next %v, want %v and no next", refs(p3.Runs), p3.Next, want[4:])
 	}
 
+	// scopes: one per (source, id), named by the newest report
+	renamed := mk("brd_02/run_09", "running", 40, t0)
+	renamed.ScopeID, renamed.ScopeName = ptr("brd_02"), ptr("Operations")
+	upsert(t, s, now.Add(time.Hour), renamed)
+	scopes, err := s.Scopes(context.Background())
+	if err != nil || len(scopes) != 2 || scopes[0].ID != "brd_01" || scopes[0].Runs != 4 || *scopes[0].Name != "Press" ||
+		scopes[1].ID != "brd_02" || scopes[1].Runs != 2 || *scopes[1].Name != "Operations" {
+		t.Errorf("scopes = %+v %v", scopes, err)
+	}
+
 	// latest_verdict and needs_verdict
 	ref := "superpipeline:brd_01/run_03"
 	nv := func() []string { return refs(list(t, s, Filter{NeedsVerdict: true}).Runs) }

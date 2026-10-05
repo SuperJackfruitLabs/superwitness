@@ -5,7 +5,7 @@ This product is licensed under the MIT License (see LICENSE).
 
 Third-party components
 ----------------------
-The superwitness binary links the Go modules below and embeds a web page built
+The superwitness binary links the Go modules below and embeds a web app built
 with React. Each keeps its own licence; Apache-2.0 components are credited here
 as section 4(d) requires. The list covers the packages of ./cmd/superwitness
 (go-licenses v2.0.1 report), not test-only modules.
@@ -35,10 +35,18 @@ Go modules
 - golang.org/x/sync, golang.org/x/net, golang.org/x/oauth2, golang.org/x/sys,
   golang.org/x/text, golang.org/x/time - BSD-3-Clause
 
-Embedded web page (internal/web/dist), from the npm production dependencies
+Embedded web app (internal/web/dist), from the npm production dependencies
 - react, react-dom, scheduler - MIT, Copyright (c) Meta Platforms, Inc. and affiliates
-Build-time only, not bundled: npm caniuse-lite (CC-BY-4.0, pulled in by the
-browserslist tooling) and the other devDependencies.
+- Fonts, bundled from the @fontsource packages (also OFL-1.1). The fonts are
+  licensed under the SIL Open Font License 1.1; each licence's full text is in
+  licenses/fonts/ in this repository and in every release tarball.
+  - Fraunces - Copyright 2020 The Fraunces Project Authors
+    (github.com/undercasetype/Fraunces)
+  - IBM Plex Sans - Copyright 2019 IBM Corp., with Reserved Font Name "Plex"
+  - IBM Plex Mono - Copyright 2017 IBM Corp., with Reserved Font Name "Plex"
+Build-time and test-only, not bundled: npm caniuse-lite (CC-BY-4.0, pulled in by the
+browserslist tooling), @playwright/test (Apache-2.0), jsdom (MIT) and the other
+devDependencies.
 
 Not bundled. superwitness only calls their published APIs over HTTP:
 VictoriaTraces and VictoriaLogs, fed by the OpenTelemetry Collector (all

@@ -27,6 +27,7 @@ type Ops struct {
 	Runs       runs.Store
 	RunSources map[string]string // SW_RUN_SOURCES: reporting principal -> its one source
 	Rubrics    verdicts.RubricReader
+	History    verdicts.HistoryReader
 	Now        func() time.Time
 }
 

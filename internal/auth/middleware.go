@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"slices"
 	"strings"
@@ -20,6 +21,12 @@ func Middleware(a Authenticator) func(http.Handler) http.Handler {
 				return
 			}
 			p, err := a.Verify(r.Context(), tok)
+			if errors.Is(err, ErrLookupUnavailable) {
+				w.Header().Set("Retry-After", "5")
+				writeAuthError(w, http.StatusServiceUnavailable, "principal_unresolved",
+					"the hub could not say which principal this token names; retry")
+				return
+			}
 			if err != nil {
 				unauthorized(w, "the bearer token is not valid for this service")
 				return
@@ -32,6 +39,11 @@ func Middleware(a Authenticator) func(http.Handler) http.Handler {
 func unauthorized(w http.ResponseWriter, msg string) {
 	w.Header().Set("WWW-Authenticate", `Bearer realm="superwitness"`)
 	writeAuthError(w, http.StatusUnauthorized, "unauthenticated", msg)
+}
+
+// WriteError answers with the API's JSON error shape, for handlers outside the gate (sign-out).
+func WriteError(w http.ResponseWriter, status int, code, msg string) {
+	writeAuthError(w, status, code, msg)
 }
 
 func writeAuthError(w http.ResponseWriter, status int, code, msg string) {

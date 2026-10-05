@@ -24,6 +24,7 @@ type Principal struct {
 	Tenant string
 	Actor  string   // RFC 8693 act.sub when a service spoke for the subject; recorded, never trusted for reach
 	Scopes []string // the hub's space-delimited scope claim, split; empty when the token carries none
+	Email  string   // the hub's email claim; empty when the token carries none
 }
 
 // HasScope reports whether the token was granted scope s. Scopes compare exactly.
@@ -31,8 +32,9 @@ func (p Principal) HasScope(s string) bool { return s != "" && slices.Contains(p
 
 // PrincipalRecord is the hub's principal record as superwitness needs it.
 type PrincipalRecord struct {
-	ID   string // prn_…
-	Kind PrincipalKind
+	ID        string // prn_…
+	Kind      PrincipalKind
+	Suspended bool
 }
 
 // PrincipalLookup reads a principal record from the hub's principals route. It accepts a

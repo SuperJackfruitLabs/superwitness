@@ -36,6 +36,10 @@ func (s *Server) postRuns(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) reportRuns(r *http.Request, caller auth.Principal) ([]ReportResult, error) {
+	if auth.ViaSession(r.Context()) {
+		return nil, &APIError{Status: http.StatusForbidden, Code: "bearer_required",
+			Message: "runs are reported with a service token, never a browser session"}
+	}
 	if caller.Kind != auth.KindService {
 		return nil, &APIError{Status: http.StatusForbidden, Code: "service_principal_required",
 			Message: "runs are reported by service principals only"}
@@ -43,6 +47,11 @@ func (s *Server) reportRuns(r *http.Request, caller auth.Principal) ([]ReportRes
 	if !caller.HasScope(runs.WriteScope) {
 		return nil, &APIError{Status: http.StatusForbidden, Code: "insufficient_scope",
 			Message: "the token does not carry the " + runs.WriteScope + " scope"}
+	}
+	if l := s.Limits; l != nil && l.Reports != nil {
+		if ok, wait := l.Reports.Allow(caller.ID); !ok {
+			return nil, rateLimited(wait)
+		}
 	}
 	body, err := io.ReadAll(http.MaxBytesReader(nil, r.Body, runs.MaxBodyBytes))
 	var tooBig *http.MaxBytesError

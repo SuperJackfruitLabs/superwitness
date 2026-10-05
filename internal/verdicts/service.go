@@ -185,24 +185,11 @@ func normalize(req *Request, caller auth.Principal, judgeKind JudgeKind) error {
 	if !kinds[req.Kind] {
 		return refuse(400, "invalid_kind", "kind must be one of grader, review, eval, calibration")
 	}
-	switch req.SubjectKind {
-	case SubjectRun:
-		ref, err := source.ParseRunRef(req.SubjectRef)
-		if err != nil {
-			return refuse(400, "invalid_subject", "%v", err)
-		}
-		req.SubjectRef = ref.String()
-	case SubjectAttempt:
-		if !source.ValidAttemptID(req.SubjectRef) {
-			return refuse(400, "invalid_subject", "an attempt subject is attempt_<id>, got %q", req.SubjectRef)
-		}
-	case SubjectEvalCaseRun:
-		if !caseRef.MatchString(req.SubjectRef) {
-			return refuse(400, "invalid_subject", "an eval case run is case:<id>@sha256:<fingerprint>, got %q", req.SubjectRef)
-		}
-	default:
-		return refuse(400, "invalid_subject_kind", "subject_kind must be run, attempt or eval_case_run")
+	ref, err := NormalizeSubject(req.SubjectKind, req.SubjectRef)
+	if err != nil {
+		return err
 	}
+	req.SubjectRef = ref
 	if req.Standard == "" {
 		return refuse(422, "missing_standard", "every verdict names a versioned standard: rubric:<id>@<version>, stage:<key> or case:<id>")
 	}
@@ -429,4 +416,28 @@ func hasLoneSurrogate(raw json.RawMessage) bool {
 		}
 	}
 	return wantLow
+}
+
+// NormalizeSubject checks a subject reference against its kind and returns its canonical form.
+// Its refusals are *Error: 400 invalid_subject_kind or invalid_subject.
+func NormalizeSubject(kind SubjectKind, ref string) (string, error) {
+	switch kind {
+	case SubjectRun:
+		r, err := source.ParseRunRef(ref)
+		if err != nil {
+			return "", refuse(400, "invalid_subject", "%v", err)
+		}
+		return r.String(), nil
+	case SubjectAttempt:
+		if !source.ValidAttemptID(ref) {
+			return "", refuse(400, "invalid_subject", "an attempt subject is attempt_<id>, got %q", ref)
+		}
+	case SubjectEvalCaseRun:
+		if !caseRef.MatchString(ref) {
+			return "", refuse(400, "invalid_subject", "an eval case run is case:<id>@sha256:<fingerprint>, got %q", ref)
+		}
+	default:
+		return "", refuse(400, "invalid_subject_kind", "subject_kind must be run, attempt or eval_case_run")
+	}
+	return ref, nil
 }

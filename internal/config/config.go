@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/netip"
 	"net/url"
 	"regexp"
 	"strconv"
@@ -46,7 +47,14 @@ type Config struct {
 	OTLPEndpoint        string
 	FakeSources         bool
 	RunSources          map[string]string // SW_RUN_SOURCES: reporting principal (prn_…) → the one source it may report for
+	AppClientID         string            // SW_APP_CLIENT_ID: the hub OAuth client browsers sign in through
+	AllowedPrincipals   []string          // SW_ALLOWED_PRINCIPALS: who may sign in; empty turns sign-in off
+	SessionSecretFile   string            // SW_SESSION_SECRET_FILE: 32+ bytes that key the login cookie
+	TrustedProxies      []netip.Prefix    // SW_TRUSTED_PROXIES; nil means this host's own addresses
 }
+
+// AppEnabled reports whether browser sign-in is on: someone is allowed to sign in.
+func (c Config) AppEnabled() bool { return len(c.AllowedPrincipals) > 0 }
 
 func Load(getenv func(string) string) (Config, error) {
 	c := Config{
@@ -86,6 +94,15 @@ func Load(getenv func(string) string) (Config, error) {
 	}
 	c.RunSources = rs
 
+	c.AppClientID = strings.TrimSpace(getenv("SW_APP_CLIENT_ID"))
+	c.SessionSecretFile = strings.TrimSpace(getenv("SW_SESSION_SECRET_FILE"))
+	if c.AllowedPrincipals, err = parsePrincipals(getenv("SW_ALLOWED_PRINCIPALS")); err != nil {
+		return Config{}, fmt.Errorf("SW_ALLOWED_PRINCIPALS: %w", err)
+	}
+	if c.TrustedProxies, err = parsePrefixes(getenv("SW_TRUSTED_PROXIES")); err != nil {
+		return Config{}, fmt.Errorf("SW_TRUSTED_PROXIES: %w", err)
+	}
+
 	var missing []string
 	need := func(name, v string) {
 		if v == "" {
@@ -116,8 +133,20 @@ func Load(getenv func(string) string) (Config, error) {
 		need("SW_TRACES_URL", c.TracesURL)
 		need("SW_LOGS_URL", c.LogsURL)
 	}
+	if c.AppEnabled() {
+		need("SW_APP_CLIENT_ID", c.AppClientID)
+		need("SW_SESSION_SECRET_FILE", c.SessionSecretFile)
+		if c.FakeSources {
+			need("SW_HUB_URL", c.HubURL) // sign-in still goes through a hub
+		}
+	}
 	if len(missing) > 0 {
 		return Config{}, fmt.Errorf("missing required settings: %s", strings.Join(missing, ", "))
+	}
+	// The session and login cookies are Secure, which a browser drops over plain http. Fake mode
+	// is loopback-only and is allowed http so the end-to-end test can sign in.
+	if c.AppEnabled() && !c.FakeSources && !strings.HasPrefix(c.PublicURL, "https://") {
+		return Config{}, fmt.Errorf("SW_ALLOWED_PRINCIPALS turns sign-in on, which needs an https SW_PUBLIC_URL; got %q", c.PublicURL)
 	}
 
 	for _, u := range []struct{ name, v string }{
@@ -200,6 +229,47 @@ func parseRunSources(s string) (map[string]string, error) {
 			return nil, fmt.Errorf("%s is bound to more than one source", prn)
 		}
 		out[prn] = src
+	}
+	return out, nil
+}
+
+// parsePrincipals reads comma-separated prn_ ids.
+func parsePrincipals(s string) ([]string, error) {
+	var out []string
+	for _, item := range strings.Split(s, ",") {
+		if item = strings.TrimSpace(item); item == "" {
+			continue
+		}
+		if !principalID.MatchString(item) {
+			return nil, fmt.Errorf("want comma-separated prn_ ids, got %q", item)
+		}
+		out = append(out, item)
+	}
+	return out, nil
+}
+
+// parsePrefixes reads comma-separated IP addresses and CIDR prefixes. An address is its own
+// single-address prefix.
+func parsePrefixes(s string) ([]netip.Prefix, error) {
+	var out []netip.Prefix
+	for _, item := range strings.Split(s, ",") {
+		if item = strings.TrimSpace(item); item == "" {
+			continue
+		}
+		if strings.Contains(item, "/") {
+			p, err := netip.ParsePrefix(item)
+			if err != nil {
+				return nil, fmt.Errorf("want IP addresses or CIDR prefixes, got %q", item)
+			}
+			out = append(out, p.Masked())
+			continue
+		}
+		a, err := netip.ParseAddr(item)
+		if err != nil {
+			return nil, fmt.Errorf("want IP addresses or CIDR prefixes, got %q", item)
+		}
+		a = a.Unmap()
+		out = append(out, netip.PrefixFrom(a, a.BitLen()))
 	}
 	return out, nil
 }

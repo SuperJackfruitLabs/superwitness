@@ -94,14 +94,37 @@ func TestRuntimeRoleMigrationPass(t *testing.T) {
 	}
 	// Make the newest migration pending again (its table gone, its version row removed); the
 	// runtime role cannot apply it, because that needs CREATE on the schema.
-	if _, err := owner.Exec(ctx, `DROP TABLE runs`); err != nil {
+	if _, err := owner.Exec(ctx, `DROP TABLE sessions`); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := owner.Exec(ctx, `DELETE FROM goose_db_version WHERE version_id = 2`); err != nil {
+	if _, err := owner.Exec(ctx, `DELETE FROM goose_db_version WHERE version_id = 3`); err != nil {
 		t.Fatal(err)
 	}
 	if err := Migrate(ctx, roles.AppDSN); err == nil {
 		t.Error("runtime role applied a pending migration")
+	}
+	// The owner re-runs the pass: sessions comes back, and README's grants (re-applied here, as
+	// an operator would after an upgrade) give the runtime role what it needs on it.
+	if err := Migrate(ctx, roles.OwnerDSN); err != nil {
+		t.Fatalf("owner re-ran the pending migration: %v", err)
+	}
+	roles.GrantRuntime(t)
+	var can bool
+	for _, priv := range []string{"SELECT", "INSERT", "UPDATE", "DELETE"} {
+		if err := owner.QueryRow(ctx, `SELECT has_table_privilege('superwitness_app', 'sessions', $1)`, priv).Scan(&can); err != nil || !can {
+			t.Errorf("runtime role %s on sessions = %v %v; want granted", priv, can, err)
+		}
+	}
+	for _, priv := range []string{"TRUNCATE", "REFERENCES", "TRIGGER"} {
+		if err := owner.QueryRow(ctx, `SELECT has_table_privilege('superwitness_app', 'sessions', $1)`, priv).Scan(&can); err != nil || can {
+			t.Errorf("runtime role %s on sessions = %v %v; want refused", priv, can, err)
+		}
+	}
+	// The earlier tables' pass still holds at the new head: runs stays update-only.
+	for priv, want := range map[string]bool{"SELECT": true, "INSERT": true, "UPDATE": true, "DELETE": false} {
+		if err := owner.QueryRow(ctx, `SELECT has_table_privilege('superwitness_app', 'runs', $1)`, priv).Scan(&can); err != nil || can != want {
+			t.Errorf("runtime role %s on runs = %v %v; want %v", priv, can, err, want)
+		}
 	}
 }
 

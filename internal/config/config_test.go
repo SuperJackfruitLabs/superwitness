@@ -170,3 +170,59 @@ func TestRunSourcesInFakeMode(t *testing.T) {
 		t.Errorf("fake mode: %v %v", c.RunSources, err)
 	}
 }
+
+func TestAppSettings(t *testing.T) {
+	m := full()
+	m["SW_PUBLIC_URL"] = "https://app.superwitness.example"
+	m["SW_ALLOWED_PRINCIPALS"] = " prn_human01 , prn_human02 "
+	m["SW_APP_CLIENT_ID"] = "superwitness-console"
+	m["SW_SESSION_SECRET_FILE"] = "/etc/superwitness/session-secret"
+	m["SW_TRUSTED_PROXIES"] = "127.0.0.1, 10.0.0.0/8, ::1"
+	c, err := Load(env(m))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !c.AppEnabled() || len(c.AllowedPrincipals) != 2 || c.AllowedPrincipals[1] != "prn_human02" ||
+		c.AppClientID != "superwitness-console" || c.SessionSecretFile != "/etc/superwitness/session-secret" {
+		t.Errorf("app settings = %+v", c)
+	}
+	if len(c.TrustedProxies) != 3 || c.TrustedProxies[0].String() != "127.0.0.1/32" || c.TrustedProxies[1].String() != "10.0.0.0/8" ||
+		c.TrustedProxies[2].String() != "::1/128" {
+		t.Errorf("trusted proxies = %v", c.TrustedProxies)
+	}
+
+	for name, edit := range map[string]func(map[string]string){
+		"a listed id that is not a principal": func(m map[string]string) { m["SW_ALLOWED_PRINCIPALS"] = "prn_human01,usr_01" },
+		"no client id":                        func(m map[string]string) { delete(m, "SW_APP_CLIENT_ID") },
+		"no session secret":                   func(m map[string]string) { delete(m, "SW_SESSION_SECRET_FILE") },
+		"a plain-http public URL":             func(m map[string]string) { m["SW_PUBLIC_URL"] = "http://superwitness.example" },
+		"a bad proxy":                         func(m map[string]string) { m["SW_TRUSTED_PROXIES"] = "localhost" },
+	} {
+		mm := map[string]string{}
+		for k, v := range m {
+			mm[k] = v
+		}
+		edit(mm)
+		if _, err := Load(env(mm)); err == nil {
+			t.Errorf("%s: accepted", name)
+		}
+	}
+
+	// Sign-in off: nobody listed. The other app settings are then not required.
+	off := full()
+	if c, err := Load(env(off)); err != nil || c.AppEnabled() || c.TrustedProxies != nil {
+		t.Errorf("off: %+v %v", c, err)
+	}
+}
+
+func TestAppSettingsInFakeMode(t *testing.T) {
+	base := map[string]string{"SW_FAKE_SOURCES": "1", "SW_DATABASE_URL": "postgres://x", "SW_PUBLIC_URL": "http://127.0.0.1:8790",
+		"SW_ALLOWED_PRINCIPALS": "prn_human01", "SW_APP_CLIENT_ID": "superwitness-console", "SW_SESSION_SECRET_FILE": "/tmp/s"}
+	if _, err := Load(env(base)); err == nil || !strings.Contains(err.Error(), "SW_HUB_URL") {
+		t.Errorf("fake mode without a hub: %v; sign-in needs one", err)
+	}
+	base["SW_HUB_URL"] = "http://127.0.0.1:8791"
+	if c, err := Load(env(base)); err != nil || !c.AppEnabled() {
+		t.Errorf("fake mode over loopback http: %v", err)
+	}
+}

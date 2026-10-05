@@ -20,6 +20,8 @@ Authorization: Bearer <token>
 lists what a token must carry. A missing or refused token is 401 `unauthenticated`. In fake
 mode, tokens are `dev:<principal>:<human|agent|service>`.
 
+A browser signed in to [the app](/use/the-app/) is authenticated by its session cookie instead; changes made that way must carry `Origin` equal to `SW_PUBLIC_URL`. A bearer token always wins over a cookie. `POST /v1/runs` and `/mcp` take bearer tokens only. A person's token is resolved to their `prn_` principal id; if AgentPod cannot be asked, the answer is 503 `principal_unresolved`.
+
 ## Routes
 
 | Method | Path | Answers |
@@ -32,6 +34,9 @@ mode, tokens are `dev:<principal>:<human|agent|service>`.
 | `GET` | `/v1/runs` | 200 with one page of registry runs ([Run registry API](/build/run-registry/#listing-runs)) |
 | `GET` | `/v1/rubrics` | 200 with every rubric version, without bodies |
 | `GET` | `/v1/rubrics/{id}/{version}` | 200 with one rubric version and its body |
+| `GET` | `/v1/me` | 200 with `{"principal", "kind", "email", "via"}`: who the caller is, and whether by `session` or `bearer` |
+| `GET` | `/v1/verdicts` | 200 with every verdict on one subject (`subject_kind`, `subject_ref`), oldest first, each with `superseded_by`; past 500, the newest 500 |
+| `GET` | `/v1/scopes` | 200 with every scope runs were reported in: `{"scopes": [{"source", "id", "name", "runs"}]}` |
 | `POST` | `/v1/verdicts` | 201 with a new verdict, or 200 with the one already recorded under the key |
 
 Path parameters:
@@ -98,10 +103,11 @@ has the shape.
 | Path | |
 |---|---|
 | `GET /health` | No token. 200 whenever the process is alive, with each source's status in the body ([Operations](/use/operations/#health)). |
-| `/mcp` | The MCP server, with the same bearer token ([MCP tools](/build/mcp/)). |
-| `GET /runs/superpipeline/{board}/{run}` | The run page, a browser page built into the binary ([Read a run](/use/read-a-run/#the-run-page)). |
+| `/mcp` | The MCP server, with the same bearer token ([MCP tools](/build/mcp/)). A request that arrives through the public edge (from a `SW_TRUSTED_PROXIES` address, carrying `CF-Connecting-IP`) is answered 404 before authentication. |
+| `GET /auth/login`, `GET /auth/callback`, `POST /auth/logout` | Signing in to and out of the app ([The app](/use/the-app/)). 404 "Sign-in is off" when no one is allowed to sign in. Logout answers 204, or 503 `store_unavailable` with the cookie cleared. |
+| `GET /runs/superpipeline/{board}/{run}`, `GET /rubrics` | Pages of the app, built into the binary. |
 
-Any other `GET` or `HEAD` outside `/v1` and `/mcp` is served by the run page: one of its files,
+Any other `GET` or `HEAD` outside `/v1` and `/mcp` is served by the app: one of its files,
 or the page itself for a path without a file extension. Other methods on unknown paths are 404
 `not_found`. A wrong method on a route that exists, such as `POST /health`, is 405
 `method_not_allowed`.
@@ -146,6 +152,9 @@ Every error from `/v1` is one JSON object:
 | 400 | `judge_mismatch` | `judge` is set to someone other than the caller |
 | 400 | `judge_kind_not_accepted` | `judge_kind` is set; it comes from the caller's principal record |
 | 401 | `unauthenticated` | the bearer token is missing or not valid for this service |
+| 403 | `origin_mismatch` | a change made with a session did not come from `SW_PUBLIC_URL` |
+| 403 | `not_authorised` | the session's person is no longer on `SW_ALLOWED_PRINCIPALS` |
+| 403 | `bearer_required` | a run report made with a session |
 | 403 | `service_principal_required` | a run report from a principal that is not a service |
 | 403 | `insufficient_scope` | a run report whose token lacks `runs:write` |
 | 403 | `source_not_allowed` | a run report for a source the reporter is not bound to |
@@ -167,10 +176,12 @@ Every error from `/v1` is one JSON object:
 | 422 | `unknown_rubric` | the rubric version does not exist |
 | 422 | `supersedes_not_found` | the verdict named in `supersedes` does not exist |
 | 422 | `supersedes_mismatch` | the correction names a different subject or standard |
+| 429 | `rate_limited` | over a [rate limit](/use/the-app/#rate-limits); `Retry-After` says when to retry |
 | 500 | `internal` | an unexpected failure |
 | 502 | `<source>_unauthorized` | a source refused superwitness's credential |
 | 503 | `<source>_unavailable` | a source could not be reached or failed (retryable) |
 | 503 | `store_unavailable` | the database is unavailable (retryable) |
+| 503 | `principal_unresolved` | AgentPod could not say which principal a person's token names (retryable) |
 | 503 | `subject_unresolved` | superwitness could not confirm the subject or who executed it (retryable) |
 | 504 | `<source>_timeout` | a source did not answer in time (retryable) |
 

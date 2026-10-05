@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 )
@@ -80,6 +81,10 @@ func storeContract(t *testing.T, s Store) {
 	if _, err := rr.GetRubric(ctx, "press", 9); !errors.Is(err, ErrRubricNotFound) {
 		t.Errorf("GetRubric missing: %v", err)
 	}
+	hist, err := s.(HistoryReader).ListSubject(ctx, SubjectKey{SubjectRun, "superpipeline:brd_01/run_01"})
+	if err != nil || len(hist) != 2 || hist[0].ID != "vrd_1" || hist[1].ID != "vrd_2" {
+		t.Errorf("ListSubject = %+v %v; want vrd_1 then vrd_2, the superseded one included", hist, err)
+	}
 }
 
 func TestMemStoreContract(t *testing.T) { storeContract(t, NewMemStore()) }
@@ -91,3 +96,28 @@ func TestMemStoreFail(t *testing.T) {
 		t.Errorf("err = %v", err)
 	}
 }
+
+// historyContract: past MaxHistory verdicts on one subject, ListSubject keeps the newest,
+// oldest first, so the latest judgement is never the one dropped.
+func historyContract(t *testing.T, s Store) {
+	t.Helper()
+	ctx := context.Background()
+	t0 := time.Date(2026, 10, 4, 12, 0, 0, 0, time.UTC)
+	const ref = "superpipeline:brd_01/run_history"
+	for i := 0; i <= MaxHistory; i++ { // MaxHistory+1 verdicts
+		v := verdict(fmt.Sprintf("vrd_h%04d", i), fmt.Sprintf("kh%04d", i), nil, t0.Add(time.Duration(i)*time.Second))
+		v.SubjectRef = ref
+		if _, _, err := s.Insert(ctx, v); err != nil {
+			t.Fatal(err)
+		}
+	}
+	hist, err := s.(HistoryReader).ListSubject(ctx, SubjectKey{SubjectRun, ref})
+	if err != nil || len(hist) != MaxHistory {
+		t.Fatalf("ListSubject: %d verdicts, %v; want %d", len(hist), err, MaxHistory)
+	}
+	if hist[0].ID != "vrd_h0001" || hist[MaxHistory-1].ID != fmt.Sprintf("vrd_h%04d", MaxHistory) {
+		t.Errorf("ListSubject kept %s … %s; want vrd_h0001 … the newest, oldest first", hist[0].ID, hist[MaxHistory-1].ID)
+	}
+}
+
+func TestMemStoreHistoryKeepsTheNewest(t *testing.T) { historyContract(t, NewMemStore()) }

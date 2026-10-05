@@ -50,6 +50,7 @@ func NewDev() (*Dev, error) {
 			DevGrader:      {ID: DevGrader, Kind: auth.KindAgent},
 			DevHuman2:      {ID: DevHuman2, Kind: auth.KindHuman},
 			"hubuser_7f3a": {ID: DevHuman2, Kind: auth.KindHuman}, // gate_02's decided_by_hub_sub
+			"hubuser_01":   {ID: DevHuman, Kind: auth.KindHuman},  // DevHuman's hub account, as a browser sign-in names it
 		},
 	}
 

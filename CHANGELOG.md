@@ -3,6 +3,55 @@
 All notable changes to superwitness are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 0.0.3 — unreleased
+
+superwitness has a web app. People on an allowlist sign in with AgentPod, browse the runs
+sources report, read a run and record verdicts against rubrics.
+
+### Added
+
+- **The app**, served from the binary: runs grouped by day with Needs verdict, Failed, Waiting
+  and per-board views; a run view with a span waterfall, logs, errors, verdict history and
+  attempts; a drawer that records and revises verdicts for each rubric scale; rubric pages;
+  light and dark themes; a phone layout. Fraunces, IBM Plex Sans and IBM Plex Mono are bundled,
+  and their SIL Open Font License 1.1 texts ship in `licenses/fonts/` in the repository and in
+  every release tarball.
+- **Sign-in with AgentPod** (`/auth/login`, `/auth/callback`, `/auth/logout`): PKCE, a signed
+  ten-minute login cookie (`__Host-sw_login`), and superwitness's own sessions
+  (`__Host-sw_session`; 12 hours at most, 2 hours idle) in a new `sessions` table. Only
+  principals on `SW_ALLOWED_PRINCIPALS` may sign in. Settings: `SW_APP_CLIENT_ID`,
+  `SW_ALLOWED_PRINCIPALS`, `SW_SESSION_SECRET_FILE`, `SW_TRUSTED_PROXIES`. `SW_PUBLIC_URL` must be
+  https when sign-in is on. Refusals are logged as `auth.signin_refused` with a reason
+  (including `login_missing` and `no_code`). `POST /auth/logout` can answer 503
+  `store_unavailable`, with the cookie cleared.
+- Changes made with a session must carry the app's own `Origin` (403 `origin_mismatch`).
+- **Rate limits**: `/auth/*` per client address, session changes and run reports per principal;
+  429 `rate_limited` with `Retry-After`.
+- `/mcp` answers 404 to requests that arrive through the public edge (from a trusted proxy,
+  with `CF-Connecting-IP`), so the MCP tools stay private when the app is published.
+- `GET /v1/me`, `GET /v1/verdicts` (one subject's verdict history) and `GET /v1/scopes`.
+- An end-to-end test (`make e2e`, Playwright against Chromium) and its CI job. Playwright
+  (Apache-2.0) and jsdom (MIT) are test-only npm dependencies and are never bundled.
+
+### Changed
+
+- A person's bearer token is now resolved through AgentPod to their `prn_` principal id, so a
+  person is the same judge whether they use the app or a token. When the hub cannot be reached
+  and the principal is not already cached, such a request answers 503 `principal_unresolved`
+  (retryable), even with sign-in off. Agent and service tokens are not looked up. Verdicts
+  recorded with a person's token before 0.0.3 keep the account id as their judge.
+- `/mcp` and `POST /v1/runs` refuse session cookies.
+- The token-paste run page is gone; the app replaces it.
+
+### Upgrading
+
+- Migration `00003` adds the `sessions` table. After `superwitness migrate`, grant the runtime
+  role as the owner: `GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE sessions TO superwitness_app;`.
+  Upgrading straight from 0.0.1, also run 0.0.2's
+  `GRANT SELECT, INSERT, UPDATE ON TABLE runs TO superwitness_app;`.
+- The app is off until `SW_ALLOWED_PRINCIPALS` names someone; it then needs an https
+  `SW_PUBLIC_URL`, `SW_APP_CLIENT_ID` and `SW_SESSION_SECRET_FILE`.
+
 ## 0.0.2 — 2026-10-05
 
 superwitness keeps its own list of runs. Sources report runs to a published contract, and
