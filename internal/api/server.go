@@ -1,6 +1,7 @@
 package api
 
 import (
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -16,6 +17,7 @@ type Server struct {
 	Health http.Handler // GET /health
 	MCP    http.Handler // /mcp
 	Web    http.Handler // the run page
+	Logger *slog.Logger // audit lines; nil discards them
 }
 
 func (s *Server) Handler() http.Handler {
@@ -31,6 +33,7 @@ func (s *Server) Handler() http.Handler {
 		r.Get("/v1/runs/superpipeline/{boardId}/{runId}/logs", s.listLogs)
 		r.Get("/v1/runs/by-attempt/{attemptId}", s.byAttempt)
 		r.Post("/v1/verdicts", s.postVerdict)
+		r.Post("/v1/runs", s.postRuns)
 		if s.MCP != nil {
 			r.Handle("/mcp", s.MCP)
 		}

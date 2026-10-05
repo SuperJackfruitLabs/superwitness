@@ -16,6 +16,7 @@ type APIError struct {
 	Code      string `json:"code"`
 	Message   string `json:"message"`
 	Retryable bool   `json:"retryable,omitempty"`
+	Index     *int   `json:"index,omitempty"` // the refused report's position in a POST /v1/runs batch
 }
 
 func (e *APIError) Error() string { return e.Code + ": " + e.Message }
