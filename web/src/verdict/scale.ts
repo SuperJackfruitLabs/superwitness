@@ -3,10 +3,19 @@ import type { Scale } from "../types";
 // The drawer's input for each recognised scale, and the verdict value it sends.
 export type Input =
   | { kind: "decision" | "label"; choice: string | null }
-  | { kind: "score"; x: number }
+  | { kind: "score"; x: number; touched: boolean }
   | { kind: "text"; text: string };
 
 export const range = (s: Scale) => ({ lo: s.min ?? 0, hi: s.max ?? 1 });
+
+// supported is false for a scale the app cannot offer an input for, even if the server sent it:
+// a score whose range is empty or not finite (a legacy {"min":1,"max":1}) has no slider.
+export function supported(s: Scale | null | undefined): s is Scale {
+  if (!s) return false;
+  if (s.kind !== "score") return true;
+  const { lo, hi } = range(s);
+  return Number.isFinite(lo) && Number.isFinite(hi) && lo < hi;
+}
 
 // A score slider has twenty steps: 0.05 on the 0 to 1 scale.
 export const stepOf = (s: Scale) => {
@@ -14,7 +23,8 @@ export const stepOf = (s: Scale) => {
   return (hi - lo) / 20;
 };
 
-// initialInput is empty for a new verdict and the earlier value for a revision.
+// initialInput is empty for a new verdict and the earlier value for a revision. A new score
+// starts mid-slider but untouched: it is not a value until the person moves it.
 export function initialInput(s: Scale, prev?: Record<string, unknown>): Input {
   switch (s.kind) {
     case "decision":
@@ -25,8 +35,9 @@ export function initialInput(s: Scale, prev?: Record<string, unknown>): Input {
       return { kind: "text", text: typeof prev?.text === "string" ? prev.text : "" };
     case "score": {
       const { lo, hi } = range(s);
-      const p = typeof prev?.score === "number" ? prev.score : 0.5;
-      return { kind: "score", x: lo + p * (hi - lo) };
+      const had = typeof prev?.score === "number";
+      const p = had ? (prev.score as number) : 0.5;
+      return { kind: "score", x: lo + p * (hi - lo), touched: had };
     }
   }
 }
@@ -43,6 +54,7 @@ export function valueOf(s: Scale, i: Input): Record<string, unknown> | null {
       return i.text.trim() ? { text: i.text } : null;
     case "score": {
       const { lo, hi } = range(s);
+      if (!i.touched || !supported(s)) return null;
       const p = Math.min(1, Math.max(0, (i.x - lo) / (hi - lo)));
       return { score: Math.round(p * 10000) / 10000 };
     }

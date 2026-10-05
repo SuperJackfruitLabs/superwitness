@@ -22,6 +22,7 @@ const rubrics = [
   rub("rubric:ok@1", { kind: "decision", options: ["pass", "fail"] }),
   rub("rubric:odd@1", null),
   rub("rubric:score@1", { kind: "score", min: 0, max: 1 }),
+  rub("rubric:flat@1", { kind: "score", min: 1, max: 1 }),
 ];
 const doc = { run: { ref: "canary:run_01" }, attempts: [{ id: "attempt_a1" }] };
 
@@ -127,11 +128,69 @@ describe("VerdictDrawer", () => {
     expect(postJSON.mock.calls[0][1]).toMatchObject({ subject_kind: "attempt", subject_ref: "attempt_a1", supersedes: "vrd_1", value: { decision: "fail" }, comment: "old" });
   });
 
-  it("sends a score as {score}", async () => {
+  it("keeps Save off until the score is moved, then sends it as {score}", async () => {
     await open();
     await setSelect(host.querySelectorAll("select")[1], "rubric:score@1");
+    expect(save().disabled).toBe(true);
+    expect(host.querySelector("output")?.textContent).toBe("not set");
+    const slider = host.querySelector('input[type="range"]') as HTMLInputElement;
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(slider, "0.75");
+      slider.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    expect(save().disabled).toBe(false);
+    await click(save());
+    expect(postJSON.mock.calls[0][1].value).toEqual({ score: 0.75 });
+  });
+
+  it("a click on the untouched slider where it sits chooses that score", async () => {
+    await open();
+    await setSelect(host.querySelectorAll("select")[1], "rubric:score@1");
+    await click(host.querySelector('input[type="range"]')!);
     await click(save());
     expect(postJSON.mock.calls[0][1].value).toEqual({ score: 0.5 });
+  });
+
+  it("revising a score can be saved without moving it", async () => {
+    const prev = { id: "vrd_2", subject_kind: "run", subject_ref: "canary:run_01", standard: "rubric:score@1", value: { score: 0.3 }, comment: "", evidence_refs: [] } as unknown as HistoryVerdict;
+    await open({ revising: prev });
+    expect(save().disabled).toBe(false);
+    await click(save());
+    expect(postJSON.mock.calls[0][1].value).toEqual({ score: 0.3 });
+  });
+
+  it("lists a legacy score with an empty range as unsupported", async () => {
+    await open();
+    const o = [...host.querySelectorAll("option")].find((x) => x.value === "rubric:flat@1")!;
+    expect(o.disabled).toBe(true);
+    expect(o.textContent).toContain("scale not supported in the app");
+  });
+
+  it("a revision keeps the earlier evidence, merged with spans ticked now, without repeats", async () => {
+    const range = { session: "ses_01", from: 1, to: 3 };
+    const prev = { id: "vrd_1", subject_kind: "run", subject_ref: "canary:run_01", standard: "rubric:ok@1", value: { decision: "pass" }, comment: "", evidence_refs: ["aaaaaaaaaaaaaaaa", range] } as unknown as HistoryVerdict;
+    await open({ revising: prev, evidence: ["bbbbbbbbbbbbbbbb", "aaaaaaaaaaaaaaaa"] });
+    expect(host.textContent).toContain("3 cited: 2 from the verdict being revised, 1 ticked in the Trace tab");
+    await click(save());
+    expect(postJSON.mock.calls[0][1].evidence_refs).toEqual(["aaaaaaaaaaaaaaaa", range, "bbbbbbbbbbbbbbbb"]);
+  });
+
+  it("a revision with no new ticks still cites the earlier evidence", async () => {
+    const prev = { id: "vrd_1", subject_kind: "run", subject_ref: "canary:run_01", standard: "rubric:ok@1", value: { decision: "pass" }, comment: "", evidence_refs: ["aaaaaaaaaaaaaaaa"] } as unknown as HistoryVerdict;
+    await open({ revising: prev });
+    expect(host.textContent).toContain("1 cited: 1 from the verdict being revised");
+    expect(host.textContent).not.toContain("ticked in the Trace tab");
+    await click(save());
+    expect(postJSON.mock.calls[0][1].evidence_refs).toEqual(["aaaaaaaaaaaaaaaa"]);
+  });
+
+  it("refuses a revision whose merged evidence is over 100", async () => {
+    const old = Array.from({ length: 60 }, (_, i) => i.toString(16).padStart(16, "a"));
+    const now = Array.from({ length: 41 }, (_, i) => i.toString(16).padStart(16, "b"));
+    const prev = { id: "vrd_1", subject_kind: "run", subject_ref: "canary:run_01", standard: "rubric:ok@1", value: { decision: "pass" }, comment: "", evidence_refs: old } as unknown as HistoryVerdict;
+    await open({ revising: prev, evidence: now });
+    expect(save().disabled).toBe(true);
+    expect(host.textContent).toContain("at most 100 spans, the revised verdict's 60 included");
   });
 
   it("refuses a comment over the limit and shows a counter", async () => {

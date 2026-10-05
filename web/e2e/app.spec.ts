@@ -71,6 +71,7 @@ test("sign in, browse, record a verdict and revise it", async ({ page, request }
     await page.goto("/runs/superpipeline/brd_01/run_01?tab=verdicts");
     await page.getByRole("button", { name: "Revise" }).click();
     const drawer = page.getByRole("dialog", { name: "Revise verdict" });
+    await expect(drawer.getByText("1 cited: 1 from the verdict being revised")).toBeVisible(); // the cited span carries over
     await drawer.getByRole("button", { name: "fail" }).click();
     await drawer.getByRole("button", { name: "Save verdict" }).click();
     await expect(drawer).toBeHidden();

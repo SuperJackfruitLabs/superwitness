@@ -4,7 +4,7 @@ import { list } from "../format";
 import { useJSON } from "../hooks";
 import type { Doc, HistoryVerdict, Rubric } from "../types";
 import { refusalText } from "./messages";
-import { initialInput, type Input, valueOf } from "./scale";
+import { initialInput, type Input, supported, valueOf } from "./scale";
 import { ScaleInput } from "./ScaleInput";
 
 export const MAX_COMMENT = 10000;
@@ -12,7 +12,22 @@ export const MAX_EVIDENCE = 100;
 
 // VerdictDrawer records a verdict on the run, or on one of its attempts, against a rubric. The
 // idempotency key is made when the drawer opens, so a double click or a retry records one verdict.
-export function VerdictDrawer({ doc, evidence, revising, onClose, onRecorded }: {
+// citedEvidence is what a verdict cites: when revising, the earlier verdict's evidence first, then
+// any spans ticked now, without repeats. More than MAX_EVIDENCE blocks the save.
+export function citedEvidence(ticked: string[], revising?: HistoryVerdict): unknown[] {
+  const out: unknown[] = [];
+  const seen = new Set<string>();
+  for (const ref of [...(Array.isArray(revising?.evidence_refs) ? revising.evidence_refs : []), ...ticked]) {
+    const k = JSON.stringify(ref);
+    if (!seen.has(k)) {
+      seen.add(k);
+      out.push(ref);
+    }
+  }
+  return out;
+}
+
+export function VerdictDrawer({ doc, evidence: ticked, revising, onClose, onRecorded }: {
   doc: Doc;
   evidence: string[];
   revising?: HistoryVerdict;
@@ -20,6 +35,8 @@ export function VerdictDrawer({ doc, evidence, revising, onClose, onRecorded }: 
   onRecorded: () => void;
 }) {
   const rubrics = useJSON<{ rubrics: Rubric[] }>("/v1/rubrics");
+  const evidence = citedEvidence(ticked, revising);
+  const kept = citedEvidence([], revising).length; // how many come from the verdict being revised
   const [key] = useState(() => crypto.randomUUID());
   const runRef: string = doc.run?.ref;
   const attempts = list<Doc>(doc.attempts).map((a) => String(a.id));
@@ -30,9 +47,9 @@ export function VerdictDrawer({ doc, evidence, revising, onClose, onRecorded }: 
   const [sending, setSending] = useState(false);
   const [refusal, setRefusal] = useState<string | null>(null);
 
-  const usable = (rubrics.data?.rubrics ?? []).filter((r) => r.recognised_scale);
+  const usable = (rubrics.data?.rubrics ?? []).filter((r) => supported(r.recognised_scale));
   const rubric = rubrics.data?.rubrics.find((r) => r.standard === standard);
-  const scale = rubric?.recognised_scale ?? null;
+  const scale = supported(rubric?.recognised_scale) ? rubric.recognised_scale : null;
   useEffect(() => {
     setInput(scale ? initialInput(scale, revising?.standard === standard ? revising.value : undefined) : null);
   }, [standard, scale?.kind]);
@@ -128,8 +145,8 @@ export function VerdictDrawer({ doc, evidence, revising, onClose, onRecorded }: 
           <select value={standard} disabled={!!revising} onChange={(e) => setStandard(e.target.value)}>
             <option value="">Choose a rubric…</option>
             {(rubrics.data?.rubrics ?? []).map((r) => (
-              <option key={r.standard} value={r.standard} disabled={!r.recognised_scale}>
-                {r.name} ({r.standard}){r.recognised_scale ? "" : ": scale not supported in the app"}
+              <option key={r.standard} value={r.standard} disabled={!supported(r.recognised_scale)}>
+                {r.name} ({r.standard}){supported(r.recognised_scale) ? "" : ": scale not supported in the app"}
               </option>
             ))}
           </select>
@@ -144,11 +161,16 @@ export function VerdictDrawer({ doc, evidence, revising, onClose, onRecorded }: 
           </span>
         </label>
         <p className="muted">
-          Evidence: {evidence.length ? `${evidence.length} span${evidence.length === 1 ? "" : "s"} ticked in the Trace tab` : "none; tick spans in the Trace tab to cite them"}
+          Evidence:{" "}
+          {evidence.length === 0
+            ? "none; tick spans in the Trace tab to cite them"
+            : kept > 0
+              ? `${evidence.length} cited: ${kept} from the verdict being revised${evidence.length > kept ? `, ${evidence.length - kept} ticked in the Trace tab` : ""}`
+              : `${evidence.length} span${evidence.length === 1 ? "" : "s"} ticked in the Trace tab`}
         </p>
         {tooMuchEvidence && (
           <p className="refusal" role="alert">
-            A verdict cites at most {MAX_EVIDENCE} spans; untick some in the Trace tab
+            A verdict cites at most {MAX_EVIDENCE} spans{kept > 0 ? `, the revised verdict's ${kept} included` : ""}; untick some in the Trace tab
           </p>
         )}
         {refusal && (

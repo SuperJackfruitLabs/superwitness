@@ -32,8 +32,18 @@ export function ScaleInput({ scale, input, onChange }: { scale: Scale; input: In
       return (
         <label>
           Score
-          <input type="range" min={lo} max={hi} step={stepOf(scale)} value={input.x} onChange={(e) => onChange({ kind: "score", x: Number(e.target.value) })} />
-          <output>{input.x.toFixed(2)}</output>
+          <input
+            type="range"
+            min={lo}
+            max={hi}
+            step={stepOf(scale)}
+            value={input.x}
+            aria-valuetext={input.touched ? undefined : "not set"}
+            onChange={(e) => onChange({ kind: "score", x: Number(e.target.value), touched: true })}
+            // A click on the thumb where it already sits changes nothing, but is still a choice.
+            onClick={() => !input.touched && onChange({ ...input, touched: true })}
+          />
+          <output>{input.touched ? input.x.toFixed(2) : "not set"}</output>
         </label>
       );
     }
