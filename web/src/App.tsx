@@ -8,10 +8,11 @@ import { RunsPage } from "./runs/RunsPage";
 import { Shell } from "./Shell";
 import type { Me } from "./types";
 
-export function App() {
+export function App({ assign }: { assign?: (to: string) => void } = {}) {
   const me = useJSON<Me>("/v1/me");
   const { path, query } = useLocation();
-  if (me.error) return <ErrorView error={me.error} next={query ? `${path}?${query}` : path} />;
+  if (me.error)
+    return <ErrorView error={me.error} next={query ? `${path}?${query}` : path} retry={me.reload} assign={assign} />;
   if (!me.data) return <p className="loading">Loading…</p>;
   const route = match(path);
   let page;
@@ -31,5 +32,9 @@ export function App() {
     default:
       page = <NotFound />;
   }
-  return <Shell me={me.data}>{page}</Shell>;
+  return (
+    <Shell me={me.data} assign={assign}>
+      {page}
+    </Shell>
+  );
 }

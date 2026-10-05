@@ -109,6 +109,29 @@ describe("Shell", () => {
     expect(el.querySelector("nav")).toBeNull();
   });
 
+  it.each([
+    ["403 origin_mismatch", () => j(403, { error: { code: "origin_mismatch", message: "sign out from the app" } }), "reload the page first"],
+    [
+      "429 rate_limited",
+      () => new Response(JSON.stringify({ error: { code: "rate_limited", message: "slow down", retryable: true } }), { status: 429, headers: { "Retry-After": "7" } }),
+      "Too many requests; wait 7 s.",
+    ],
+    ["a network failure", () => { throw new TypeError("Failed to fetch"); }, "could not be reached"],
+    ["500 internal", () => j(500, { error: { code: "internal", message: "it broke" } }), "it broke"],
+  ])("on %s stays signed in, says why, and retries", async (_name, answer, reason) => {
+    routes["POST /auth/logout"] = answer as () => Response;
+    await mount();
+    await click(button("Sign out"));
+    expect(assign).not.toHaveBeenCalled();
+    expect(el.querySelector("nav")).not.toBeNull();
+    const alert = el.querySelector('[role="alert"]');
+    expect(alert?.textContent).toContain("Sign out failed — try again.");
+    expect(alert?.textContent).toContain(reason);
+    routes["POST /auth/logout"] = () => new Response(null, { status: 204 });
+    await click(button("Try again"));
+    expect(assign).toHaveBeenCalledWith("/");
+  });
+
   it("offers no Sign out to a bearer caller", async () => {
     await act(async () => root.render(<Shell me={{ ...me, via: "bearer" }}><p>x</p></Shell>));
     expect(button("Sign out")).toBeUndefined();

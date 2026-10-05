@@ -1,5 +1,10 @@
+import { useEffect } from "react";
 import { ApiError } from "./api";
 import { Link } from "./router";
+import { SignedOutLingering, SignOutFailed, useSignOut } from "./signout";
+
+// How often a "Can't reach the database" page asks again on its own.
+export const DATABASE_RETRY_MS = 30_000;
 
 export function SignedOut({ next }: { next: string }) {
   return (
@@ -15,20 +20,43 @@ export function SignedOut({ next }: { next: string }) {
   );
 }
 
-export function NotAuthorised() {
+// NotAuthorised is what a signed-in person sees once they are off the allowlist: their session
+// still exists, so the page offers the way out.
+export function NotAuthorised({ assign }: { assign?: (to: string) => void }) {
+  const [out, signOut] = useSignOut(assign);
+  if (out.kind === "lingering") return <SignedOutLingering />;
   return (
     <main className="edge">
       <h1>Not authorised</h1>
       <p>This account is not allowed to use this superwitness. Ask its operator to add you.</p>
+      <p>
+        <button className="button" onClick={signOut} disabled={out.kind === "busy"}>
+          Sign out
+        </button>
+      </p>
+      {out.kind === "failed" && <SignOutFailed reason={out.reason} retry={signOut} />}
     </main>
   );
 }
 
-export function DatabaseDown() {
+// DatabaseDown asks again every DATABASE_RETRY_MS, and on demand, when given a retry.
+export function DatabaseDown({ retry }: { retry?: () => void }) {
+  useEffect(() => {
+    if (!retry) return;
+    const t = setInterval(retry, DATABASE_RETRY_MS);
+    return () => clearInterval(t);
+  }, [retry]);
   return (
     <section>
       <h1>Can’t reach the database</h1>
       <p className="muted">superwitness is running but its database is not answering. This page will work again when it does.</p>
+      {retry && (
+        <p>
+          <button className="button" onClick={retry}>
+            Try again
+          </button>
+        </p>
+      )}
     </section>
   );
 }
@@ -57,10 +85,21 @@ export function NotFound() {
 }
 
 // ErrorView turns an API refusal into the page it calls for.
-export function ErrorView({ error, next = "/" }: { error: ApiError; next?: string }) {
+// retry, when given, reloads what failed; assign is for tests.
+export function ErrorView({
+  error,
+  next = "/",
+  retry,
+  assign,
+}: {
+  error: ApiError;
+  next?: string;
+  retry?: () => void;
+  assign?: (to: string) => void;
+}) {
   if (error.status === 401) return <SignedOut next={next} />;
-  if (error.code === "not_authorised") return <NotAuthorised />;
-  if (error.code === "store_unavailable") return <DatabaseDown />;
+  if (error.code === "not_authorised") return <NotAuthorised assign={assign} />;
+  if (error.code === "store_unavailable") return <DatabaseDown retry={retry} />;
   if (error.code === "run_not_found") return <RunNotFound />;
   if (error.code === "rate_limited") {
     const wait = error.retryAfter !== null ? ` in ${error.retryAfter} s` : " shortly";

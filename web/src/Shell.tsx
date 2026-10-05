@@ -1,7 +1,8 @@
 import { type ReactNode, useEffect, useState, useSyncExternalStore } from "react";
-import { ApiError, getJSON, isStoreDown, postJSON, subscribeStore } from "./api";
+import { getJSON, isStoreDown, subscribeStore } from "./api";
 import { useJSON } from "./hooks";
 import { Link, useLocation } from "./router";
+import { SignedOutLingering, SignOutFailed, useSignOut } from "./signout";
 import { sourcesState } from "./sources";
 import { applyTheme, nextTheme, readTheme } from "./theme";
 import type { Health, Me, ScopeEntry } from "./types";
@@ -32,49 +33,19 @@ function useHealth(): Health | null {
   return h;
 }
 
-const reload = (to: string) => window.location.assign(to);
-
-// Sign out ends the session. The server answers 204, or 503 store_unavailable with the cookie
-// already cleared: this browser is signed out either way, but a 503 means the session row may
-// still be in the database, so the shell says so instead of pretending.
-export function Shell({ me, children, assign = reload }: { me: Me; children: ReactNode; assign?: (to: string) => void }) {
+// Sign out: see useSignOut for what each answer means.
+export function Shell({ me, children, assign }: { me: Me; children: ReactNode; assign?: (to: string) => void }) {
   const { path, query } = useLocation();
   const here = query ? `${path}?${query}` : path;
   const [open, setOpen] = useState(false);
   const [theme, setTheme] = useState(readTheme);
-  const [lingering, setLingering] = useState(false);
+  const [out, signOut] = useSignOut(assign);
   const scopes = useJSON<{ scopes: ScopeEntry[] }>("/v1/scopes");
   const storeDown = useSyncExternalStore(subscribeStore, isStoreDown, () => false);
   const dot = sourcesState(useHealth(), storeDown);
   useEffect(() => setOpen(false), [here]);
 
-  async function signOut() {
-    try {
-      await postJSON("/auth/logout");
-    } catch (e) {
-      if (e instanceof ApiError && e.status === 503 && e.code === "store_unavailable") {
-        setLingering(true);
-        return;
-      }
-    }
-    assign("/");
-  }
-
-  if (lingering)
-    return (
-      <main className="edge">
-        <h1>Signed out</h1>
-        <p>
-          You are signed out in this browser. The database did not answer, so the server-side session may outlive this
-          sign-out. On a shared computer, sign in again later and sign out once more.
-        </p>
-        <p>
-          <a className="button" href="/">
-            Continue
-          </a>
-        </p>
-      </main>
-    );
+  if (out.kind === "lingering") return <SignedOutLingering />;
 
   return (
     <div className="shell">
@@ -127,10 +98,11 @@ export function Shell({ me, children, assign = reload }: { me: Me; children: Rea
             {me.email ?? me.principal}
           </span>
           {me.via === "session" && (
-            <button className="link" onClick={signOut}>
+            <button className="link" onClick={signOut} disabled={out.kind === "busy"}>
               Sign out
             </button>
           )}
+          {out.kind === "failed" && <SignOutFailed reason={out.reason} retry={signOut} />}
         </div>
       </nav>
       <main className="content">{children}</main>
