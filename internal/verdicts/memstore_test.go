@@ -80,6 +80,10 @@ func storeContract(t *testing.T, s Store) {
 	if _, err := rr.GetRubric(ctx, "press", 9); !errors.Is(err, ErrRubricNotFound) {
 		t.Errorf("GetRubric missing: %v", err)
 	}
+	hist, err := s.(HistoryReader).ListSubject(ctx, SubjectKey{SubjectRun, "superpipeline:brd_01/run_01"})
+	if err != nil || len(hist) != 2 || hist[0].ID != "vrd_1" || hist[1].ID != "vrd_2" {
+		t.Errorf("ListSubject = %+v %v; want vrd_1 then vrd_2, the superseded one included", hist, err)
+	}
 }
 
 func TestMemStoreContract(t *testing.T) { storeContract(t, NewMemStore()) }

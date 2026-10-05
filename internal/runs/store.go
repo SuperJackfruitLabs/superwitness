@@ -42,6 +42,8 @@ type Store interface {
 	// transaction, and says which were applied. now becomes updated_at (and first_seen_at for a new run).
 	Upsert(ctx context.Context, batch []Run, now time.Time) ([]bool, error)
 	List(ctx context.Context, f Filter) (Page, error)
+	// Scopes lists every scope runs were reported in, by source and id.
+	Scopes(ctx context.Context) ([]Scope, error)
 }
 
 func zeroCounts() map[string]int {
