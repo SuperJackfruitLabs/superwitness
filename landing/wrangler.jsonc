@@ -1,0 +1,17 @@
+// superwitness.dev: a Worker with static assets and no script.
+//
+// Not a classic Pages project: wrangler 4.147 no longer creates those ("Cloudflare
+// Pages, now part of Cloudflare Workers"). The custom domains are declared here, so
+// `wrangler deploy` attaches them; no dashboard step. Deployed by
+// scripts/deploy-sites.sh with the operator's `wrangler login`; no API token exists.
+{
+  "name": "superwitness-site",
+  "compatibility_date": "2026-10-01",
+  "assets": { "directory": "./dist", "not_found_handling": "404-page" },
+  "routes": [
+    { "pattern": "superwitness.dev", "custom_domain": true },
+    { "pattern": "www.superwitness.dev", "custom_domain": true }
+  ],
+  "workers_dev": false,
+  "preview_urls": false
+}

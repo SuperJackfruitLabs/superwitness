@@ -1,0 +1,22 @@
+{ "data": [ {
+  "traceID": "4bf92f3577b34da6a3ce929d0e0e4736",
+  "spans": [
+    { "traceID": "4bf92f3577b34da6a3ce929d0e0e4736", "spanID": "00f067aa0ba902b7", "operationName": "dispatch",
+      "references": [], "startTime": 1791108000000000, "duration": 300000000, "processID": "p1",
+      "tags": [ {"key":"run.id","type":"string","value":"run_01"}, {"key":"board.id","type":"string","value":"brd_01"},
+                {"key":"card.id","type":"string","value":"crd_01"}, {"key":"external.source","type":"string","value":"superpipeline"} ] },
+    { "traceID": "4bf92f3577b34da6a3ce929d0e0e4736", "spanID": "00f067aa0ba902b8", "operationName": "attempt",
+      "references": [ {"refType":"CHILD_OF","traceID":"4bf92f3577b34da6a3ce929d0e0e4736","spanID":"00f067aa0ba902b7"} ],
+      "startTime": 1791108002000000, "duration": 296000000, "processID": "p1",
+      "tags": [ {"key":"attempt.id","type":"string","value":"attempt_01"}, {"key":"station.id","type":"string","value":"stn_01"},
+                {"key":"fingerprint.digest","type":"string","value":"sha256:c1a88701c4409ae0eafb5f51ec7dabbe5f18037c1256baa045ab8cabf7ed3426"},
+                {"key":"harness.name","type":"string","value":"hermes"}, {"key":"acp.session_id","type":"string","value":"acps_01"},
+                {"key":"acp.seq_from","type":"int64","value":1}, {"key":"run.id","type":"string","value":"run_01"} ] },
+    { "traceID": "4bf92f3577b34da6a3ce929d0e0e4736", "spanID": "00f067aa0ba902b9", "operationName": "turn",
+      "references": [ {"refType":"CHILD_OF","traceID":"4bf92f3577b34da6a3ce929d0e0e4736","spanID":"00f067aa0ba902b8"} ],
+      "startTime": 1791108003000000, "duration": 290000000, "processID": "p1",
+      "tags": [ {"key":"attempt.id","type":"string","value":"attempt_01"}, {"key":"acp.seq_from","type":"int64","value":1},
+                {"key":"acp.seq_to","type":"int64","value":9} ] }
+  ],
+  "processes": { "p1": { "serviceName": "agentpod-hub", "tags": [] } }
+} ] }

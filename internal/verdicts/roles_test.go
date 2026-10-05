@@ -1,0 +1,101 @@
+//go:build integration
+
+package verdicts
+
+import (
+	"context"
+	"errors"
+	"testing"
+
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/SuperJackfruitLabs/superwitness/internal/testutil"
+)
+
+// The runtime role holds only README's runtime grants, so it can append and read but cannot
+// rewrite history, and, not owning the tables, cannot switch the append-only triggers off.
+func TestRuntimeRoleCanAppendButNotRewrite(t *testing.T) {
+	ctx := context.Background()
+	roles := testutil.StartPostgresWithRoles(t)
+	if err := Migrate(ctx, roles.OwnerDSN); err != nil {
+		t.Fatalf("migrate as owner: %v", err)
+	}
+	roles.GrantRuntime(t)
+
+	pool, err := pgxpool.New(ctx, roles.AppDSN)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(pool.Close)
+	s := &PGStore{Pool: pool}
+	storeContract(t, s) // INSERT and SELECT on verdicts and rubrics, supersedes FK included
+
+	for _, stmt := range []string{
+		`UPDATE verdicts SET comment = 'edited'`,
+		`DELETE FROM verdicts`,
+		`TRUNCATE verdicts`,
+		`UPDATE rubrics SET body = 'edited'`,
+		`DELETE FROM rubrics`,
+		`TRUNCATE rubrics`,
+		`ALTER TABLE verdicts DISABLE TRIGGER verdicts_append_only`,
+		`ALTER TABLE verdicts DISABLE TRIGGER ALL`,
+		`ALTER TABLE rubrics DISABLE TRIGGER rubrics_append_only`,
+		`DROP TRIGGER verdicts_append_only ON verdicts`,
+		`DROP TRIGGER rubrics_no_truncate ON rubrics`,
+		`DROP FUNCTION superwitness_refuse_mutation() CASCADE`,
+		`DROP TABLE verdicts`,
+		`CREATE TABLE sneaky (id int)`,
+	} {
+		// 42501 insufficient_privilege: refused for want of a grant, not by the triggers (P0001),
+		// so a widened grant cannot pass here.
+		_, err := pool.Exec(ctx, stmt)
+		var pgErr *pgconn.PgError
+		if !errors.As(err, &pgErr) || pgErr.Code != "42501" {
+			t.Errorf("%q as runtime role: err = %v; want SQLSTATE 42501", stmt, err)
+		}
+	}
+	var n int
+	if err := pool.QueryRow(ctx, `SELECT count(*) FROM verdicts`).Scan(&n); err != nil || n != 3 {
+		t.Errorf("verdicts after refused writes = %d %v; want 3 untouched", n, err)
+	}
+
+	// The runtime role cannot migrate: goose's own table is the owner's alone.
+	if err := Migrate(ctx, roles.AppDSN); err == nil {
+		t.Error("runtime role ran the migrations")
+	}
+}
+
+// When SW_MIGRATE_DATABASE_URL is kept out of the service env, serve's background migration
+// runs as the runtime role. README says what that needs: SELECT on goose_db_version, after
+// which the pass succeeds while nothing is pending and fails when a migration is pending.
+func TestRuntimeRoleMigrationPass(t *testing.T) {
+	ctx := context.Background()
+	roles := testutil.StartPostgresWithRoles(t)
+	if err := Migrate(ctx, roles.OwnerDSN); err != nil {
+		t.Fatalf("migrate as owner: %v", err)
+	}
+	roles.GrantRuntime(t)
+	owner, err := pgxpool.New(ctx, roles.OwnerDSN)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(owner.Close)
+
+	if err := Migrate(ctx, roles.AppDSN); err == nil {
+		t.Fatal("runtime role passed the migration check without SELECT on goose_db_version")
+	}
+	if _, err := owner.Exec(ctx, `GRANT SELECT ON goose_db_version TO superwitness_app`); err != nil {
+		t.Fatal(err)
+	}
+	if err := Migrate(ctx, roles.AppDSN); err != nil {
+		t.Errorf("runtime role, nothing pending: %v", err)
+	}
+	// Make migration 1 pending again; the runtime role cannot apply it.
+	if _, err := owner.Exec(ctx, `DELETE FROM goose_db_version WHERE version_id = 1`); err != nil {
+		t.Fatal(err)
+	}
+	if err := Migrate(ctx, roles.AppDSN); err == nil {
+		t.Error("runtime role applied a pending migration")
+	}
+}

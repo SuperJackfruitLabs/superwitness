@@ -1,0 +1,525 @@
+---
+/**
+ * superwitness.dev — the public page.
+ *
+ * One page, no framework, no scripts. Its job is to explain the product to somebody who
+ * typed the domain, and then send them to the docs or the source. There is no app to sign
+ * in to: superwitness is self-hosted, so the page sells nothing it cannot hand over.
+ *
+ * This directory is deliberately outside the Go module and has its own npm lockfile:
+ * Astro 7 brings Vite 8, and nothing here should share a dependency tree with the
+ * service's own `web/` build. `go build ./...` never looks in here.
+ *
+ * Every label in the hero is real.
+ * The hero is a RunDocument, `GET /v1/runs/superpipeline/{board}/{run}`
+ * (internal/join/document.go). Every label below is a field name or value it returns:
+ *   title         run.ref "superpipeline:{board}/{run}" (source and run id) · run.stage "draft"
+ *   agent         the run.agent row; its content is attempts[].fingerprint.harness ·
+ *                 harness_version · digest (run.agent itself is a principal id, which
+ *                 the page does not print)
+ *   attempts      attempts[] (count) · attempts[].state "completed"
+ *   trace         trace.status "joined" · sum of attempts[].span_count
+ *   errors        errors[] (count)
+ *   cost          cost.status "unreported"   (reported | unreported | unknown)
+ *   verdicts      verdicts[].kind "gate", value.decision "approved", judge_kind "human"
+ *                 (internal/join/join.go gateViews; judge kind from the principal lookup);
+ *                 verdicts[].kind "grader", value.score 0.8 (internal/verdicts/validate.go)
+ *   sources       sources map: superpipeline, agentpod, traces, logs, errors, verdicts → "ok"
+ *                 (internal/source/source.go names; verdicts is the store's own key)
+ * The waterfall's "configuration" row names attempts[].fingerprint's fields: harness, model,
+ * profile, skill_release, digest. The MCP tool names are internal/mcp's.
+ * If any of these change, this page is wrong.
+ *
+ * Colours and faces are listed once, in `:root` below; docs-site/src/styles/theme.css uses
+ * the same values. Jade is spent on three things only: "on the record", a joined trace and
+ * an approved gate — the parts of the page that are evidence.
+ */
+import Mark from '../components/Mark.astro';
+import ShareMeta from '../components/ShareMeta.astro';
+
+const SITE = 'https://superwitness.dev';
+const DOCS = 'https://docs.superwitness.dev';
+const REPO = 'https://github.com/SuperJackfruitLabs/superwitness';
+const VERSION = 'v0.0.1'; // the latest release tag; bump with each release
+const TITLE = 'superwitness — every run, on the record';
+const DESCRIPTION =
+  'What your agents did, how your products behaved while they did it, and whether the work was any good, joined on one run. Self-hosted, MIT.';
+
+// The waterfall: one run.id across three products. Offsets and widths are percentages of
+// the run's duration — illustrative, the shape hero-visual option B settled on.
+const lanes = [
+  { name: 'superpipeline', depth: 0, from: 0, width: 30, tone: 'marigold' },
+  { name: 'hub · dispatch', depth: 0, from: 4, width: 92, tone: 'cyan' },
+  { name: 'attempt', depth: 1, from: 12, width: 70, tone: 'cyan' },
+  { name: 'turn · tool', depth: 2, from: 20, width: 38, tone: 'cyan' },
+  { name: 'node-agent', depth: 0, from: 16, width: 55, tone: 'grey' },
+  { name: 'gate · review', depth: 0, from: 84, width: 14, tone: 'jade' },
+];
+
+// Must equal the commands on the docs site's install page.
+const install = [
+  `curl -LO ${REPO}/releases/download/v0.0.1/superwitness_0.0.1_linux_amd64.tar.gz`,
+  `curl -LO ${REPO}/releases/download/v0.0.1/SHA256SUMS`,
+  'sha256sum --ignore-missing -c SHA256SUMS',
+  'tar xzf superwitness_0.0.1_linux_amd64.tar.gz',
+];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{TITLE}</title>
+    <meta name="description" content={DESCRIPTION} />
+    <meta name="theme-color" content="#0e1116" />
+    <ShareMeta title={TITLE} description={DESCRIPTION} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+    />
+    <style>
+      /* Contrast (WCAG 2.x), measured on the grounds they sit on:
+           dark   jade #3fd0a2 on #0e1116 9.7:1 · on the jade pill 6.7:1 · muted #8b95a5 5.8:1 on surface
+                  button text #0e1116 on #3fd0a2 9.7:1 · warn #f4a526 on its pill 6.5:1
+           light  jade #1b7f63 on #f7f8f6 4.6:1 (headline, links) · jade-text #136049 on the jade
+                  pill 6.4:1 and on inset 6.6:1 · button text #ffffff on #1b7f63 4.9:1
+                  muted #545e6b 6.2:1 · warn #8a5a06 on its pill 5.2:1
+         Light-theme jade is the deep jade because #3fd0a2 on a light ground is 1.9:1. */
+      :root {
+        --bg: #0e1116; --surface: #151a22; --inset: #070a0e; --line: rgba(255,255,255,.08);
+        --text: #e8ecf2; --muted: #8b95a5; --jade: #3fd0a2; --jade-deep: #1b7f63;
+        --jade-tint: rgba(63,208,162,.15); --warn: #f4a526; --warn-tint: rgba(244,165,38,.15);
+        --jade-text: #3fd0a2; --jade-ink: #0e1116; --code: #c9d1dc;
+        --marigold: #f4a526; --cyan: #5fb3d4; --grey: #9aa6b8;
+        --display: 'Fraunces', Georgia, serif; --sans: 'IBM Plex Sans', system-ui, sans-serif;
+        --mono: 'IBM Plex Mono', ui-monospace, monospace;
+        color-scheme: dark light;
+      }
+      @media (prefers-color-scheme: light) {
+        :root {
+          --bg: #f7f8f6; --surface: #ffffff; --inset: #eef1ee; --line: rgba(14,17,22,.1);
+          --text: #12161c; --muted: #545e6b; --jade: #1b7f63; --jade-deep: #136049;
+          --jade-tint: rgba(27,127,99,.12); --warn: #8a5a06; --warn-tint: rgba(244,165,38,.18);
+          --jade-text: #136049; --jade-ink: #ffffff; --code: #2a313b;
+          --marigold: #e0961c; --cyan: #3f97bb; --grey: #8a96a8;
+        }
+      }
+
+      * { box-sizing: border-box; }
+      html { -webkit-text-size-adjust: 100%; }
+      body {
+        margin: 0; background: var(--bg); color: var(--text);
+        font-family: var(--sans); font-size: 17px; line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+      }
+      a { color: inherit; }
+      a:focus-visible { outline: 2px solid var(--jade); outline-offset: 3px; border-radius: 4px; }
+      .mono { font-family: var(--mono); }
+      .muted { color: var(--muted); }
+
+      .wrap { width: 100%; max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+      /* ── masthead ─────────────────────────────────────────────── */
+      header .wrap {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 16px; padding-top: 24px; padding-bottom: 24px;
+      }
+      .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--jade); }
+      .brand .name {
+        font-family: var(--display); font-weight: 600; font-size: 21px; color: var(--text);
+        letter-spacing: -0.01em; font-variation-settings: 'opsz' 48;
+      }
+      nav { display: flex; gap: 20px; align-items: center; font-size: 15px; }
+      nav a { color: var(--muted); text-decoration: none; }
+      nav a:hover { color: var(--text); }
+      nav .ver {
+        font-family: var(--mono); font-size: 12.5px; padding: 2px 8px;
+        border: 1px solid var(--line); border-radius: 999px;
+      }
+
+      /* ── hero ─────────────────────────────────────────────────── */
+      .hero .wrap {
+        display: grid; grid-template-columns: 1.05fr 1fr; gap: 56px; align-items: center;
+        padding-top: 56px; padding-bottom: 88px;
+      }
+      .hero .wrap > * { min-width: 0; }
+      h1 {
+        font-family: var(--display); font-weight: 600;
+        font-size: clamp(2.6rem, 6vw, 4.4rem); line-height: 1.02;
+        letter-spacing: -0.025em; margin: 0 0 22px; text-wrap: balance;
+        font-variation-settings: 'opsz' 144;
+      }
+      h1 em { font-style: italic; font-weight: 500; color: var(--jade); }
+      .lede { color: var(--muted); font-size: 1.1rem; margin: 0 0 30px; max-width: 32em; }
+
+      .cta { display: flex; gap: 12px; flex-wrap: wrap; }
+      .btn {
+        display: inline-flex; align-items: center; border-radius: 8px;
+        padding: 11px 19px; font-size: 15px; font-weight: 600; text-decoration: none;
+        border: 1px solid transparent; transition: filter .15s, border-color .15s;
+      }
+      .btn-primary { background: var(--jade); color: var(--jade-ink); }
+      .btn-primary:hover { filter: brightness(1.08); }
+      .btn-ghost { border-color: var(--line); color: var(--text); }
+      .btn-ghost:hover { border-color: var(--jade); }
+
+      /* ── the run document: this page's signature ──────────────── */
+      .hero { overflow-x: clip; }
+      .doc-wrap { position: relative; margin: 0; }
+      .doc-wrap::before {
+        /* a faint jade glow under the record, nothing more */
+        content: ''; position: absolute; inset: -40px -30px; z-index: 0; pointer-events: none;
+        background: radial-gradient(closest-side, var(--jade-tint), transparent 75%);
+        opacity: .55;
+      }
+      .doc {
+        position: relative; z-index: 1; background: var(--surface);
+        border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
+        box-shadow: 0 1px 0 rgba(255,255,255,.03) inset, 0 24px 48px -24px rgba(0,0,0,.45);
+        font-size: 14px;
+      }
+      @media (prefers-color-scheme: light) {
+        .doc { box-shadow: 0 24px 48px -28px rgba(14,17,22,.22); }
+      }
+      .doc-head {
+        display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap;
+        gap: 4px 12px; padding: 15px 18px 13px; border-bottom: 1px solid var(--line);
+      }
+      .ttl { font-family: var(--display); font-weight: 600; font-size: 20px; letter-spacing: -0.01em; }
+      .ttl .muted { font-family: var(--mono); font-size: 12.5px; font-weight: 400; letter-spacing: 0; margin-left: 6px; }
+      .doc-head .route { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+      .doc dl { margin: 0; padding: 4px 18px; }
+      .row {
+        display: flex; align-items: center; justify-content: space-between; gap: 6px 14px;
+        flex-wrap: wrap; padding: 10px 0; border-bottom: 1px dashed var(--line);
+      }
+      .row:last-child { border-bottom: 0; }
+      .row dt { font-family: var(--mono); font-size: 12.5px; color: var(--muted); }
+      .row dd { margin: 0; text-align: right; display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+      .row dd.mono { font-size: 12.5px; display: block; }
+      .pill {
+        font-family: var(--mono); font-size: 12px; padding: 2px 8px; border-radius: 6px;
+        background: var(--inset); color: var(--text); white-space: nowrap;
+      }
+      .pill.jade { background: var(--jade-tint); color: var(--jade-text); }
+      .pill.warn { background: var(--warn-tint); color: var(--warn); }
+      .sources {
+        margin: 0; padding: 11px 18px 13px; border-top: 1px solid var(--line);
+        background: var(--inset); font-size: 11.5px; color: var(--muted); line-height: 1.7;
+      }
+      .sources b { font-weight: 500; color: var(--jade-text); }
+
+      /* ── bands ────────────────────────────────────────────────── */
+      section.band { border-top: 1px solid var(--line); }
+      section.band .wrap { padding-top: 68px; padding-bottom: 68px; }
+      .n {
+        display: block; font-family: var(--mono); font-size: 12px; letter-spacing: .12em;
+        color: var(--muted); margin-bottom: 10px;
+      }
+      h2 {
+        font-family: var(--display); font-weight: 600;
+        font-size: clamp(1.65rem, 3.2vw, 2.25rem); line-height: 1.12; letter-spacing: -0.02em;
+        margin: 0 0 14px; text-wrap: balance; font-variation-settings: 'opsz' 72;
+      }
+      .sub { color: var(--muted); margin: 0; max-width: 60ch; font-size: 1.05rem; }
+      .split { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; }
+      .split > * { min-width: 0; }
+
+      .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 34px; }
+      .cell {
+        background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+        padding: 20px 20px 18px; display: flex; flex-direction: column; gap: 6px;
+      }
+      .cell h3 {
+        font-family: var(--display); font-weight: 600; font-size: 1.2rem;
+        letter-spacing: -0.01em; margin: 0;
+      }
+      .cell p { margin: 0; color: var(--muted); font-size: 15.5px; }
+      .cell .field {
+        margin-top: auto; padding-top: 12px; font-family: var(--mono); font-size: 12px;
+        color: var(--muted); border-top: 1px dashed var(--line);
+      }
+
+      /* telemetry vs verdicts */
+      table.compare {
+        width: 100%; border-collapse: collapse; font-size: 14.5px;
+        background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+        overflow: hidden; border-style: hidden; box-shadow: 0 0 0 1px var(--line);
+      }
+      .compare th, .compare td { text-align: left; padding: 11px 16px; border-bottom: 1px solid var(--line); vertical-align: top; }
+      .compare tr:last-child td, .compare tr:last-child th { border-bottom: 0; }
+      .compare thead th { font-family: var(--display); font-weight: 600; font-size: 1.05rem; }
+      .compare tbody th { font-family: var(--mono); font-weight: 400; font-size: 12.5px; color: var(--muted); width: 22%; }
+      .compare td { color: var(--muted); }
+      .compare .never { color: var(--jade-text); font-weight: 500; }
+
+      /* waterfall */
+      .fall {
+        margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+        padding: 18px 18px 14px;
+      }
+      .lane { display: grid; grid-template-columns: 130px 1fr; gap: 12px; align-items: center; height: 26px; }
+      .lane .lname { font-family: var(--mono); font-size: 12px; color: var(--muted); white-space: nowrap; }
+      .lane[data-depth='1'] .lname { padding-left: 12px; }
+      .lane[data-depth='2'] .lname { padding-left: 24px; }
+      .track { position: relative; height: 10px; }
+      .track::before { content: ''; position: absolute; inset: 4px 0; background: var(--line); border-radius: 1px; }
+      .bar { position: absolute; top: 0; height: 10px; border-radius: 3px; }
+      .bar.marigold { background: var(--marigold); }
+      .bar.cyan { background: var(--cyan); }
+      .bar.grey { background: var(--grey); }
+      .bar.jade { background: var(--jade); box-shadow: 0 0 0 3px var(--jade-tint); }
+      .fall figcaption {
+        margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--line);
+        font-family: var(--mono); font-size: 12px; color: var(--muted);
+      }
+      .fall figcaption b { font-weight: 500; color: var(--text); }
+      .config { margin-top: 26px; }
+      .config h3 { font-family: var(--display); font-weight: 600; font-size: 1.15rem; margin: 0 0 10px; }
+      .chain { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-family: var(--mono); font-size: 12.5px; }
+      .chain .k { padding: 3px 9px; border-radius: 6px; border: 1px solid var(--line); color: var(--text); }
+      .chain .out { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+      .chain .to { color: var(--muted); }
+      .chain .fp { padding: 3px 9px; border-radius: 6px; background: var(--inset); color: var(--text); }
+      .chain .fp span { color: var(--muted); }
+
+      /* code */
+      pre, .codeline {
+        font-family: var(--mono); font-size: 13px; line-height: 1.75; color: var(--code);
+        background: var(--inset); border: 1px solid var(--line); border-radius: 10px;
+        margin: 0; padding: 14px 16px; overflow-x: auto; max-width: 100%;
+      }
+      .codeline { display: block; margin-top: 22px; word-spacing: .1em; }
+      pre .p { color: var(--muted); user-select: none; }
+
+      .install { margin-top: 30px; }
+      ul.facts { list-style: none; margin: 22px 0 0; padding: 0; display: grid; gap: 10px; }
+      ul.facts li { position: relative; padding-left: 22px; }
+      ul.facts li::before {
+        content: ''; position: absolute; left: 2px; top: .62em; width: 8px; height: 8px;
+        border: 1.5px solid var(--jade); border-radius: 50%;
+      }
+      ul.facts code { font-family: var(--mono); font-size: .88em; }
+      .closing { margin: 22px 0 0; font-family: var(--display); font-style: italic; font-weight: 500; font-size: 1.2rem; }
+      .more { display: inline-block; margin-top: 14px; font-size: 15px; color: var(--jade-text); text-decoration: none; font-weight: 500; }
+      .more:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+      /* ── footer ───────────────────────────────────────────────── */
+      footer { border-top: 1px solid var(--line); }
+      footer .wrap {
+        display: flex; justify-content: space-between; align-items: center; gap: 14px 24px; flex-wrap: wrap;
+        padding-top: 30px; padding-bottom: 44px; font-size: 14px; color: var(--muted);
+      }
+      footer a { color: var(--muted); text-decoration: none; }
+      footer a:hover { color: var(--text); }
+      .fnav { display: flex; gap: 6px 18px; flex-wrap: wrap; }
+      .colophon { display: inline-flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 12.5px; color: var(--muted); }
+      .colophon svg { color: var(--jade); }
+
+      @media (min-width: 900px) {
+        ul.facts { grid-auto-flow: column; justify-content: start; gap: 10px 36px; }
+      }
+      @media (max-width: 899px) {
+        .hero .wrap { grid-template-columns: 1fr; gap: 44px; padding-top: 32px; padding-bottom: 64px; }
+        .split { grid-template-columns: 1fr; gap: 32px; }
+        .grid { grid-template-columns: 1fr; }
+      }
+      @media (max-width: 480px) {
+        .wrap { padding: 0 16px; }
+        nav { gap: 14px; }
+        section.band .wrap { padding-top: 52px; padding-bottom: 52px; }
+        .lane { grid-template-columns: 104px 1fr; gap: 8px; }
+        .lane .lname { font-size: 11px; }
+        .doc dl, .doc-head, .sources { padding-left: 14px; padding-right: 14px; }
+        .compare th, .compare td { padding: 10px 12px; }
+      }
+      @media (max-width: 360px) {
+        .brand .name { font-size: 18px; }
+        nav { gap: 12px; font-size: 14px; }
+        nav .ver { display: none; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * { transition: none !important; animation: none !important; }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="wrap">
+        <a class="brand" href="/" aria-label="superwitness home">
+          <Mark size={28} />
+          <span class="name">superwitness</span>
+        </a>
+        <nav aria-label="Primary">
+          <a href={DOCS}>Docs</a>
+          <a href={REPO}>Source</a>
+          <a class="ver" href={`${REPO}/releases/tag/${VERSION}`}>{VERSION}</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <div class="hero">
+        <div class="wrap">
+          <div>
+            <h1>Every run, <em>on the record</em>.</h1>
+            <p class="lede">
+              What your agents did, how your products behaved while they did it, and whether the work
+              was any good, joined on one run.
+            </p>
+            <div class="cta">
+              <a class="btn btn-primary" href={DOCS}>Read the docs</a>
+              <a class="btn btn-ghost" href={REPO}>Source</a>
+            </div>
+          </div>
+
+          <figure class="doc-wrap" aria-label="An example run document">
+            <div class="doc">
+              <div class="doc-head">
+                <div class="ttl">run_7f3a <span class="muted mono">superpipeline · draft</span></div>
+                <span class="route">GET /v1/runs/superpipeline/brd_01/run_7f3a</span>
+              </div>
+              <dl>
+                <div class="row"><dt>agent</dt><dd class="mono">hermes 0.9 · <span class="muted">sha256:4dd8…</span></dd></div>
+                <div class="row"><dt>attempts</dt><dd><span class="pill">2 · completed</span></dd></div>
+                <div class="row"><dt>trace</dt><dd><span class="pill jade">joined · 41 spans</span></dd></div>
+                <div class="row"><dt>errors</dt><dd><span class="pill">0</span></dd></div>
+                <div class="row"><dt>cost</dt><dd><span class="pill warn">unreported</span></dd></div>
+                <div class="row"><dt>verdicts</dt><dd><span class="pill jade">gate: approved · human</span> <span class="pill">grader 0.8</span></dd></div>
+              </dl>
+              <p class="sources mono">sources: superpipeline <b>ok</b> · agentpod <b>ok</b> · traces <b>ok</b> · logs <b>ok</b> · errors <b>ok</b> · verdicts <b>ok</b></p>
+            </div>
+          </figure>
+        </div>
+      </div>
+
+      <section class="band" aria-labelledby="q">
+        <div class="wrap">
+          <span class="n">01</span>
+          <h2 id="q">Three questions, one run</h2>
+          <div class="grid">
+            <div class="cell">
+              <h3>What did it do?</h3>
+              <p>Attempts, turns, tool calls, spans.</p>
+              <span class="field">attempts · trace</span>
+            </div>
+            <div class="cell">
+              <h3>How did the products run?</h3>
+              <p>Logs and errors that share the run's trace.</p>
+              <span class="field">log_count · errors</span>
+            </div>
+            <div class="cell">
+              <h3>Was it any good?</h3>
+              <p>Gate decisions and recorded verdicts.</p>
+              <span class="field">verdicts</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="band" aria-labelledby="t">
+        <div class="wrap split">
+          <div>
+            <span class="n">02</span>
+            <h2 id="t">Telemetry and evidence are different things</h2>
+            <p class="sub">
+              Telemetry is sampled, lossy and short-lived. Verdicts are append-only and never lost.
+              superwitness keeps them in separate stores and never treats one as the other.
+            </p>
+          </div>
+          <table class="compare">
+            <thead>
+              <tr><td></td><th scope="col">Telemetry</th><th scope="col">Verdicts</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">loss</th><td>Expected: sampled, short retention</td><td class="never">Never</td></tr>
+              <tr><th scope="row">where</th><td>Upstream engines</td><td>superwitness's own database</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="band" aria-labelledby="j">
+        <div class="wrap split">
+          <div>
+            <span class="n">03</span>
+            <h2 id="j">Joined on the run, across products</h2>
+            <div class="config">
+              <h3>The configuration that ran it</h3>
+              <div class="chain">
+                <span class="k">harness</span><span class="k">model</span><span class="k">profile</span><span class="k">skills</span>
+                <span class="out"><span class="to" aria-hidden="true">→</span> <span class="fp">fingerprint <span>sha256:4dd8…</span></span></span>
+              </div>
+            </div>
+          </div>
+          <figure class="fall" aria-label="A trace waterfall: superpipeline, hub dispatch, attempt, turn and tool, node-agent, and the gate review, all sharing one run id">
+            {lanes.map((l) => (
+              <div class="lane" data-depth={l.depth}>
+                <span class="lname">{l.name}</span>
+                <span class="track"><span class={`bar ${l.tone}`} style={`left:${l.from}%;width:${l.width}%`}></span></span>
+              </div>
+            ))}
+            <figcaption><b>run.id</b> = run_7f3a</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="band" aria-labelledby="a">
+        <div class="wrap">
+          <span class="n">04</span>
+          <h2 id="a">Built for agents first</h2>
+          <p class="sub">An MCP server: thin tools over the run, spans, logs and verdict operations.</p>
+          <code class="codeline">get_run · list_run_spans · list_run_logs · record_verdict</code>
+        </div>
+      </section>
+
+      <section class="band" aria-labelledby="e">
+        <div class="wrap">
+          <span class="n">05</span>
+          <h2 id="e">Standing on engines you'd pick anyway</h2>
+          <p class="sub">
+            VictoriaLogs, VictoriaTraces and the OpenTelemetry Collector: upstream, unforked,
+            permissively licensed. superwitness adds the run, the join and the verdicts. Designed
+            to sit beside VictoriaMetrics and Perses the same way.
+          </p>
+        </div>
+      </section>
+
+      <section class="band" aria-labelledby="h">
+        <div class="wrap">
+          <div class="host">
+            <span class="n">06</span>
+            <h2 id="h">You host all of it</h2>
+            <ul class="facts">
+              <li>A single Go binary plus Postgres.</li>
+              <li>Release tarballs with <code>SHA256SUMS</code>.</li>
+              <li>A systemd unit.</li>
+              <li>Tailnet-first.</li>
+            </ul>
+            <p class="closing">No product requires it: they send plain OTLP and never wait on it.</p>
+          </div>
+          <div class="install">
+            <pre aria-label="Install"><code>{install.map((line) => (<><span class="p">$ </span>{line}{'\n'}</>))}</code></pre>
+            <a class="more" href={`${DOCS}/install/`}>Full install guide →</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="wrap">
+        <span class="fnav">
+          <a href={DOCS}>Documentation</a>
+          <a href={REPO}>GitHub</a>
+          <a href="https://agentpod.dev">AgentPod</a>
+          <a href="https://superpipeline.dev">superpipeline</a>
+          <a href="https://supermessage.dev">supermessage</a>
+        </span>
+        <span class="colophon"><Mark size={16} /> superwitness · self-hosted · MIT</span>
+      </div>
+    </footer>
+  </body>
+</html>

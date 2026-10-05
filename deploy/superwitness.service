@@ -1,0 +1,35 @@
+[Unit]
+Description=superwitness: observability and evaluation for agent fleets
+Documentation=https://github.com/SuperJackfruitLabs/superwitness
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=superwitness
+Group=superwitness
+EnvironmentFile=/etc/superwitness/env
+ExecStart=/usr/local/bin/superwitness serve
+Restart=always
+RestartSec=5
+
+# superwitness reads over HTTP and writes only to its own Postgres; it needs no filesystem.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+SystemCallArchitectures=native
+CapabilityBoundingSet=
+ReadOnlyPaths=/etc/superwitness
+
+[Install]
+WantedBy=multi-user.target

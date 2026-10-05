@@ -1,0 +1,9 @@
+.astro/
+dist/
+node_modules/
+.wrangler/
+
+# Docs pages served at /build/*, not build artifacts. The root .gitignore has no `build/`
+# rule today, but superpipeline's did and its pages vanished silently; this keeps a later
+# root rule from doing the same here.
+!src/content/docs/build/

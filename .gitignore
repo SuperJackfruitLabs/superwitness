@@ -1,0 +1,10 @@
+node_modules/
+dist/
+target/
+.env
+.env.*
+*.log
+.DS_Store
+bin/
+# The embedded web page is committed so `go build` needs no Node toolchain.
+!internal/web/dist/

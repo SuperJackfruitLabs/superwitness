@@ -1,0 +1,26 @@
+{
+  "run": { "id": "run_01", "board_id": "brd_01", "card_id": "crd_01", "stage_key": "draft",
+           "agent_id": "agt_01", "agent_principal_id": "prn_agent01", "status": "ended", "outcome": "completed",
+           "started_at": "2026-10-04T10:00:00Z", "ended_at": "2026-10-04T10:05:00Z" },
+  "card": { "id": "crd_01", "title": "Write the release note", "stage_key": "review" },
+  "gates": [
+    { "id": "gate_01", "run_id": "run_01", "stage_key": "draft", "status": "resolved", "decision": "rejected",
+      "decided_by": "usr_reviewer", "produced_by": "agt_01",
+      "decided_by_principal_id": "prn_human01", "decided_by_hub_sub": null, "produced_by_principal_id": "prn_agent01",
+      "created_at": "2026-10-04T10:05:00Z", "resolved_at": "2026-10-04T10:20:00Z" },
+    { "id": "gate_02", "run_id": null, "stage_key": "draft", "status": "resolved", "decision": "changes_requested",
+      "decided_by": "hubuser_7f3a", "produced_by": "agt_01",
+      "decided_by_principal_id": null, "decided_by_hub_sub": "hubuser_7f3a", "produced_by_principal_id": "prn_agent01",
+      "created_at": "2026-10-04T10:21:00Z", "resolved_at": "2026-10-04T10:30:00Z" },
+    { "id": "gate_03", "run_id": "run_01", "stage_key": "draft", "status": "pending", "decision": null,
+      "decided_by": null, "produced_by": "agt_01",
+      "decided_by_principal_id": null, "decided_by_hub_sub": null, "produced_by_principal_id": "prn_agent01",
+      "created_at": "2026-10-04T10:31:00Z", "resolved_at": null },
+    { "id": "gate_04", "run_id": "run_01", "stage_key": "draft", "status": "cancelled", "decision": null,
+      "decided_by": null, "produced_by": "agt_01",
+      "decided_by_principal_id": null, "decided_by_hub_sub": null, "produced_by_principal_id": "prn_agent01",
+      "created_at": "2026-10-04T10:40:00Z", "resolved_at": "2026-10-04T10:45:00Z" }
+  ],
+  "usage": { "status": "unreported", "input_tokens": null, "output_tokens": null, "cost_usd": null },
+  "as_of": "2026-10-04T11:00:00Z"
+}

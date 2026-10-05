@@ -1,0 +1,6 @@
+[
+  { "key": "work", "name": "Work", "order": 0, "ownerKind": "capability", "owner": "code",
+    "requires": { "any": ["code"] } },
+  { "key": "review", "name": "Review", "order": 1, "ownerKind": "human", "gate": "approval" },
+  { "key": "done", "name": "Done", "order": 2, "ownerKind": "human" }
+]

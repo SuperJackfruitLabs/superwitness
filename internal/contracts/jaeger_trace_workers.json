@@ -1,0 +1,10 @@
+{ "data": [ {
+  "traceID": "5bf92f3577b34da6a3ce929d0e0e4737",
+  "spans": [
+    { "traceID": "5bf92f3577b34da6a3ce929d0e0e4737", "spanID": "10f067aa0ba902b7",
+      "operationName": "POST /v1/boards/:id/runs/:runId/heartbeat", "references": [],
+      "startTime": 1791108060000000, "duration": 12000, "processID": "p1",
+      "tags": [ {"key":"run.id","type":"string","value":"run_01"} ] }
+  ],
+  "processes": { "p1": { "serviceName": "superpipeline-api", "tags": [] } }
+} ] }

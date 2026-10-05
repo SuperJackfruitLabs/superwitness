@@ -1,0 +1,11 @@
+{
+  "board_id": "brd_canary",
+  "checks": [],
+  "ended_at": "2026-01-01T00:00:00Z",
+  "error": "forced failure: proving flow 10 (a canary failure reaches ntfy)",
+  "forced": true,
+  "pass": false,
+  "started_at": "2026-01-01T00:00:00Z",
+  "trigger": "manual",
+  "v": 1
+}

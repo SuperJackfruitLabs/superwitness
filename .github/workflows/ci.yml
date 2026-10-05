@@ -1,0 +1,54 @@
+name: ci
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  go:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version-file: go.mod }
+      - run: make lint
+      - run: make test
+      - run: make licenses
+      - run: sudo useradd -r superwitness && sudo install -m 0755 /bin/true /usr/local/bin/superwitness && systemd-analyze verify deploy/superwitness.service
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 26 }
+      - run: make web-check
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version-file: go.mod }
+      - run: make test-integration
+  # The two public sites. Build-only: deploys run from the operator's machine with
+  # scripts/deploy-sites.sh and a wrangler login, so this repository holds no
+  # Cloudflare token. npm, scoped to each directory, because both sit outside the
+  # Go module and have their own lockfiles.
+  landing:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm ci
+        working-directory: landing
+      - run: npm run build
+        working-directory: landing
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm ci
+        working-directory: docs-site
+      - run: npm run build
+        working-directory: docs-site

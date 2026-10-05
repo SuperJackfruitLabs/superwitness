@@ -1,0 +1,56 @@
+package auth
+
+import (
+	"context"
+	"encoding/json"
+	"net/http"
+	"strings"
+)
+
+// Middleware authenticates the bearer token. The token's aud must be this service, which
+// the hub only mints for clients granted it, so every verified kind is admitted.
+func Middleware(a Authenticator) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			tok, ok := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
+			tok = strings.TrimSpace(tok)
+			if !ok || tok == "" {
+				unauthorized(w, "a hub-issued bearer token is required")
+				return
+			}
+			p, err := a.Verify(r.Context(), tok)
+			if err != nil {
+				unauthorized(w, "the bearer token is not valid for this service")
+				return
+			}
+			next.ServeHTTP(w, r.WithContext(WithPrincipal(r.Context(), p)))
+		})
+	}
+}
+
+func unauthorized(w http.ResponseWriter, msg string) {
+	w.Header().Set("WWW-Authenticate", `Bearer realm="superwitness"`)
+	writeAuthError(w, http.StatusUnauthorized, "unauthenticated", msg)
+}
+
+func writeAuthError(w http.ResponseWriter, status int, code, msg string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(map[string]any{"error": map[string]string{"code": code, "message": msg}})
+}
+
+// DevAuthenticator accepts "dev:<principal id>:<kind>". Only SW_FAKE_SOURCES mode wires
+// it, and config refuses that mode on a non-loopback listen address.
+type DevAuthenticator struct{}
+
+func (DevAuthenticator) Verify(_ context.Context, tok string) (Principal, error) {
+	parts := strings.Split(tok, ":")
+	if len(parts) != 3 || parts[0] != "dev" || parts[1] == "" {
+		return Principal{}, ErrUnauthenticated
+	}
+	k := PrincipalKind(parts[2])
+	if k != KindHuman && k != KindAgent && k != KindService {
+		return Principal{}, ErrUnauthenticated
+	}
+	return Principal{ID: parts[1], Kind: k, Tenant: "dev"}, nil
+}

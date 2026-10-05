@@ -1,0 +1,161 @@
+// Package mcp exposes the api operations as MCP tools: get_run, list_run_spans,
+// list_run_logs and record_verdict. The by-attempt lookup is HTTP-only.
+package mcp
+
+import (
+	"context"
+	"encoding/json"
+	"net/http"
+
+	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
+
+	"github.com/SuperJackfruitLabs/superwitness/internal/api"
+	"github.com/SuperJackfruitLabs/superwitness/internal/auth"
+	"github.com/SuperJackfruitLabs/superwitness/internal/source"
+	"github.com/SuperJackfruitLabs/superwitness/internal/verdicts"
+)
+
+type RunArgs struct {
+	Source  string `json:"source,omitempty" jsonschema:"the run's source system; this release supports only superpipeline (the default)"`
+	BoardID string `json:"board_id" jsonschema:"superpipeline board id, brd_…"`
+	RunID   string `json:"run_id" jsonschema:"superpipeline run id, run_…"`
+}
+
+type SpansArgs struct {
+	Source  string `json:"source,omitempty" jsonschema:"superpipeline (the default)"`
+	BoardID string `json:"board_id" jsonschema:"superpipeline board id, brd_…"`
+	RunID   string `json:"run_id" jsonschema:"superpipeline run id, run_…"`
+	Cursor  string `json:"cursor,omitempty" jsonschema:"next_cursor from the previous page"`
+	Limit   int    `json:"limit,omitempty" jsonschema:"page size from 1 to 500; default 100"`
+}
+
+type LogsArgs struct {
+	Source  string `json:"source,omitempty" jsonschema:"superpipeline (the default)"`
+	BoardID string `json:"board_id" jsonschema:"superpipeline board id, brd_…"`
+	RunID   string `json:"run_id" jsonschema:"superpipeline run id, run_…"`
+	Cursor  string `json:"cursor,omitempty" jsonschema:"next_cursor from the previous page"`
+	Level   string `json:"level,omitempty" jsonschema:"debug, info, warn or error; empty for all"`
+	Limit   int    `json:"limit,omitempty" jsonschema:"page size from 1 to 500; default 100"`
+}
+
+// VerdictArgs is the POST /v1/verdicts body. The judge is always the caller.
+type VerdictArgs struct {
+	IdempotencyKey string         `json:"idempotency_key" jsonschema:"a key you choose; a retry with the same key returns the original verdict"`
+	Kind           string         `json:"kind,omitempty" jsonschema:"grader, review, eval or calibration; defaults to review for humans and grader otherwise"`
+	SubjectKind    string         `json:"subject_kind" jsonschema:"run, attempt or eval_case_run"`
+	SubjectRef     string         `json:"subject_ref" jsonschema:"superpipeline:<board>/<run>, attempt_<id>, or case:<id>@sha256:<fingerprint>"`
+	Standard       string         `json:"standard" jsonschema:"rubric:<id>@<version>, stage:<key> or case:<id>"`
+	Value          map[string]any `json:"value" jsonschema:"exactly one of {decision}, {score 0..1}, {label}, {text}"`
+	Comment        string         `json:"comment,omitempty" jsonschema:"free text, at most 10000 characters"`
+	EvidenceRefs   []any          `json:"evidence_refs,omitempty" jsonschema:"span ids or {session_id, seq_from, seq_to}"`
+	Supersedes     string         `json:"supersedes,omitempty" jsonschema:"the id of your earlier verdict this one corrects"`
+}
+
+func NewHandler(ops *api.Ops, version string) http.Handler {
+	return sdk.NewStreamableHTTPHandler(func(r *http.Request) *sdk.Server {
+		caller, _ := auth.PrincipalFrom(r.Context())
+		return NewServer(ops, caller, version)
+	}, &sdk.StreamableHTTPOptions{Stateless: true})
+}
+
+func NewServer(ops *api.Ops, caller auth.Principal, version string) *sdk.Server {
+	s := sdk.NewServer(&sdk.Implementation{Name: "superwitness", Version: version}, nil)
+
+	sdk.AddTool(s, &sdk.Tool{Name: "get_run",
+		Description: "The RunDocument for one work run: attempts with fingerprints, joined traces, errors, gate and recorded verdicts, cost, and per-source status."},
+		func(ctx context.Context, _ *sdk.CallToolRequest, in RunArgs) (*sdk.CallToolResult, any, error) {
+			ref, err := runRef(in.Source, in.BoardID, in.RunID)
+			if err != nil {
+				return toolError(err), nil, nil
+			}
+			doc, err := ops.GetRun(ctx, ref)
+			if err != nil {
+				return toolError(err), nil, nil
+			}
+			return toolJSON(doc), nil, nil
+		})
+
+	sdk.AddTool(s, &sdk.Tool{Name: "list_run_spans", Description: "One page of a run's spans, oldest first."},
+		func(ctx context.Context, _ *sdk.CallToolRequest, in SpansArgs) (*sdk.CallToolResult, any, error) {
+			ref, err := runRef(in.Source, in.BoardID, in.RunID)
+			if err != nil {
+				return toolError(err), nil, nil
+			}
+			page, err := ops.ListSpans(ctx, ref, in.Cursor, in.Limit)
+			if err != nil {
+				return toolError(err), nil, nil
+			}
+			return toolJSON(page), nil, nil
+		})
+
+	sdk.AddTool(s, &sdk.Tool{Name: "list_run_logs", Description: "One page of a run's log lines, matched by run.id and by the run's trace ids, oldest first."},
+		func(ctx context.Context, _ *sdk.CallToolRequest, in LogsArgs) (*sdk.CallToolResult, any, error) {
+			ref, err := runRef(in.Source, in.BoardID, in.RunID)
+			if err != nil {
+				return toolError(err), nil, nil
+			}
+			page, err := ops.ListLogs(ctx, ref, in.Cursor, in.Level, in.Limit)
+			if err != nil {
+				return toolError(err), nil, nil
+			}
+			return toolJSON(page), nil, nil
+		})
+
+	sdk.AddTool(s, &sdk.Tool{Name: "record_verdict",
+		Description: "Record a verdict as the calling principal. Append-only; to correct one, record a new verdict that supersedes it. An agent may not judge a run it executed."},
+		func(ctx context.Context, _ *sdk.CallToolRequest, in VerdictArgs) (*sdk.CallToolResult, any, error) {
+			req, err := in.request()
+			if err != nil {
+				return toolError(err), nil, nil
+			}
+			v, _, err := ops.RecordVerdict(ctx, caller, req)
+			if err != nil {
+				return toolError(err), nil, nil
+			}
+			return toolJSON(v), nil, nil
+		})
+	return s
+}
+
+func runRef(src, board, run string) (source.RunRef, error) {
+	if src != "" && src != string(source.Superpipeline) {
+		return source.RunRef{}, &api.APIError{Status: 400, Code: "invalid_source", Message: "source must be superpipeline in this release"}
+	}
+	ref, err := source.NewSuperpipelineRef(board, run)
+	if err != nil {
+		return source.RunRef{}, &api.APIError{Status: 400, Code: "invalid_run_ref", Message: err.Error()}
+	}
+	return ref, nil
+}
+
+func (a VerdictArgs) request() (verdicts.Request, error) {
+	value, err := json.Marshal(a.Value)
+	if err != nil {
+		return verdicts.Request{}, &api.APIError{Status: 400, Code: "invalid_value", Message: err.Error()}
+	}
+	req := verdicts.Request{IdempotencyKey: a.IdempotencyKey, Kind: a.Kind, SubjectKind: verdicts.SubjectKind(a.SubjectKind),
+		SubjectRef: a.SubjectRef, Standard: a.Standard, Value: value, Comment: a.Comment}
+	if a.EvidenceRefs != nil {
+		if req.EvidenceRefs, err = json.Marshal(a.EvidenceRefs); err != nil {
+			return verdicts.Request{}, &api.APIError{Status: 400, Code: "invalid_evidence_refs", Message: err.Error()}
+		}
+	}
+	if a.Supersedes != "" {
+		sup := a.Supersedes
+		req.Supersedes = &sup
+	}
+	return req, nil
+}
+
+func toolJSON(v any) *sdk.CallToolResult {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return toolError(err)
+	}
+	return &sdk.CallToolResult{Content: []sdk.Content{&sdk.TextContent{Text: string(b)}}, StructuredContent: json.RawMessage(b)}
+}
+
+func toolError(err error) *sdk.CallToolResult {
+	b, _ := json.Marshal(map[string]any{"error": api.AsAPIError(err)})
+	return &sdk.CallToolResult{IsError: true, Content: []sdk.Content{&sdk.TextContent{Text: string(b)}}}
+}

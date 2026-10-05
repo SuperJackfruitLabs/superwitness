@@ -1,0 +1,16 @@
+{
+  "name": "@superwitness/docs",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev --port 4328",
+    "build": "astro build",
+    "preview": "astro preview --port 4328",
+    "check": "astro check"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "^0.42.0",
+    "astro": "^7.3.2"
+  }
+}

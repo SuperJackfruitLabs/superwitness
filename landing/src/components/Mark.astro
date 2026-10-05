@@ -1,0 +1,34 @@
+---
+/**
+ * The superwitness mark, inline: a seal (ring) enclosing an eye.
+ *
+ * These three shapes must match public/favicon.svg exactly — the favicon, this component,
+ * og/og.html and the docs site's copy are one mark. Nothing reads the file at build time,
+ * so the README's guard compares the two by their path data.
+ *
+ * Stroke is `currentColor`, so the mark takes the page's jade (dark #3fd0a2, light #1b7f63)
+ * from whatever it sits in.
+ */
+interface Props {
+  size?: number;
+}
+const { size = 28 } = Astro.props;
+---
+
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 32 32"
+  width={size}
+  height={size}
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2.25"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  aria-hidden="true"
+  focusable="false"
+>
+  <circle cx="16" cy="16" r="13.5" />
+  <path d="M7 16c2.5-4.3 5.6-6.4 9-6.4s6.5 2.1 9 6.4c-2.5 4.3-5.6 6.4-9 6.4s-6.5-2.1-9-6.4z" />
+  <circle cx="16" cy="16" r="2.75" fill="currentColor" stroke="none" />
+</svg>

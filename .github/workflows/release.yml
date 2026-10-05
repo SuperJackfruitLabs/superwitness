@@ -1,0 +1,28 @@
+name: release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with: { node-version: 26 }
+      - run: make web-check
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        with: { go-version-file: go.mod }
+      - run: make dist VERSION="${GITHUB_REF_NAME}"
+      - name: Sanity-check the amd64 binary reports the tag
+        run: |
+          ver="${GITHUB_REF_NAME#v}"
+          tar -xzf "dist/superwitness_${ver}_linux_amd64.tar.gz" -C "$RUNNER_TEMP"
+          got="$("$RUNNER_TEMP/superwitness_${ver}_linux_amd64/superwitness" --version)"
+          test "$got" = "$GITHUB_REF_NAME" || { echo "version $got != tag $GITHUB_REF_NAME" >&2; exit 1; }
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "$GITHUB_REF_NAME" dist/*.tar.gz dist/SHA256SUMS --generate-notes

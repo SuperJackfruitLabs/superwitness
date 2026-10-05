@@ -1,0 +1,45 @@
+superwitness
+Copyright (c) 2026 Rakesh Gangwar
+
+This product is licensed under the MIT License (see LICENSE).
+
+Third-party components
+----------------------
+The superwitness binary links the Go modules below and embeds a web page built
+with React. Each keeps its own licence; Apache-2.0 components are credited here
+as section 4(d) requires. The list covers the packages of ./cmd/superwitness
+(go-licenses v2.0.1 report), not test-only modules.
+
+Go modules
+- github.com/go-chi/chi/v5 - MIT
+- github.com/jackc/pgx/v5 (and jackc/pgpassfile, jackc/pgservicefile, jackc/puddle/v2) - MIT
+- github.com/pressly/goose/v3, github.com/mfridman/interpolate - MIT
+- github.com/sethvargo/go-retry - Apache-2.0
+- github.com/golang-jwt/jwt/v5 - MIT
+- github.com/modelcontextprotocol/go-sdk - MIT (existing code) and Apache-2.0 (new contributions)
+- github.com/google/jsonschema-go - MIT
+- github.com/yosida95/uritemplate/v3 - BSD-3-Clause
+- github.com/segmentio/encoding - MIT
+- github.com/segmentio/asm - MIT-0 (MIT No Attribution; hand-reviewed, not classified by go-licenses)
+- github.com/cespare/xxhash/v2, github.com/felixge/httpsnoop, go.uber.org/multierr,
+  github.com/cenkalti/backoff/v5 - MIT
+- github.com/go-logr/logr, github.com/go-logr/stdr - Apache-2.0
+- github.com/google/uuid, github.com/grpc-ecosystem/grpc-gateway/v2 - BSD-3-Clause
+- go.opentelemetry.io/otel (api, sdk, log, metric, trace, OTLP exporters),
+  go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp,
+  go.opentelemetry.io/auto/sdk, go.opentelemetry.io/proto/otlp - Apache-2.0
+  Copyright The OpenTelemetry Authors. The otel modules and otelhttp also hold
+  code under BSD-3-Clause, Copyright 2009 The Go Authors.
+- google.golang.org/grpc, google.golang.org/genproto - Apache-2.0
+- google.golang.org/protobuf - BSD-3-Clause
+- golang.org/x/sync, golang.org/x/net, golang.org/x/oauth2, golang.org/x/sys,
+  golang.org/x/text, golang.org/x/time - BSD-3-Clause
+
+Embedded web page (internal/web/dist), from the npm production dependencies
+- react, react-dom, scheduler - MIT, Copyright (c) Meta Platforms, Inc. and affiliates
+Build-time only, not bundled: npm caniuse-lite (CC-BY-4.0, pulled in by the
+browserslist tooling) and the other devDependencies.
+
+Not bundled. superwitness only calls their published APIs over HTTP:
+VictoriaTraces and VictoriaLogs, fed by the OpenTelemetry Collector (all
+Apache-2.0).

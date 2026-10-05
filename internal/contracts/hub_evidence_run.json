@@ -1,0 +1,14 @@
+{
+  "external_source": "superpipeline", "external_run_id": "run_01",
+  "board_id": "brd_01", "card_id": "crd_01",
+  "dispatch": { "outcome": "completed", "detail": null, "station_id": "stn_01", "updated_at": "2026-10-04T10:05:01Z" },
+  "attempts": [
+    { "id": "attempt_01", "station_id": "stn_01", "session_id": "acps_01", "state": "completed",
+      "start_seq": 1, "end_seq": 9, "started_at": "2026-10-04T10:00:02Z", "ended_at": "2026-10-04T10:04:58Z",
+      "agent_principal_id": "prn_agent01",
+      "fingerprint": { "digest": "sha256:c1a88701c4409ae0eafb5f51ec7dabbe5f18037c1256baa045ab8cabf7ed3426",
+                       "harness": "hermes", "harness_version": "unknown", "model": "unknown",
+                       "profile": "default", "skill_release": "none", "reported_by": "hub" } }
+  ],
+  "as_of": "2026-10-04T11:00:00Z"
+}
