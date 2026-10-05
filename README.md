@@ -192,6 +192,10 @@ superwitness uses only the engines' published query APIs. Lookback is 7 days.
 
 Log fields read: `severity_text`, `severity_number`, `trace_id`, `span_id`, `run.id`, `service.name`.
 
+## Contributing and security
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for how changes land and how to run the checks. Please report vulnerabilities privately, as described in [SECURITY.md](SECURITY.md).
+
 ## License
 
 [MIT](LICENSE).
