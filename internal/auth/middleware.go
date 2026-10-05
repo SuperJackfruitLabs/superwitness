@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"slices"
 	"strings"
@@ -20,6 +21,12 @@ func Middleware(a Authenticator) func(http.Handler) http.Handler {
 				return
 			}
 			p, err := a.Verify(r.Context(), tok)
+			if errors.Is(err, ErrLookupUnavailable) {
+				w.Header().Set("Retry-After", "5")
+				writeAuthError(w, http.StatusServiceUnavailable, "principal_unresolved",
+					"the hub could not say which principal this token names; retry")
+				return
+			}
 			if err != nil {
 				unauthorized(w, "the bearer token is not valid for this service")
 				return

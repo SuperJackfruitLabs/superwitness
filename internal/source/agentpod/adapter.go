@@ -87,8 +87,9 @@ func (a *Adapter) Lookup(ctx context.Context, key string) (auth.PrincipalRecord,
 		return p, nil
 	}
 	var body struct {
-		ID   string `json:"id"`
-		Kind string `json:"kind"`
+		ID        string `json:"id"`
+		Kind      string `json:"kind"`
+		Suspended bool   `json:"suspended"`
 	}
 	switch st := a.get(ctx, "/api/evidence/principals/"+url.PathEscape(key), &body); st {
 	case source.StatusOK:
@@ -102,7 +103,7 @@ func (a *Adapter) Lookup(ctx context.Context, key string) (auth.PrincipalRecord,
 	if !valid || (principalPattern.MatchString(key) && body.ID != key) {
 		return auth.PrincipalRecord{}, fmt.Errorf("%w: malformed principal record", auth.ErrLookupUnavailable)
 	}
-	p = auth.PrincipalRecord{ID: body.ID, Kind: k}
+	p = auth.PrincipalRecord{ID: body.ID, Kind: k, Suspended: body.Suspended}
 	a.mu.Lock()
 	a.principals[key] = p
 	a.mu.Unlock()

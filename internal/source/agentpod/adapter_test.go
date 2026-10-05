@@ -47,6 +47,8 @@ func hub(t *testing.T, principalHits *atomic.Int32) *httptest.Server {
 			_, _ = w.Write(contracts.HubPrincipal)
 		case "hubuser_7f3a":
 			fmt.Fprint(w, `{"id":"prn_human02","kind":"human","handle":"former","suspended":false}`)
+		case "hubuser_gone":
+			fmt.Fprint(w, `{"id":"prn_human09","kind":"human","handle":"gone","suspended":true}`)
 		case "prn_broken":
 			w.WriteHeader(500)
 		default:
@@ -163,6 +165,12 @@ func TestLookupCachesAndMapsErrors(t *testing.T) {
 	// A hub auth user id (superpipeline's decided_by_hub_sub) resolves to its prn_.
 	if p, err := a.Lookup(context.Background(), "hubuser_7f3a"); err != nil || p.ID != "prn_human02" || p.Kind != auth.KindHuman {
 		t.Errorf("hub sub = %+v %v", p, err)
+	}
+	if p, err := a.Lookup(context.Background(), "hubuser_gone"); err != nil || p.ID != "prn_human09" || !p.Suspended {
+		t.Errorf("suspended = %+v %v", p, err)
+	}
+	if p, _ := a.Lookup(context.Background(), "prn_human01"); p.Suspended {
+		t.Errorf("prn_human01 reads as suspended")
 	}
 	if _, err := a.Lookup(context.Background(), "prn_nobody"); !errors.Is(err, auth.ErrPrincipalNotFound) {
 		t.Errorf("nobody: %v", err)

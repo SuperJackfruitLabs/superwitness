@@ -291,3 +291,16 @@ func TestVerifyReadsScope(t *testing.T) {
 		t.Error("a scope claim that is an array was accepted")
 	}
 }
+
+func TestVerifyReadsEmail(t *testing.T) {
+	is := newIssuer(t)
+	is.addKey(t, "k1")
+	now := time.Now()
+	v := newTestVerifier(is, &now)
+	p, err := v.Verify(context.Background(), is.sign(t, "k1", now, func(c jwt.MapClaims) {
+		c["principalKind"], c["email"] = "human", "human01@example.com"
+	}))
+	if err != nil || p.Email != "human01@example.com" {
+		t.Errorf("email = %q %v", p.Email, err)
+	}
+}
