@@ -50,6 +50,7 @@ export default defineConfig({
         {
           label: 'Use it',
           items: [
+            { label: 'The app', slug: 'use/the-app' },
             { label: 'Read a run', slug: 'use/read-a-run' },
             { label: 'Verdicts', slug: 'use/verdicts' },
             { label: 'Sending telemetry', slug: 'use/telemetry' },

@@ -3,7 +3,7 @@ title: Configuration
 description: Every environment variable superwitness reads, with its default.
 ---
 
-superwitness reads its settings from environment variables; three of them name files to read
+superwitness reads its settings from environment variables; four of them name files to read
 secrets from. Under systemd they come from `/etc/superwitness/env` ([Install](/install/#configure)). Leading and trailing spaces
 are trimmed from every value.
 
@@ -26,6 +26,10 @@ are trimmed from every value.
 | `SW_LOGS_URL` | yes / no | none | VictoriaLogs. |
 | `SW_LOGS_TOKEN_FILE` | no / no | none | a file holding a bearer token to send to VictoriaLogs. |
 | `SW_RUN_SOURCES` | no / no | none: nobody may report runs | the run reporters, as `prn_<id>=<source>,…`. Each service principal named may `POST /v1/runs` for its one source ([Run registry API](/build/run-registry/#who-may-report)). |
+| `SW_ALLOWED_PRINCIPALS` | no / no | none: the app is off | comma-separated `prn_` ids who may sign in to the app ([The app](/use/the-app/)). |
+| `SW_APP_CLIENT_ID` | when the app is on | none | the AgentPod OAuth client browsers sign in through. |
+| `SW_SESSION_SECRET_FILE` | when the app is on | none | a file of at least 32 random bytes that keys the sign-in cookie; it must not be readable by group or others. |
+| `SW_TRUSTED_PROXIES` | no / no | this host's own addresses | IP addresses or CIDR prefixes whose `CF-Connecting-IP` header is believed. |
 | `SW_SOURCE_TIMEOUT` | no / no | `2s` | how long each source has to answer, as a Go duration such as `2s` or `1500ms`; it must be positive. |
 | `SW_OTLP_ENDPOINT` | no / no | none: superwitness sends no telemetry of its own | the OTLP/HTTP endpoint for superwitness's own traces and metrics ([Sending telemetry](/use/telemetry/#superwitnesss-own-telemetry)). |
 | `SW_FAKE_SOURCES` | no / – | `false` | `1` or `true` serves the built-in development run and accepts development tokens ([Install](/install/#try-it-without-the-other-products)). Accepts `true`/`false`/`1`/`0`; empty is false. |
@@ -48,11 +52,16 @@ finds:
 - **`SW_RUN_SOURCES`** must be comma-separated `prn_<id>=<source>` pairs, a source being
   lowercase letters, digits and `-`, and no principal bound twice.
 - **`SW_FAKE_SOURCES`** must parse as a boolean.
+- **The app.** With `SW_ALLOWED_PRINCIPALS` set, `SW_APP_CLIENT_ID` and `SW_SESSION_SECRET_FILE` are
+  required, `SW_PUBLIC_URL` must be `https` (fake mode excepted), and in fake mode `SW_HUB_URL` is
+  required. Each listed id must be `prn_` and letters, digits, `_` or `-`.
+- **`SW_TRUSTED_PROXIES`** must be IP addresses or CIDR prefixes.
 - **Fake mode** refuses a `SW_LISTEN` that is not loopback.
 
-Secret files are checked as `serve` starts. `SW_HUB_CLIENT_SECRET_FILE`, `SW_TRACES_TOKEN_FILE`
-and `SW_LOGS_TOKEN_FILE` must each hold a non-empty value (surrounding whitespace is trimmed) and
-must not be readable by group or others; otherwise `serve` exits 1 naming the file.
+Secret files are checked as `serve` starts. `SW_HUB_CLIENT_SECRET_FILE`, `SW_TRACES_TOKEN_FILE`,
+`SW_LOGS_TOKEN_FILE` and `SW_SESSION_SECRET_FILE` must each hold a non-empty value (surrounding
+whitespace is trimmed; the session secret must hold at least 32 bytes) and must not be readable by
+group or others; otherwise `serve` exits 1 naming the file.
 
 ## Other commands
 

@@ -9,11 +9,12 @@ superwitness is released under the [MIT licence](https://github.com/SuperJackfru
 
 A release tarball holds:
 
-- the `superwitness` binary, with the run page built into it;
+- the `superwitness` binary, with the app built into it;
 - `LICENSE` and `NOTICE`;
+- `licenses/fonts/`, the fonts' licences;
 - `deploy/superwitness.service` and `deploy/env.example`.
 
-The binary links Go modules and embeds a web page built with React. Each keeps its own licence,
+The binary links Go modules and embeds a web app built with React, with three bundled fonts. Each keeps its own licence,
 and the [`NOTICE`](https://github.com/SuperJackfruitLabs/superwitness/blob/main/NOTICE) file in
 every release credits them. In summary:
 
@@ -25,11 +26,12 @@ every release credits them. In summary:
 | sethvargo/go-retry, go-logr/logr and stdr, the OpenTelemetry Go API, SDK, exporters, otelhttp instrumentation and OTLP protobufs, gRPC and genproto | Apache-2.0 |
 | portions of the OpenTelemetry Go modules and otelhttp, from the Go Authors | BSD-3-Clause |
 | yosida95/uritemplate, google/uuid, grpc-gateway, Go protobuf, and golang.org/x sync, net, oauth2, sys, text and time | BSD-3-Clause |
-| react, react-dom and scheduler, in the embedded run page | MIT |
+| react, react-dom and scheduler, in the embedded app | MIT |
+| Fraunces, IBM Plex Sans and IBM Plex Mono, bundled in the app (from the `@fontsource` packages, also OFL-1.1) | SIL Open Font License 1.1 |
 
-The list covers what the binary links, not test-only modules. Build tools are not bundled: the
-web page's development dependencies, including caniuse-lite (CC-BY-4.0, used by the browser-list
-tooling), stay out of the release. The same goes for the npm packages that build
+The list covers what the binary links, not test-only modules. Build and test tools are not bundled: the
+app's development dependencies, including caniuse-lite (CC-BY-4.0, used by the browser-list
+tooling), @playwright/test (Apache-2.0) and jsdom (MIT), stay out of the release. The same goes for the npm packages that build
 superwitness.dev and this documentation site: they are not part of any release.
 
 ## The allowlist

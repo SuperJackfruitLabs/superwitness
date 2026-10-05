@@ -17,8 +17,8 @@ cards, runs and approval gates; [supermessage](https://github.com/SuperJackfruit
 is the Matrix client that puts agents in the conversation. superwitness records what happened and
 whether it was any good.
 
-> **Status: v0.0.2** ([changelog](CHANGELOG.md)). Run documents cover superpipeline runs, with attempts read from the
-> AgentPod hub, and a run registry lists the runs sources report. To try it without either product, `SW_FAKE_SOURCES=1` serves one development run
+> **Status: v0.0.3** ([changelog](CHANGELOG.md)). Run documents cover superpipeline runs, with attempts read from the
+> AgentPod hub, and a run registry lists the runs sources report, and a web app to read and judge them. To try it without either product, `SW_FAKE_SOURCES=1` serves one development run
 > on loopback.
 
 ## What it is for
@@ -86,6 +86,8 @@ curl -H 'Authorization: Bearer dev:prn_human01:human' localhost:8790/v1/runs
 
 A fourth segment of a development token lists its scopes, comma-separated.
 
+To sign in to the app in fake mode, run `make e2e`'s pieces: `web/e2e/stub-hub.mjs` stands in for AgentPod and `web/e2e/serve.sh` shows the settings.
+
 | Surface | Path |
 |---|---|
 | Run document | `GET /v1/runs/superpipeline/{board}/{run}` |
@@ -96,7 +98,8 @@ A fourth segment of a development token lists its scopes, comma-separated.
 | List runs | `GET /v1/runs?source=&scope=&status=&executor=&since=&until=&needs_verdict=&cursor=&limit=` |
 | Rubrics | `GET /v1/rubrics`, `GET /v1/rubrics/{id}/{version}` |
 | MCP (streamable HTTP) | `/mcp`: `get_run`, `list_run_spans`, `list_run_logs`, `list_runs`, `record_verdict` |
-| Run page | `/runs/superpipeline/{board}/{run}` |
+| The app (sign in with AgentPod) | `/`, `/runs/superpipeline/{board}/{run}`, `/rubrics` |
+| Who am I, verdict history, scopes | `GET /v1/me`, `GET /v1/verdicts?subject_kind=&subject_ref=`, `GET /v1/scopes` |
 | Health | `GET /health` (no auth; always 200 while alive, per-source status in the body) |
 
 Rubrics are append-only: `superwitness rubric-add -id press -version 1 -name Press -scale '{"min":0,"max":1}' -body-file press.md -created-by prn_…`.

@@ -1,42 +1,20 @@
 ---
 title: Read a run
-description: The run page, the run document, and the paged spans and logs behind them.
+description: The app's run view, the run document, and the paged spans and logs behind them.
 ---
 
-A run can be read three ways: in a browser on the run page, over HTTP, or through the
+A run can be read three ways: in the app, over HTTP, or through the
 [MCP tools](/build/mcp/). All three return the same run document, assembled at read time from
 every source. [Concepts](/concepts/) explains its fields; [Contracts](/build/contracts/) lists
 every one.
 
-## The run page
+## In the app
 
-superwitness serves a page for each run at `/runs/superpipeline/{board}/{run}` on its own
-address, for example `/runs/superpipeline/brd_01/run_01`. The page is built into the binary.
-
-It asks for a hub token whose audience is this superwitness (its `SW_PUBLIC_URL`; see
-[With AgentPod and superpipeline](/use/with-agentpod-and-superpipeline/#tokens-callers-present)).
-You paste the token once; the page keeps it in the browser tab's session storage, so it is gone
-when the tab closes. If superwitness answers 401 or 403, the page drops the token and asks
-again.
-
-The page then shows, from the run document:
-
-- the run: its ref, card title, stage, state, agent, and start and end times;
-- **Sources**, with each source's status;
-- **Attempts**: id, station, state, fingerprint digest, harness and version, model, and span
-  count;
-- **Trace**: the trace status, `sampled`, and the trace ids;
-- **Errors**: time, service, message and trace id of each error line;
-- **Verdicts**: kind, source, status, value, judge, judge kind, standard and time, gates and
-  recorded verdicts together;
-- **Cost**: status, input and output tokens, and USD;
-- **Logs**: the run's log count, and a button that loads the first 100 lines, then the next 100.
-
-An empty section reads `none` only when every source behind it answered `ok`. Otherwise it reads
-`unknown` and names the source and its status, because an empty list from a source that did not
-answer is not evidence that there was nothing.
-
-The page does not list spans; read them through the API below.
+Signed in to [the app](/use/the-app/), open a run from the list, or go to
+`/runs/superpipeline/{board}/{run}`. The run view shows the run's title, status and a strip of
+facts (agent, attempts, errors, duration and cost), and tabs for the trace, logs, errors,
+verdicts and attempts. A source that did not answer shows as unavailable in its tab, and a value
+no source supplied reads `unknown`, never 0.
 
 ## The run document
 

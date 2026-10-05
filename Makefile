@@ -23,6 +23,7 @@ dist:
 	  mkdir -p dist/$$name/deploy; \
 	  CGO_ENABLED=0 GOOS=linux GOARCH=$$arch $(GO) build -trimpath -ldflags "-s -w -X main.version=$(VERSION)" -o dist/$$name/superwitness ./cmd/superwitness; \
 	  cp LICENSE NOTICE dist/$$name/; \
+	  cp -R licenses dist/$$name/; \
 	  cp deploy/superwitness.service deploy/env.example dist/$$name/deploy/; \
 	  COPYFILE_DISABLE=1 tar -C dist -czf dist/$$name.tar.gz $$name; \
 	  rm -rf dist/$$name; \
