@@ -1,5 +1,5 @@
 // Package mcp exposes the api operations as MCP tools: get_run, list_run_spans,
-// list_run_logs and record_verdict. The by-attempt lookup is HTTP-only.
+// list_run_logs, list_runs and record_verdict. The by-attempt lookup is HTTP-only.
 package mcp
 
 import (
@@ -27,6 +27,19 @@ type SpansArgs struct {
 	RunID   string `json:"run_id" jsonschema:"superpipeline run id, run_…"`
 	Cursor  string `json:"cursor,omitempty" jsonschema:"next_cursor from the previous page"`
 	Limit   int    `json:"limit,omitempty" jsonschema:"page size from 1 to 500; default 100"`
+}
+
+// ListRunsArgs are GET /v1/runs's query parameters.
+type ListRunsArgs struct {
+	Source       string   `json:"source,omitempty" jsonschema:"only runs from this source, e.g. superpipeline"`
+	Scope        string   `json:"scope,omitempty" jsonschema:"only runs in this scope, e.g. a board id"`
+	Status       []string `json:"status,omitempty" jsonschema:"any of queued, running, waiting, succeeded, failed, cancelled"`
+	Executor     string   `json:"executor,omitempty" jsonschema:"only runs this principal executed (prn_…)"`
+	Since        string   `json:"since,omitempty" jsonschema:"RFC 3339: runs that started, or were first seen, at or after this"`
+	Until        string   `json:"until,omitempty" jsonschema:"RFC 3339: runs that started, or were first seen, before this"`
+	NeedsVerdict bool     `json:"needs_verdict,omitempty" jsonschema:"only finished runs that no verdict names yet"`
+	Cursor       string   `json:"cursor,omitempty" jsonschema:"next_cursor from the previous page"`
+	Limit        int      `json:"limit,omitempty" jsonschema:"page size from 1 to 200; default 50"`
 }
 
 type LogsArgs struct {
@@ -95,6 +108,18 @@ func NewServer(ops *api.Ops, caller auth.Principal, version string) *sdk.Server 
 				return toolError(err), nil, nil
 			}
 			page, err := ops.ListLogs(ctx, ref, in.Cursor, in.Level, in.Limit)
+			if err != nil {
+				return toolError(err), nil, nil
+			}
+			return toolJSON(page), nil, nil
+		})
+
+	sdk.AddTool(s, &sdk.Tool{Name: "list_runs",
+		Description: "Runs reported to superwitness's run registry, newest first, with per-status counts and each run's latest verdict. Filter by source, scope, status, executor, time, or needs_verdict."},
+		func(ctx context.Context, _ *sdk.CallToolRequest, in ListRunsArgs) (*sdk.CallToolResult, any, error) {
+			page, err := ops.ListRuns(ctx, api.RunQuery{Source: in.Source, Scope: in.Scope, Status: in.Status,
+				Executor: in.Executor, Since: in.Since, Until: in.Until, NeedsVerdict: in.NeedsVerdict,
+				Cursor: in.Cursor, Limit: in.Limit})
 			if err != nil {
 				return toolError(err), nil, nil
 			}

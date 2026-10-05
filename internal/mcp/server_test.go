@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/SuperJackfruitLabs/superwitness/internal/auth"
 	"github.com/SuperJackfruitLabs/superwitness/internal/join"
 	"github.com/SuperJackfruitLabs/superwitness/internal/mcp"
+	"github.com/SuperJackfruitLabs/superwitness/internal/runs"
 	"github.com/SuperJackfruitLabs/superwitness/internal/source/fake"
 	"github.com/SuperJackfruitLabs/superwitness/internal/verdicts"
 )
@@ -32,6 +34,17 @@ func mcpServer(t *testing.T) *httptest.Server {
 		Spans: d, Logs: d, Attempts: d,
 		Verdicts: &verdicts.Service{Store: store, Subjects: &join.Subjects{Superpipeline: d.SP, AgentPod: d.AP, Attempts: d}},
 	}
+	rs := runs.NewMemStore(store)
+	started := time.Date(2026, 10, 6, 9, 0, 0, 0, time.UTC)
+	scope, name := "brd_01", "Press"
+	if _, err := rs.Upsert(context.Background(), []runs.Run{
+		{Source: "superpipeline", ExternalRef: "brd_01/run_01", ScopeID: &scope, ScopeName: &name, Status: "succeeded",
+			SourceStatus: "done", StartedAt: &started, ReportedAt: started},
+		{Source: "superpipeline", ExternalRef: "brd_01/run_02", Status: "running", SourceStatus: "in_progress", ReportedAt: started},
+	}, started); err != nil {
+		t.Fatal(err)
+	}
+	ops.Runs = rs
 	mux := http.NewServeMux()
 	mux.Handle("/mcp", auth.Middleware(auth.DevAuthenticator{})(mcp.NewHandler(ops, "test")))
 	srv := httptest.NewServer(mux)
@@ -87,7 +100,7 @@ func TestToolsListed(t *testing.T) {
 		names = append(names, tool.Name)
 	}
 	slices.Sort(names)
-	if strings.Join(names, ",") != "get_run,list_run_logs,list_run_spans,record_verdict" {
+	if strings.Join(names, ",") != "get_run,list_run_logs,list_run_spans,list_runs,record_verdict" {
 		t.Errorf("tools = %v", names)
 	}
 }
@@ -159,5 +172,28 @@ func TestRecordVerdictRoundTrip(t *testing.T) {
 func TestMCPRequiresAuth(t *testing.T) {
 	if _, err := connect(t, mcpServer(t), ""); err == nil {
 		t.Error("connected without a token")
+	}
+}
+
+func TestListRunsTool(t *testing.T) {
+	cs, err := connect(t, mcpServer(t), "dev:prn_agent01:agent")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cs.Close()
+	text, isErr := call(t, cs, "list_runs", map[string]any{"status": []string{"succeeded"}, "needs_verdict": true})
+	var page struct { // runs.Run has no UnmarshalJSON, so read the fields the test needs
+		Runs []struct {
+			ExternalRef string `json:"external_ref"`
+		} `json:"runs"`
+		Counts map[string]int `json:"counts"`
+	}
+	_ = json.Unmarshal([]byte(text), &page)
+	if isErr || len(page.Runs) != 1 || page.Runs[0].ExternalRef != "brd_01/run_01" || page.Counts["running"] != 0 {
+		t.Errorf("list_runs: %s", text)
+	}
+	text, isErr = call(t, cs, "list_runs", map[string]any{"status": []string{"done"}})
+	if !isErr || !strings.Contains(text, "invalid_status") {
+		t.Errorf("bad status: %v %s", isErr, text)
 	}
 }
