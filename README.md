@@ -159,6 +159,7 @@ Then grant the runtime role, connected to the `superwitness` database as `superw
 GRANT USAGE ON SCHEMA public TO superwitness_app;
 GRANT SELECT, INSERT ON TABLE verdicts, rubrics TO superwitness_app;
 GRANT SELECT, INSERT, UPDATE ON TABLE runs TO superwitness_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE sessions TO superwitness_app;
 ```
 
 That is the whole runtime grant set. The tables have no sequences (keys are text), and the
@@ -167,13 +168,14 @@ serve migrates as the runtime role, above). Nothing is
 granted through `ALTER DEFAULT PRIVILEGES`: a later migration that adds a table must add that
 table's grant here. The runtime role cannot update, delete, truncate, alter or drop `verdicts`
 and `rubrics` or their triggers; it can update registry rows in `runs` but never delete them;
+`sessions` holds browser sign-ins and is the one table the runtime role may delete from;
 and it cannot create tables. `TestRuntimeRoleCanAppendButNotRewrite` and
 `TestRuntimeRoleRegistryGrants` run both blocks above verbatim against Postgres 17 and check
 all of this.
 
 Upgrading from 0.0.1: after `superwitness migrate`, run only the new line,
 `GRANT SELECT, INSERT, UPDATE ON TABLE runs TO superwitness_app;`, as the owner. Until then the
-run registry answers 503 `store_unavailable`; verdicts are unaffected.
+run registry answers 503 `store_unavailable`; verdicts are unaffected. Upgrading from 0.0.2, run only `GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE sessions TO superwitness_app;` as the owner after `superwitness migrate`; until then sign-in shows the "Can't reach the database" page.
 
 On Postgres 14 or older, schema `public` belongs to the bootstrap superuser and every role may
 create tables in it. There, after the provision block and before `superwitness migrate`, run

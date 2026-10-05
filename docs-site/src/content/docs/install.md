@@ -191,6 +191,7 @@ Then grant the runtime role, connected to the `superwitness` database as `superw
 GRANT USAGE ON SCHEMA public TO superwitness_app;
 GRANT SELECT, INSERT ON TABLE verdicts, rubrics TO superwitness_app;
 GRANT SELECT, INSERT, UPDATE ON TABLE runs TO superwitness_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE sessions TO superwitness_app;
 ```
 
 That is the whole runtime grant set. The runtime role cannot update, delete, truncate, alter or
@@ -199,7 +200,7 @@ delete them, and cannot create tables. Nothing is granted through `ALTER DEFAULT
 a later migration that adds a table needs a grant of its own.
 
 Upgrading from 0.0.1, run only `GRANT SELECT, INSERT, UPDATE ON TABLE runs TO superwitness_app;`
-as the owner after `superwitness migrate`.
+as the owner after `superwitness migrate`. Upgrading from 0.0.2, run only `GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE sessions TO superwitness_app;` as the owner after `superwitness migrate`; until then sign-in shows the "Can't reach the database" page.
 
 The settings file above keeps the owner's DSN in the service's environment, so the running
 process holds the owner password. To keep it out, leave `SW_MIGRATE_DATABASE_URL` only in your

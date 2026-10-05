@@ -33,7 +33,7 @@ test:
 	$(GO) test $(UNIT_PKGS)
 
 test-integration:
-	$(GO) test -tags integration -count=1 ./internal/verdicts/... ./internal/runs/... ./internal/app/... ./test/integration/...
+	$(GO) test -tags integration -count=1 ./internal/verdicts/... ./internal/runs/... ./internal/session/... ./internal/app/... ./test/integration/...
 
 web:
 	cd web && npm ci && npm test && npm run build
