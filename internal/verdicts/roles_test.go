@@ -92,8 +92,12 @@ func TestRuntimeRoleMigrationPass(t *testing.T) {
 	if err := Migrate(ctx, roles.AppDSN); err != nil {
 		t.Errorf("runtime role, nothing pending: %v", err)
 	}
-	// Make migration 1 pending again; the runtime role cannot apply it.
-	if _, err := owner.Exec(ctx, `DELETE FROM goose_db_version WHERE version_id = 1`); err != nil {
+	// Make the newest migration pending again (its table gone, its version row removed); the
+	// runtime role cannot apply it, because that needs CREATE on the schema.
+	if _, err := owner.Exec(ctx, `DROP TABLE runs`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := owner.Exec(ctx, `DELETE FROM goose_db_version WHERE version_id = 2`); err != nil {
 		t.Fatal(err)
 	}
 	if err := Migrate(ctx, roles.AppDSN); err == nil {
