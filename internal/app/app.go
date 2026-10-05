@@ -177,10 +177,14 @@ func signIn(cfg config.Config, srv *api.Server, w wiring, store *verdicts.Gated,
 	for _, p := range cfg.AllowedPrincipals {
 		allowed[p] = true
 	}
+	origin, err := auth.PublicOrigin(cfg.PublicURL)
+	if err != nil {
+		return nil, fmt.Errorf("sign-in needs SW_PUBLIC_URL's origin: %w", err)
+	}
 	m := &session.Manager{Store: &session.PGStore{Pool: pool, Ready: store.Ready}, Allowed: allowed}
 	cookies := session.Cookies{Secure: strings.HasPrefix(cfg.PublicURL, "https://")}
-	login := &session.Login{HubURL: cfg.HubURL, ClientID: cfg.AppClientID, PublicURL: cfg.PublicURL, Key: key,
-		Tokens: auth.NewVerifier(cfg.HubURL, cfg.PublicURL, hc), Principals: w.principals, Sessions: m,
+	login := &session.Login{HubURL: cfg.HubURL, ClientID: cfg.AppClientID, PublicURL: cfg.PublicURL, Origin: origin,
+		Key: key, Tokens: auth.NewVerifier(cfg.HubURL, cfg.PublicURL, hc), Principals: w.principals, Sessions: m,
 		Cookies: cookies, HTTP: hc, Logger: logger}
 	srv.Sessions, srv.SessionCookie, srv.Login = m, cookies.SessionName(), login.Handler()
 	logger.Info("browser sign-in on", "allowed", len(allowed), "secure_cookies", cookies.Secure)

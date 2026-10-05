@@ -106,3 +106,35 @@ func TestSignInRefusesAnUnusableSessionSecret(t *testing.T) {
 		}
 	}
 }
+
+// Sign-out compares the browser's Origin with SW_PUBLIC_URL's normalised origin, as the gate
+// does for session writes: a public URL written with capitals and the default port must not
+// make every sign-out a 403.
+func TestSignOutAcceptsTheNormalisedPublicOrigin(t *testing.T) {
+	secret := filepath.Join(t.TempDir(), "secret")
+	_ = os.WriteFile(secret, []byte(strings.Repeat("s", 48)), 0o600)
+	a, err := buildOffline(t, map[string]string{"SW_ALLOWED_PRINCIPALS": "prn_human01", "SW_APP_CLIENT_ID": "c",
+		"SW_HUB_URL": "http://hub.example", "SW_SESSION_SECRET_FILE": secret,
+		"SW_PUBLIC_URL": "https://App.Example.com:443"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	logout := func(origin string) int {
+		req := httptest.NewRequest("POST", "/auth/logout", nil)
+		req.RemoteAddr = "127.0.0.1:5000"
+		if origin != "" {
+			req.Header.Set("Origin", origin)
+		}
+		rec := httptest.NewRecorder()
+		a.Handler.ServeHTTP(rec, req)
+		return rec.Code
+	}
+	if code := logout("https://app.example.com"); code != http.StatusNoContent {
+		t.Errorf("sign-out from https://app.example.com: %d; want 204", code)
+	}
+	for _, bad := range []string{"", "https://App.Example.com:443", "https://evil.example"} {
+		if code := logout(bad); code != http.StatusForbidden {
+			t.Errorf("sign-out with Origin %q: %d; want 403", bad, code)
+		}
+	}
+}

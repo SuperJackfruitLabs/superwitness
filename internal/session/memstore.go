@@ -6,10 +6,12 @@ import (
 	"time"
 )
 
-// MemStore mirrors PGStore in memory, for unit tests. Touches counts Touch calls.
+// MemStore mirrors PGStore in memory, for unit tests. Touches counts Touch calls. FailDelete
+// fails only Delete, after Fail is checked.
 type MemStore struct {
-	Fail    error
-	Touches int
+	Fail       error
+	FailDelete error
+	Touches    int
 
 	mu   sync.Mutex
 	rows map[string]Session
@@ -59,6 +61,9 @@ func (m *MemStore) Delete(_ context.Context, id []byte) error {
 	defer m.mu.Unlock()
 	if m.Fail != nil {
 		return m.Fail
+	}
+	if m.FailDelete != nil {
+		return m.FailDelete
 	}
 	delete(m.rows, string(id))
 	return nil

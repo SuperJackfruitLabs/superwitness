@@ -41,6 +41,7 @@ type Login struct {
 	HubURL     string // SW_HUB_URL, the token issuer
 	ClientID   string // SW_APP_CLIENT_ID
 	PublicURL  string // SW_PUBLIC_URL; the callback is {PublicURL}/auth/callback
+	Origin     string // auth.PublicOrigin(SW_PUBLIC_URL): what a sign-out's Origin header must equal
 	Key        []byte // DeriveLoginKey(secret)
 	Tokens     auth.Authenticator
 	Principals auth.PrincipalLookup
@@ -228,6 +229,7 @@ func (l *Login) callback(w http.ResponseWriter, r *http.Request) {
 		l.refuse(w, http.StatusForbidden, "not_allowlisted", pageNotAuthorised, "principal", p.ID)
 		return
 	}
+	l.revokePrevious(r)
 	token, err := l.Sessions.Issue(r.Context(), p)
 	if err != nil {
 		l.refuse(w, http.StatusServiceUnavailable, "store_unavailable", pageDatabase, "principal", p.ID)
@@ -236,6 +238,28 @@ func (l *Login) callback(w http.ResponseWriter, r *http.Request) {
 	l.Cookies.Set(w, l.Cookies.SessionName(), token, AbsoluteTTL)
 	l.log().Info("auth.signin", "principal", p.ID)
 	http.Redirect(w, r, lc.Next, http.StatusSeeOther)
+}
+
+// revokePrevious ends the session the browser already holds, if any, before a new one is
+// issued: signing in again must not leave the old cookie's session alive in the store. A store
+// failure is logged and does not block the sign-in; the old session still expires on its own.
+func (l *Login) revokePrevious(r *http.Request) {
+	c, err := r.Cookie(l.Cookies.SessionName())
+	if err != nil || c.Value == "" {
+		return
+	}
+	s, err := l.Sessions.Revoke(r.Context(), c.Value)
+	switch {
+	case err == nil:
+		l.log().Info("auth.signout", "principal", s.Principal, "reason", "signed_in_again")
+	case errors.Is(err, ErrNotFound):
+	default:
+		attrs := []any{"reason", "signed_in_again"}
+		if s.Principal != "" {
+			attrs = append(attrs, "principal", s.Principal)
+		}
+		l.log().Warn("auth.signout_failed", attrs...)
+	}
 }
 
 var (
@@ -276,7 +300,10 @@ func (l *Login) exchange(ctx context.Context, code, verifier string) (string, er
 }
 
 func (l *Login) logout(w http.ResponseWriter, r *http.Request) {
-	if r.Header.Get("Origin") != l.PublicURL {
+	// Compare against the normalised origin, as the gate does for session writes: the browser
+	// sends https://app.example.com for SW_PUBLIC_URL=https://App.Example.com:443. An empty
+	// Origin field refuses every sign-out rather than accepting a request with no Origin.
+	if o := r.Header.Get("Origin"); l.Origin == "" || o != l.Origin {
 		auth.WriteError(w, http.StatusForbidden, "origin_mismatch", "sign out from the app")
 		return
 	}

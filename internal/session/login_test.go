@@ -57,7 +57,7 @@ func newRig(t *testing.T) *rig {
 	if err != nil {
 		t.Fatal(err)
 	}
-	r.login = &Login{HubURL: r.hub.URL, ClientID: "superwitness-console", PublicURL: sw.URL, Key: key,
+	r.login = &Login{HubURL: r.hub.URL, ClientID: "superwitness-console", PublicURL: sw.URL, Origin: sw.URL, Key: key,
 		Tokens: auth.NewVerifier(r.hub.URL, sw.URL, nil), Principals: people,
 		Sessions: &Manager{Store: r.store, Allowed: map[string]bool{"prn_human01": true}},
 		Logger:   slog.New(slog.NewJSONHandler(r.logs, nil)), Now: func() time.Time { return r.now }}
@@ -361,6 +361,44 @@ func TestLogoutWhenStoreFails(t *testing.T) {
 		t.Error("the cookie survived a failed sign-out")
 	}
 	if !strings.Contains(r.logs.String(), `"msg":"auth.signout_failed"`) || strings.Contains(r.logs.String(), tok) {
+		t.Errorf("logs = %s", r.logs)
+	}
+}
+
+// Signing in again from a browser that already holds a session ends the old one: the old
+// cookie's session must not stay alive in the store.
+func TestSignInAgainRevokesTheOldSession(t *testing.T) {
+	r := newRig(t)
+	r.hub.SignInAs("hubuser_01", "human", "human01@example.com")
+	r.signIn(t, "/")
+	old := r.sessionCookie()
+	if code, _ := r.signIn(t, "/"); code != 200 {
+		t.Fatalf("second sign-in: %d", code)
+	}
+	if r.sessionCookie() == old || r.store.Len() != 1 {
+		t.Errorf("sessions after signing in twice: %d; cookie changed: %v", r.store.Len(), r.sessionCookie() != old)
+	}
+	if _, err := r.login.Sessions.Resolve(context.Background(), old); err == nil {
+		t.Error("the old session still resolves")
+	}
+}
+
+// A store that cannot delete the old session does not block the new sign-in; it is logged
+// without the token.
+func TestSignInAgainWhenTheOldSessionCannotBeRevoked(t *testing.T) {
+	r := newRig(t)
+	r.hub.SignInAs("hubuser_01", "human", "human01@example.com")
+	r.signIn(t, "/")
+	old := r.sessionCookie()
+	r.store.FailDelete = ErrUnavailable
+	if code, body := r.signIn(t, "/"); code != 200 || body != "app:/" {
+		t.Fatalf("second sign-in with a failing delete: %d %q", code, body)
+	}
+	if r.sessionCookie() == old || r.store.Len() != 2 {
+		t.Errorf("sessions %d; new cookie issued: %v", r.store.Len(), r.sessionCookie() != old)
+	}
+	if !strings.Contains(r.logs.String(), `"msg":"auth.signout_failed","reason":"signed_in_again","principal":"prn_human01"`) ||
+		strings.Contains(r.logs.String(), old) {
 		t.Errorf("logs = %s", r.logs)
 	}
 }
