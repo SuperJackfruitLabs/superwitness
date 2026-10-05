@@ -33,6 +33,7 @@ func (s *Server) Handler() http.Handler {
 		r.Get("/v1/runs/superpipeline/{boardId}/{runId}/logs", s.listLogs)
 		r.Get("/v1/runs/by-attempt/{attemptId}", s.byAttempt)
 		r.Post("/v1/verdicts", s.postVerdict)
+		r.Get("/v1/runs", s.getRuns)
 		r.Post("/v1/runs", s.postRuns)
 		if s.MCP != nil {
 			r.Handle("/mcp", s.MCP)

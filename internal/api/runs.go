@@ -5,6 +5,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"strconv"
 
 	"github.com/SuperJackfruitLabs/superwitness/internal/auth"
 	"github.com/SuperJackfruitLabs/superwitness/internal/runs"
@@ -73,4 +74,32 @@ func (s *Server) reportRuns(r *http.Request, caller auth.Principal) ([]ReportRes
 		ae.Index = nil // a single report's errors carry no position
 	}
 	return results, err
+}
+
+func (s *Server) getRuns(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	query := RunQuery{Source: q.Get("source"), Scope: q.Get("scope"), Status: q["status"], Executor: q.Get("executor"),
+		Since: q.Get("since"), Until: q.Get("until"), Cursor: q.Get("cursor")}
+	switch q.Get("needs_verdict") {
+	case "", "false":
+	case "true":
+		query.NeedsVerdict = true
+	default:
+		writeError(w, badRequest("invalid_needs_verdict", "needs_verdict is true or false"))
+		return
+	}
+	if v := q.Get("limit"); v != "" {
+		n, err := strconv.Atoi(v)
+		if err != nil || n < 1 {
+			writeError(w, badRequest("invalid_limit", "limit must be a positive integer"))
+			return
+		}
+		query.Limit = n
+	}
+	page, err := s.Ops.ListRuns(r.Context(), query)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, page)
 }

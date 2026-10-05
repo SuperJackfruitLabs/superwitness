@@ -176,3 +176,118 @@ func TestReportRejectionIsLoggedWithoutSecrets(t *testing.T) {
 		t.Errorf("the audit line carries the token or the body: %s", line)
 	}
 }
+
+type listed struct {
+	Runs []struct {
+		ExternalRef   string          `json:"external_ref"`
+		Ref           string          `json:"ref"`
+		Status        string          `json:"status"`
+		LatestVerdict json.RawMessage `json:"latest_verdict"`
+	} `json:"runs"`
+	NextCursor *string        `json:"next_cursor"`
+	Counts     map[string]int `json:"counts"`
+}
+
+func seedRuns(t *testing.T, r *registry) {
+	t.Helper()
+	var items []string
+	for i, st := range []string{"running", "succeeded", "failed"} {
+		rep := strings.Replace(runReport, "run_01", fmt.Sprintf("run_%02d", i+1), 1)
+		rep = strings.Replace(rep, `"running"`, `"`+st+`"`, 1)
+		rep = strings.Replace(rep, "09:00:00Z", fmt.Sprintf("09:0%d:00Z", i), 1)
+		items = append(items, rep)
+	}
+	if resp, b := do(t, r.srv, "POST", "/v1/runs", reporterTok, `{"runs":[`+strings.Join(items, ",")+`]}`); resp.StatusCode != 200 {
+		t.Fatalf("seed: %d %s", resp.StatusCode, b)
+	}
+}
+
+func getList(t *testing.T, r *registry, query string) listed {
+	t.Helper()
+	resp, b := do(t, r.srv, "GET", "/v1/runs"+query, humanTok, "")
+	if resp.StatusCode != 200 {
+		t.Fatalf("GET /v1/runs%s: %d %s", query, resp.StatusCode, b)
+	}
+	var l listed
+	if err := json.Unmarshal(b, &l); err != nil {
+		t.Fatal(err)
+	}
+	return l
+}
+
+func TestListRuns(t *testing.T) {
+	r := newRegistryServer(t)
+	seedRuns(t, r)
+	l := getList(t, r, "")
+	if len(l.Runs) != 3 || l.Runs[0].ExternalRef != "brd_01/run_03" || l.Runs[0].Ref != "superpipeline:brd_01/run_03" ||
+		l.NextCursor != nil || l.Counts["running"] != 1 || l.Counts["queued"] != 0 || string(l.Runs[0].LatestVerdict) != "null" {
+		t.Errorf("list = %+v", l)
+	}
+	l = getList(t, r, "?status=succeeded&status=failed")
+	if len(l.Runs) != 2 || l.Counts["running"] != 1 {
+		t.Errorf("status filter (counts ignore it) = %+v", l)
+	}
+	l = getList(t, r, "?needs_verdict=true")
+	if len(l.Runs) != 2 {
+		t.Errorf("needs_verdict = %+v", l)
+	}
+	l = getList(t, r, "?limit=2")
+	if len(l.Runs) != 2 || l.NextCursor == nil {
+		t.Fatalf("limit 2 = %+v", l)
+	}
+	l = getList(t, r, "?limit=2&cursor="+*l.NextCursor)
+	if len(l.Runs) != 1 || l.Runs[0].ExternalRef != "brd_01/run_01" || l.NextCursor != nil {
+		t.Errorf("page 2 = %+v", l)
+	}
+	l = getList(t, r, "?limit=5000")
+	if len(l.Runs) != 3 {
+		t.Errorf("an oversized limit is clamped, not refused: %+v", l)
+	}
+	l = getList(t, r, "?since=2026-10-06T09:01:00Z&until=2026-10-06T09:02:00Z")
+	if len(l.Runs) != 1 || l.Runs[0].ExternalRef != "brd_01/run_02" {
+		t.Errorf("since/until = %+v", l)
+	}
+	// An agent token reads too: the audience is the grant.
+	if resp, b := do(t, r.srv, "GET", "/v1/runs", "dev:prn_agent01:agent", ""); resp.StatusCode != 200 {
+		t.Errorf("agent read: %d %s", resp.StatusCode, b)
+	}
+}
+
+func TestListRunsShowsTheLatestVerdict(t *testing.T) {
+	r := newRegistryServer(t)
+	seedRuns(t, r)
+	body := `{"idempotency_key":"k-list","subject_kind":"run","subject_ref":"superpipeline:brd_01/run_01","standard":"stage:review","value":{"decision":"pass"}}`
+	if resp, b := do(t, r.srv, "POST", "/v1/verdicts", humanTok, body); resp.StatusCode != 201 {
+		t.Fatalf("verdict: %d %s", resp.StatusCode, b)
+	}
+	for _, run := range getList(t, r, "").Runs {
+		if run.ExternalRef == "brd_01/run_01" && !strings.Contains(string(run.LatestVerdict), `"decision":"pass"`) {
+			t.Errorf("latest_verdict = %s", run.LatestVerdict)
+		}
+	}
+}
+
+func TestListRunsRefusals(t *testing.T) {
+	r := newRegistryServer(t)
+	for q, code := range map[string]string{
+		"?status=done":           "invalid_status",
+		"?source=Superpipeline":  "invalid_source",
+		"?since=yesterday":       "invalid_time",
+		"?until=2026-10-06":      "invalid_time",
+		"?cursor=garbage":        "invalid_cursor",
+		"?limit=0":               "invalid_limit",
+		"?limit=-1":              "invalid_limit",
+		"?needs_verdict=perhaps": "invalid_needs_verdict",
+	} {
+		if resp, b := do(t, r.srv, "GET", "/v1/runs"+q, humanTok, ""); resp.StatusCode != 400 || errCode(t, b) != code {
+			t.Errorf("%s: %d %s; want 400 %s", q, resp.StatusCode, b, code)
+		}
+	}
+	if resp, _ := do(t, r.srv, "GET", "/v1/runs", "", ""); resp.StatusCode != 401 {
+		t.Errorf("no token: %d", resp.StatusCode)
+	}
+	r.runs.Fail = runs.ErrUnavailable
+	if resp, b := do(t, r.srv, "GET", "/v1/runs", humanTok, ""); resp.StatusCode != 503 || errCode(t, b) != "store_unavailable" {
+		t.Errorf("store down: %d %s", resp.StatusCode, b)
+	}
+}
