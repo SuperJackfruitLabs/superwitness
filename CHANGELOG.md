@@ -3,7 +3,7 @@
 All notable changes to superwitness are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## 0.0.3 — unreleased
+## 0.0.3 — 2026-10-05
 
 superwitness has a web app. People on an allowlist sign in with AgentPod, browse the runs
 sources report, read a run and record verdicts against rubrics.

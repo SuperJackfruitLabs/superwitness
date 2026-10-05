@@ -40,7 +40,7 @@ import ShareMeta from '../components/ShareMeta.astro';
 const SITE = 'https://superwitness.dev';
 const DOCS = 'https://docs.superwitness.dev';
 const REPO = 'https://github.com/SuperJackfruitLabs/superwitness';
-const VERSION = 'v0.0.2'; // the latest release tag; bump with each release
+const VERSION = 'v0.0.3'; // the latest release tag; bump with each release
 const TITLE = 'superwitness — every run, on the record';
 const DESCRIPTION =
   'What your agents did, how your products behaved while they did it, and whether the work was any good, joined on one run. Self-hosted, MIT.';
@@ -58,10 +58,10 @@ const lanes = [
 
 // Must equal the commands on the docs site's install page.
 const install = [
-  `curl -LO ${REPO}/releases/download/v0.0.2/superwitness_0.0.2_linux_amd64.tar.gz`,
-  `curl -LO ${REPO}/releases/download/v0.0.2/SHA256SUMS`,
+  `curl -LO ${REPO}/releases/download/v0.0.3/superwitness_0.0.3_linux_amd64.tar.gz`,
+  `curl -LO ${REPO}/releases/download/v0.0.3/SHA256SUMS`,
   'sha256sum --ignore-missing -c SHA256SUMS',
-  'tar xzf superwitness_0.0.2_linux_amd64.tar.gz',
+  'tar xzf superwitness_0.0.3_linux_amd64.tar.gz',
 ];
 ---
 
