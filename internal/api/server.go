@@ -28,6 +28,8 @@ func (s *Server) Handler() http.Handler {
 	}
 	r.Group(func(r chi.Router) {
 		r.Use(auth.Middleware(s.Auth))
+		r.Get("/v1/rubrics", s.listRubrics)
+		r.Get("/v1/rubrics/{id}/{version}", s.getRubric)
 		r.Get("/v1/runs/superpipeline/{boardId}/{runId}", s.getRun)
 		r.Get("/v1/runs/superpipeline/{boardId}/{runId}/spans", s.listSpans)
 		r.Get("/v1/runs/superpipeline/{boardId}/{runId}/logs", s.listLogs)

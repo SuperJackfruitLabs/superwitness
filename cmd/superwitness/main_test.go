@@ -84,3 +84,26 @@ func TestUsageNamesMigrate(t *testing.T) {
 		t.Errorf("usage = %d %q", code, out)
 	}
 }
+
+func TestRubricAddWarnsOnAnUnrecognisedScale(t *testing.T) {
+	body := t.TempDir() + "/rubric.md"
+	if err := os.WriteFile(body, []byte("text"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	args := func(scale string) []string {
+		return []string{"-id", "press", "-version", "1", "-name", "Press", "-scale", scale, "-body-file", body, "-created-by", "prn_human01"}
+	}
+	noDB := func(string) string { return "" }
+	var stderr strings.Builder
+	if code := rubricAdd(args(`{"stars":5}`), noDB, &stderr); code != 2 { // stops at the missing SW_DATABASE_URL
+		t.Errorf("code = %d", code)
+	}
+	if !strings.Contains(stderr.String(), "rubric-add: warning: the scale matches none of the recognised shapes") {
+		t.Errorf("stderr = %q; want the warning", stderr.String())
+	}
+	stderr.Reset()
+	rubricAdd(args(`{"kind":"decision","options":["pass","fail"]}`), noDB, &stderr)
+	if strings.Contains(stderr.String(), "warning") {
+		t.Errorf("a recognised scale warned: %q", stderr.String())
+	}
+}

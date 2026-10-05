@@ -49,7 +49,7 @@ func newRegistryServer(t *testing.T) *registry {
 		Verdicts:   &verdicts.Service{Store: store, Subjects: &join.Subjects{Superpipeline: d.SP, AgentPod: d.AP, Attempts: d}},
 		Runs:       rs,
 		RunSources: map[string]string{"prn_reporter01": "superpipeline"},
-		Rubrics:    nil,
+		Rubrics:    store,
 		Now:        func() time.Time { return registryNow },
 	}
 	var buf bytes.Buffer
