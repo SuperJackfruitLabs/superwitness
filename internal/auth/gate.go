@@ -3,7 +3,11 @@ package auth
 import (
 	"context"
 	"errors"
+	"fmt"
+	"net"
 	"net/http"
+	"net/url"
+	"strings"
 )
 
 // SessionResolver turns a session cookie's value into the principal it was issued to.
@@ -35,6 +39,49 @@ type Gate struct {
 	Origin   string          // SW_PUBLIC_URL
 }
 
+// NewGate builds a Gate whose Origin is publicURL's origin (see PublicOrigin). With sessions on,
+// a public URL that has no origin is an error: the Origin rule would have nothing to compare.
+func NewGate(bearer Authenticator, sessions SessionResolver, cookie, publicURL string) (Gate, error) {
+	g := Gate{Bearer: bearer, Sessions: sessions, Cookie: cookie}
+	if sessions == nil {
+		return g, nil
+	}
+	o, err := PublicOrigin(publicURL)
+	if err != nil {
+		return Gate{}, fmt.Errorf("sign-in needs SW_PUBLIC_URL's origin: %w", err)
+	}
+	g.Origin = o
+	return g, nil
+}
+
+// PublicOrigin is the Origin a browser sends for pages served from publicURL: lowercase
+// scheme://host[:port], with no path, no trailing slash and no default port.
+func PublicOrigin(publicURL string) (string, error) {
+	u, err := url.Parse(publicURL)
+	if err != nil {
+		return "", fmt.Errorf("%q is not a URL", publicURL)
+	}
+	scheme := strings.ToLower(u.Scheme)
+	if scheme != "http" && scheme != "https" {
+		return "", fmt.Errorf("%q: want an http or https URL", publicURL)
+	}
+	if u.User != nil || u.Hostname() == "" {
+		return "", fmt.Errorf("%q: want scheme://host[:port]", publicURL)
+	}
+	host := strings.ToLower(u.Hostname())
+	if strings.Contains(host, ":") {
+		host = "[" + host + "]"
+	}
+	port := u.Port()
+	if (scheme == "http" && port == "80") || (scheme == "https" && port == "443") {
+		port = ""
+	}
+	if port != "" {
+		host = net.JoinHostPort(strings.Trim(host, "[]"), port)
+	}
+	return scheme + "://" + host, nil
+}
+
 func (g Gate) Middleware(next http.Handler) http.Handler {
 	bearer := Middleware(g.Bearer)(next)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -60,7 +107,8 @@ func (g Gate) Middleware(next http.Handler) http.Handler {
 			unauthorized(w, "the session has ended; sign in again")
 			return
 		}
-		if !SafeMethod(r.Method) && r.Header.Get("Origin") != g.Origin {
+		// An empty Origin on the Gate matches nothing, not a request that sends no Origin.
+		if !SafeMethod(r.Method) && (g.Origin == "" || r.Header.Get("Origin") != g.Origin) {
 			writeAuthError(w, http.StatusForbidden, "origin_mismatch", "a write made with a session must come from "+g.Origin)
 			return
 		}

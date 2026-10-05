@@ -115,3 +115,55 @@ func TestGateWithoutSessionsIsTheOldMiddleware(t *testing.T) {
 		t.Errorf("cookie with sign-in off: %d %s", rec.Code, rec.Body)
 	}
 }
+
+func TestPublicOrigin(t *testing.T) {
+	for in, want := range map[string]string{
+		"https://superwitness.example":            "https://superwitness.example",
+		"https://superwitness.example/":           "https://superwitness.example",
+		"HTTPS://SuperWitness.Example/app/?q=1#f": "https://superwitness.example",
+		"https://superwitness.example:443":        "https://superwitness.example",
+		"http://127.0.0.1:8080":                   "http://127.0.0.1:8080",
+		"http://127.0.0.1:80/":                    "http://127.0.0.1",
+		"https://superwitness.example:8443":       "https://superwitness.example:8443",
+		"http://[2001:DB8::1]:8080":               "http://[2001:db8::1]:8080",
+	} {
+		if got, err := PublicOrigin(in); err != nil || got != want {
+			t.Errorf("PublicOrigin(%q) = %q, %v; want %q", in, got, err, want)
+		}
+	}
+	for _, bad := range []string{"", "superwitness.example", "ftp://superwitness.example", "https://", "https://user@superwitness.example", "://x"} {
+		if got, err := PublicOrigin(bad); err == nil {
+			t.Errorf("PublicOrigin(%q) = %q; want an error", bad, got)
+		}
+	}
+}
+
+func TestNewGateRefusesSessionsWithoutAnOrigin(t *testing.T) {
+	ss := sessions{"good": {ID: "prn_human01", Kind: KindHuman}}
+	if _, err := NewGate(DevAuthenticator{}, ss, "sw_session", ""); err == nil {
+		t.Error("sessions with no public URL: no error")
+	}
+	if _, err := NewGate(DevAuthenticator{}, ss, "sw_session", "not a url"); err == nil {
+		t.Error("sessions with a bad public URL: no error")
+	}
+	g, err := NewGate(DevAuthenticator{}, ss, "sw_session", "HTTPS://SuperWitness.Example/")
+	if err != nil || g.Origin != origin {
+		t.Errorf("NewGate origin = %q, %v; want %q", g.Origin, err, origin)
+	}
+	if g, err := NewGate(DevAuthenticator{}, nil, "", ""); err != nil || g.Sessions != nil {
+		t.Errorf("bearer-only gate: %+v %v", g, err)
+	}
+}
+
+func TestGateWithAnEmptyOriginRefusesEverySessionWrite(t *testing.T) {
+	// A Gate built by hand with no Origin must not let a session write through just because the
+	// request carries no Origin header either.
+	g := Gate{Bearer: DevAuthenticator{}, Sessions: sessions{"good": {ID: "prn_human01", Kind: KindHuman}}, Cookie: "sw_session"}
+	h := g.Middleware(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(204) }))
+	if rec := send(h, "POST", "", "good", ""); rec.Code != 403 || !strings.Contains(rec.Body.String(), "origin_mismatch") {
+		t.Errorf("session write, empty Origin on both sides: %d %s", rec.Code, rec.Body.String())
+	}
+	if rec := send(h, "GET", "", "good", ""); rec.Code != 204 {
+		t.Errorf("session read: %d", rec.Code)
+	}
+}

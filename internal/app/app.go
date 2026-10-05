@@ -102,7 +102,7 @@ func Build(ctx context.Context, cfg config.Config, version string, logger *slog.
 		Rubrics:    store}
 	// api.Server only sends non-API GETs to Web (never /v1/* or /mcp), so an unknown /v1/foo is the API's JSON 404.
 	srv := &api.Server{Ops: ops, Auth: w.authn, Health: &api.Health{Version: version, Pingers: w.pingers},
-		MCP: mcp.NewHandler(ops, version), Web: web.Handler(), Logger: logger}
+		MCP: mcp.NewHandler(ops, version), Web: web.Handler(), Logger: logger, TrustedProxies: cfg.TrustedProxies}
 	handler, err := instrument(srv.Handler(), cfg.PublicURL)
 	if err != nil {
 		pool.Close()
