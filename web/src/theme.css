@@ -142,3 +142,4 @@ pre.body { white-space: pre-wrap; font-family: var(--sans); background: var(--su
 .edge { max-width: 34rem; margin: 12vh auto 0; padding: 0 16px; }
 .edge p { color: var(--muted); }
 a.button { display: inline-block; background: var(--jade); color: var(--jade-ink); padding: 8px 14px; border-radius: 8px; text-decoration: none; font-weight: 600; }
+.drawer:focus { outline: none; }

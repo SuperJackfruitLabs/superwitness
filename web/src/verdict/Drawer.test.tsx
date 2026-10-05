@@ -152,4 +152,65 @@ describe("VerdictDrawer", () => {
     expect(save().disabled).toBe(true);
     expect(host.textContent).toContain("at most 100 spans");
   });
+
+  describe("focus and closing", () => {
+    const key = (k: string, shiftKey = false) =>
+      act(async () => void document.dispatchEvent(new KeyboardEvent("keydown", { key: k, shiftKey, bubbles: true, cancelable: true })));
+    const drawer = () => host.querySelector(".drawer") as HTMLElement;
+    const focusables = () => [...drawer().querySelectorAll<HTMLElement>("button, select, textarea, input, [href], [tabindex]")].filter((e) => !(e as HTMLButtonElement).disabled && e.tabIndex >= 0);
+
+    it("moves focus into the drawer on open and back to the opener on close", async () => {
+      const opener = document.createElement("button");
+      document.body.append(opener);
+      opener.focus();
+      await open();
+      expect(drawer().contains(document.activeElement)).toBe(true);
+      await act(async () => root.render(<div />));
+      expect(document.activeElement).toBe(opener);
+      opener.remove();
+    });
+
+    it("keeps Tab inside the drawer, wrapping at both ends", async () => {
+      await open();
+      const f = focusables();
+      f[f.length - 1].focus();
+      await key("Tab");
+      expect(document.activeElement).toBe(f[0]);
+      f[0].focus();
+      await key("Tab", true);
+      expect(document.activeElement).toBe(f[f.length - 1]);
+    });
+
+    it("pulls focus back in when it is outside the drawer", async () => {
+      const outside = document.createElement("button");
+      document.body.append(outside);
+      await open();
+      outside.focus();
+      await key("Tab");
+      expect(drawer().contains(document.activeElement)).toBe(true);
+      outside.remove();
+    });
+
+    it("closes on Escape and on the backdrop when idle", async () => {
+      const onClose = vi.fn();
+      await open({ onClose });
+      await key("Escape");
+      await click(host.querySelector(".backdrop")!);
+      expect(onClose).toHaveBeenCalledTimes(2);
+    });
+
+    it("does not close on Escape, the backdrop or Cancel while a save is in flight", async () => {
+      let done!: () => void;
+      postJSON.mockReturnValue(new Promise<void>((r) => (done = r)));
+      const onClose = vi.fn();
+      await open({ onClose });
+      await fillDecision();
+      await click(save());
+      await key("Escape");
+      await click(host.querySelector(".backdrop")!);
+      await click(btn("Cancel"));
+      expect(onClose).not.toHaveBeenCalled();
+      await act(async () => done());
+    });
+  });
 });

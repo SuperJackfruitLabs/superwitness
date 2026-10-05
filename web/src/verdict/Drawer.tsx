@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError, postJSON } from "../api";
 import { list } from "../format";
 import { useJSON } from "../hooks";
@@ -37,11 +37,45 @@ export function VerdictDrawer({ doc, evidence, revising, onClose, onRecorded }: 
     setInput(scale ? initialInput(scale, revising?.standard === standard ? revising.value : undefined) : null);
   }, [standard, scale?.kind]);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+  // While a save is in flight the drawer cannot be closed: the verdict may still be recorded, and
+  // the person should see the outcome.
+  const panel = useRef<HTMLElement>(null);
+  const sendingRef = useRef(false);
+  sendingRef.current = sending;
+  const close = useCallback(() => {
+    if (!sendingRef.current) onClose();
   }, [onClose]);
+
+  // Focus moves into the drawer on open, stays inside while it is open, and returns to whatever
+  // opened it on close.
+  useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null;
+    panel.current?.focus();
+    return () => opener?.focus?.();
+  }, []);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") return close();
+      if (e.key !== "Tab" || !panel.current) return;
+      const f = [...panel.current.querySelectorAll<HTMLElement>("a[href], button, input, select, textarea, [tabindex]")].filter(
+        (x) => !(x as HTMLButtonElement).disabled && x.tabIndex >= 0,
+      );
+      if (f.length === 0) return e.preventDefault();
+      const first = f[0];
+      const last = f[f.length - 1];
+      const at = document.activeElement;
+      if (!panel.current.contains(at) || (e.shiftKey && (at === first || at === panel.current))) {
+        e.preventDefault();
+        (e.shiftKey ? last : first).focus();
+      } else if (!e.shiftKey && at === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [close]);
 
   const value = scale && input ? valueOf(scale, input) : null;
   const commentLen = [...comment].length; // the server counts characters, not UTF-16 units
@@ -75,8 +109,8 @@ export function VerdictDrawer({ doc, evidence, revising, onClose, onRecorded }: 
 
   return (
     <>
-      <div className="backdrop" onClick={onClose} />
-      <aside className="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title">
+      <div className="backdrop" onClick={close} />
+      <aside className="drawer" ref={panel} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="drawer-title">
         <h2 id="drawer-title">{revising ? "Revise verdict" : "Record verdict"}</h2>
         <label>
           Subject
@@ -123,7 +157,7 @@ export function VerdictDrawer({ doc, evidence, revising, onClose, onRecorded }: 
           </p>
         )}
         <div className="actions">
-          <button onClick={onClose}>Cancel</button>
+          <button onClick={close} disabled={sending}>Cancel</button>
           <button className="primary" disabled={!ready} onClick={send}>
             {sending ? "Saving…" : "Save verdict"}
           </button>
