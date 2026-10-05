@@ -51,7 +51,7 @@ func (s *Server) reportRuns(r *http.Request, caller auth.Principal) ([]ReportRes
 	if err != nil {
 		return nil, badRequest("invalid_json", "the body could not be read")
 	}
-	batch, _, err := runs.ParseBody(body, s.Ops.now())
+	batch, isBatch, err := runs.ParseBody(body, s.Ops.now())
 	var be *runs.BodyError
 	var ve *runs.ValidationError
 	switch {
@@ -67,5 +67,10 @@ func (s *Server) reportRuns(r *http.Request, caller auth.Principal) ([]ReportRes
 	case err != nil:
 		return nil, badRequest("invalid_json", err.Error())
 	}
-	return s.Ops.ReportRuns(r.Context(), caller, batch)
+	results, err := s.Ops.ReportRuns(r.Context(), caller, batch)
+	var ae *APIError
+	if !isBatch && errors.As(err, &ae) {
+		ae.Index = nil // a single report's errors carry no position
+	}
+	return results, err
 }

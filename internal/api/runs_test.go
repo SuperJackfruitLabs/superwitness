@@ -99,6 +99,9 @@ func TestReportRunRefusals(t *testing.T) {
 		if resp.StatusCode != c.status || errCode(t, b) != c.code {
 			t.Errorf("%s: %d %s; want %d %s", c.name, resp.StatusCode, b, c.status, c.code)
 		}
+		if strings.Contains(string(b), `"index"`) {
+			t.Errorf("%s: a single report's error carries an index: %s", c.name, b)
+		}
 	}
 	if p, _ := r.runs.List(t.Context(), runs.Filter{Limit: 10}); len(p.Runs) != 0 {
 		t.Errorf("a refused report was written: %+v", p.Runs)
@@ -122,8 +125,14 @@ func TestReportBatchIsAllOrNothing(t *testing.T) {
 	// A wrong source on the second item: 403 with its index, and the first is not written either.
 	other := strings.Replace(strings.Replace(runReport, "run_01", "run_02", 1), `"superpipeline"`, `"canary"`, 1)
 	resp, b = do(t, r.srv, "POST", "/v1/runs", reporterTok, `{"runs":[`+runReport+`,`+other+`]}`)
-	_ = json.Unmarshal(b, &e)
-	if resp.StatusCode != 403 || e.Error.Code != "source_not_allowed" || e.Error.Index == nil || *e.Error.Index != 1 {
+	var e2 struct {
+		Error struct {
+			Code  string `json:"code"`
+			Index *int   `json:"index"`
+		} `json:"error"`
+	}
+	_ = json.Unmarshal(b, &e2)
+	if resp.StatusCode != 403 || e2.Error.Code != "source_not_allowed" || e2.Error.Index == nil || *e2.Error.Index != 1 {
 		t.Errorf("%d %s", resp.StatusCode, b)
 	}
 	if p, _ := r.runs.List(t.Context(), runs.Filter{Limit: 10}); len(p.Runs) != 0 {
