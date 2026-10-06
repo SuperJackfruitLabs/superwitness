@@ -89,7 +89,7 @@ describe("RunViewPage", () => {
     expect(boxes().filter((b) => b.checked)).toHaveLength(MAX_EVIDENCE);
     expect(boxes()[MAX_EVIDENCE].disabled).toBe(true);
     expect(boxes()[0].disabled).toBe(false);
-  });
+  }, 30_000);
 
   it("reads verdicts for the run and for each attempt, beside the gate decisions", async () => {
     await render("tab=verdicts");

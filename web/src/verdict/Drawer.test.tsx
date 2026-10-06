@@ -12,7 +12,7 @@ vi.mock("../api", async (orig) => ({
   getJSON: (...a: unknown[]) => getJSON(...a),
   postJSON: (...a: unknown[]) => postJSON(...a),
 }));
-import { MAX_COMMENT, VerdictDrawer } from "./Drawer";
+import { evidenceSummary, MAX_COMMENT, VerdictDrawer } from "./Drawer";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -166,6 +166,27 @@ describe("VerdictDrawer", () => {
     expect(o.textContent).toContain("scale not supported in the app");
   });
 
+  it("counts cited transcript steps beside ticked spans", async () => {
+    const step = { session_id: "acps_a1", seq_from: 3, seq_to: 4 };
+    await open({ evidence: [step] });
+    expect(host.textContent).toContain("1 cited: 1 step from the transcript");
+    await fillDecision();
+    await click(save());
+    expect(postJSON.mock.calls[0][1].evidence_refs).toEqual([step]);
+  });
+
+  it("words the evidence line for every mix", () => {
+    const step = { session_id: "acps_a1", seq_from: 3, seq_to: 4 };
+    expect(evidenceSummary([], 0)).toBe("none; tick spans in the Trace tab or cite steps in the Transcript tab");
+    expect(evidenceSummary(["aaaaaaaaaaaaaaaa"], 0)).toBe("1 span ticked in the Trace tab");
+    expect(evidenceSummary(["aaaaaaaaaaaaaaaa", "bbbbbbbbbbbbbbbb"], 0)).toBe("2 spans ticked in the Trace tab");
+    expect(evidenceSummary([step, step], 0)).toBe("2 cited: 2 steps from the transcript");
+    expect(evidenceSummary(["aaaaaaaaaaaaaaaa", step], 0)).toBe("2 cited: 1 ticked in the Trace tab, 1 step from the transcript");
+    expect(evidenceSummary(["aaaaaaaaaaaaaaaa", step], 1)).toBe("2 cited: 1 from the verdict being revised, 1 step from the transcript");
+    expect(evidenceSummary(["aaaaaaaaaaaaaaaa", "bbbbbbbbbbbbbbbb"], 1)).toBe("2 cited: 1 from the verdict being revised, 1 ticked in the Trace tab");
+    expect(evidenceSummary(["aaaaaaaaaaaaaaaa"], 1)).toBe("1 cited: 1 from the verdict being revised");
+  });
+
   it("a revision keeps the earlier evidence, merged with spans ticked now, without repeats", async () => {
     const range = { session: "ses_01", from: 1, to: 3 };
     const prev = { id: "vrd_1", subject_kind: "run", subject_ref: "canary:run_01", standard: "rubric:ok@1", value: { decision: "pass" }, comment: "", evidence_refs: ["aaaaaaaaaaaaaaaa", range] } as unknown as HistoryVerdict;
@@ -173,6 +194,16 @@ describe("VerdictDrawer", () => {
     expect(host.textContent).toContain("3 cited: 2 from the verdict being revised, 1 ticked in the Trace tab");
     await click(save());
     expect(postJSON.mock.calls[0][1].evidence_refs).toEqual(["aaaaaaaaaaaaaaaa", range, "bbbbbbbbbbbbbbbb"]);
+  });
+
+  it("a step the earlier verdict cites is not cited twice when the database returned its keys reordered", async () => {
+    const stored = { seq_to: 4, seq_from: 3, session_id: "acps_a1" };
+    const prev = { id: "vrd_1", subject_kind: "run", subject_ref: "canary:run_01", standard: "rubric:ok@1", value: { decision: "pass" }, comment: "", evidence_refs: [stored] } as unknown as HistoryVerdict;
+    await open({ revising: prev, evidence: [{ session_id: "acps_a1", seq_from: 3, seq_to: 4 }] });
+    expect(host.textContent).toContain("1 cited: 1 from the verdict being revised");
+    expect(host.textContent).not.toContain("from the transcript");
+    await click(save());
+    expect(postJSON.mock.calls[0][1].evidence_refs).toEqual([stored]);
   });
 
   it("a revision with no new ticks still cites the earlier evidence", async () => {
@@ -190,7 +221,7 @@ describe("VerdictDrawer", () => {
     const prev = { id: "vrd_1", subject_kind: "run", subject_ref: "canary:run_01", standard: "rubric:ok@1", value: { decision: "pass" }, comment: "", evidence_refs: old } as unknown as HistoryVerdict;
     await open({ revising: prev, evidence: now });
     expect(save().disabled).toBe(true);
-    expect(host.textContent).toContain("at most 100 spans, the revised verdict's 60 included");
+    expect(host.textContent).toContain("at most 100 spans and steps, the revised verdict's 60 included");
   });
 
   it("refuses a comment over the limit and shows a counter", async () => {
@@ -209,7 +240,7 @@ describe("VerdictDrawer", () => {
     await open({ evidence: Array.from({ length: 101 }, (_, i) => i.toString(16).padStart(16, "0")) });
     await fillDecision();
     expect(save().disabled).toBe(true);
-    expect(host.textContent).toContain("at most 100 spans");
+    expect(host.textContent).toContain("at most 100 spans and steps");
   });
 
   describe("focus and closing", () => {

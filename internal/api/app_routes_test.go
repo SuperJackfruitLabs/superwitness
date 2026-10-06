@@ -54,7 +54,7 @@ func newAppServerWith(t *testing.T, limits *api.Limits, mutate func(*api.Server)
 	ops := &api.Ops{
 		Join: &join.Joiner{Superpipeline: d.SP, AgentPod: d.AP, Traces: d.Traces, Logs: d.Logs, Errors: d.Errors,
 			Verdicts: store, Principals: d},
-		Spans: d, Logs: d, Attempts: d,
+		Spans: d, Logs: d, Attempts: d, Transcripts: d,
 		Verdicts:   &verdicts.Service{Store: store, Subjects: &join.Subjects{Superpipeline: d.SP, AgentPod: d.AP, Attempts: d}},
 		Runs:       rs,
 		RunSources: map[string]string{"prn_reporter01": "superpipeline"},

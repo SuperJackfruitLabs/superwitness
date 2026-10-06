@@ -80,10 +80,10 @@ func TestRegistriesAreNotEmpty(t *testing.T) {
 		t.Fatalf("env registry looks wrong: %v", env)
 	}
 	if r := realRoute(t); !r("/v1/verdicts") || !r("/v1/runs/by-attempt/x") || !r("/v1/runs") ||
-		!r("/v1/rubrics/press/1") || r("/v1/nope") {
+		!r("/v1/runs/superpipeline/brd_01/run_01/transcript") || !r("/v1/rubrics/press/1") || r("/v1/nope") {
 		t.Fatal("route registry looks wrong")
 	}
-	if tools := realTools(t); len(tools) != 5 || !tools["record_verdict"] || !tools["list_runs"] {
+	if tools := realTools(t); len(tools) != 6 || !tools["record_verdict"] || !tools["list_runs"] || !tools["get_transcript"] {
 		t.Fatalf("tool registry looks wrong: %v", tools)
 	}
 }
@@ -91,7 +91,8 @@ func TestRegistriesAreNotEmpty(t *testing.T) {
 func TestRouteRuleAcceptsConcreteAndPlaceholderPaths(t *testing.T) {
 	r := realRoute(t)
 	for _, p := range []string{"/v1/runs/superpipeline/{board}/{run}", "/v1/runs/superpipeline/brd_01/run_01/spans",
-		"/v1/runs/superpipeline/{board}/{run}/logs", "/v1/runs/by-attempt/{attempt}"} {
+		"/v1/runs/superpipeline/{board}/{run}/logs", "/v1/runs/by-attempt/{attempt}",
+		"/v1/runs/superpipeline/{board}/{run}/transcript", "/v1/runs/superpipeline/{board}/{run}/transcript/items/{seq_from}"} {
 		if !r(p) {
 			t.Errorf("%s should match a registered route", p)
 		}

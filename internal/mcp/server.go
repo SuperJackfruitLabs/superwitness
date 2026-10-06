@@ -1,5 +1,6 @@
 // Package mcp exposes the api operations as MCP tools: get_run, list_run_spans,
-// list_run_logs, list_runs and record_verdict. The by-attempt lookup is HTTP-only.
+// list_run_logs, list_runs, record_verdict and get_transcript. The by-attempt lookup and the
+// transcript item route are HTTP-only.
 package mcp
 
 import (
@@ -49,6 +50,17 @@ type LogsArgs struct {
 	Cursor  string `json:"cursor,omitempty" jsonschema:"next_cursor from the previous page"`
 	Level   string `json:"level,omitempty" jsonschema:"debug, info, warn or error; empty for all"`
 	Limit   int    `json:"limit,omitempty" jsonschema:"page size from 1 to 500; default 100"`
+}
+
+// TranscriptArgs are the transcript route's parameters. An MCP caller is never a browser session,
+// so it needs a token granted transcripts:read.
+type TranscriptArgs struct {
+	BoardID   string `json:"board_id" jsonschema:"superpipeline board id, brd_…"`
+	RunID     string `json:"run_id" jsonschema:"superpipeline run id, run_…"`
+	AttemptID string `json:"attempt_id,omitempty" jsonschema:"the attempt to read, attempt_…; required when the run has more than one"`
+	SeqFrom   *int64 `json:"seq_from,omitempty" jsonschema:"first session seq to read; default the attempt's first"`
+	SeqTo     *int64 `json:"seq_to,omitempty" jsonschema:"last session seq to read; default the attempt's last"`
+	Cursor    string `json:"cursor,omitempty" jsonschema:"next_cursor from the previous page; send the same seq_from and seq_to with it"`
 }
 
 // VerdictArgs is the POST /v1/verdicts body. The judge is always the caller.
@@ -138,6 +150,21 @@ func NewServer(ops *api.Ops, caller auth.Principal, version string) *sdk.Server 
 				return toolError(err), nil, nil
 			}
 			return toolJSON(v), nil, nil
+		})
+
+	sdk.AddTool(s, &sdk.Tool{Name: "get_transcript",
+		Description: "One page (up to 200 items) of an attempt's session transcript: prompts, messages, reasoning, tool calls with input and output, permissions, state and errors, redacted by the hub. Needs a token granted transcripts:read."},
+		func(ctx context.Context, _ *sdk.CallToolRequest, in TranscriptArgs) (*sdk.CallToolResult, any, error) {
+			ref, err := runRef("", in.BoardID, in.RunID)
+			if err != nil {
+				return toolError(err), nil, nil
+			}
+			body, err := ops.GetTranscript(ctx, api.Caller{Principal: caller}, api.TranscriptRequest{Ref: ref,
+				AttemptID: in.AttemptID, SeqFrom: in.SeqFrom, SeqTo: in.SeqTo, Cursor: in.Cursor})
+			if err != nil {
+				return toolError(err), nil, nil
+			}
+			return toolJSON(body), nil, nil
 		})
 	return s
 }

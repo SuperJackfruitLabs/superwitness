@@ -1,13 +1,14 @@
 import { duration, list } from "../format";
 import type { Doc, Span } from "../types";
 
-export const TABS = ["trace", "logs", "errors", "verdicts", "attempts"] as const;
+export const TABS = ["trace", "transcript", "logs", "errors", "verdicts", "attempts"] as const;
 export type Tab = (typeof TABS)[number];
 
-export const TAB_LABEL: Record<Tab, string> = { trace: "Trace", logs: "Logs", errors: "Errors", verdicts: "Verdicts", attempts: "Attempts" };
+export const TAB_LABEL: Record<Tab, string> = { trace: "Trace", transcript: "Transcript", logs: "Logs", errors: "Errors", verdicts: "Verdicts", attempts: "Attempts" };
 
 // The source each tab reads; when it did not answer, the tab says so instead of showing nothing.
-export const TAB_SOURCE: Record<Tab, string> = { trace: "traces", logs: "logs", errors: "errors", verdicts: "verdicts", attempts: "agentpod" };
+// The Transcript reads its attempts from the hub ledger.
+export const TAB_SOURCE: Record<Tab, string> = { trace: "traces", transcript: "agentpod", logs: "logs", errors: "errors", verdicts: "verdicts", attempts: "agentpod" };
 
 export function tabOf(v: string | null): Tab {
   return (TABS as readonly string[]).includes(v ?? "") ? (v as Tab) : "trace";

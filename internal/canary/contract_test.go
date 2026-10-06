@@ -115,8 +115,8 @@ func TestContractGetRunDecodesWS5Document(t *testing.T) {
 	if a.ID != fake.DevAttempt || a.Station != "stn_01" || a.State != "completed" {
 		t.Errorf("attempt = %+v", a)
 	}
-	if n, ok := a.SpanCount(); !ok || n != 2 {
-		t.Errorf("span_count = %s, want 2 (the attempt and turn spans)", a.SpanCountRaw)
+	if n, ok := a.SpanCount(); !ok || n != 5 {
+		t.Errorf("span_count = %s, want 5 (the attempt, turn, two tool call and permission spans)", a.SpanCountRaw)
 	}
 	fp := a.Fingerprint
 	if fp.Harness != "hermes" || fp.HarnessVersion != "unknown" || fp.Model != "unknown" || fp.ReportedBy != "hub" {

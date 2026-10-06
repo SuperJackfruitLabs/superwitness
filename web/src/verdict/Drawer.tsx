@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError, postJSON } from "../api";
 import { list } from "../format";
 import { useJSON } from "../hooks";
-import type { Doc, HistoryVerdict, Rubric } from "../types";
+import type { Doc, EvidenceRef, HistoryVerdict, Rubric } from "../types";
+import { refKey } from "../run/transcript";
 import { refusalText } from "./messages";
 import { initialInput, type Input, supported, valueOf } from "./scale";
 import { ScaleInput } from "./ScaleInput";
@@ -14,11 +15,11 @@ export const MAX_EVIDENCE = 100;
 // idempotency key is made when the drawer opens, so a double click or a retry records one verdict.
 // citedEvidence is what a verdict cites: when revising, the earlier verdict's evidence first, then
 // any spans ticked now, without repeats. More than MAX_EVIDENCE blocks the save.
-export function citedEvidence(ticked: string[], revising?: HistoryVerdict): unknown[] {
+export function citedEvidence(ticked: EvidenceRef[], revising?: HistoryVerdict): unknown[] {
   const out: unknown[] = [];
   const seen = new Set<string>();
   for (const ref of [...(Array.isArray(revising?.evidence_refs) ? revising.evidence_refs : []), ...ticked]) {
-    const k = JSON.stringify(ref);
+    const k = refKey(ref);
     if (!seen.has(k)) {
       seen.add(k);
       out.push(ref);
@@ -27,9 +28,22 @@ export function citedEvidence(ticked: string[], revising?: HistoryVerdict): unkn
   return out;
 }
 
+// evidenceSummary is the drawer's evidence line: what is cited, and where it came from.
+export function evidenceSummary(evidence: unknown[], kept: number): string {
+  if (evidence.length === 0) return "none; tick spans in the Trace tab or cite steps in the Transcript tab";
+  const added = evidence.slice(kept);
+  const spans = added.filter((r) => typeof r === "string").length;
+  const steps = added.length - spans;
+  const stepText = `${steps} step${steps === 1 ? "" : "s"} from the transcript`;
+  const parts = [...(spans > 0 ? [`${spans} ticked in the Trace tab`] : []), ...(steps > 0 ? [stepText] : [])];
+  if (kept > 0) return [`${evidence.length} cited: ${kept} from the verdict being revised`, ...parts].join(", ");
+  if (steps === 0) return `${spans} span${spans === 1 ? "" : "s"} ticked in the Trace tab`;
+  return `${evidence.length} cited: ${parts.join(", ")}`;
+}
+
 export function VerdictDrawer({ doc, evidence: ticked, revising, onClose, onRecorded }: {
   doc: Doc;
-  evidence: string[];
+  evidence: EvidenceRef[];
   revising?: HistoryVerdict;
   onClose: () => void;
   onRecorded: () => void;
@@ -162,15 +176,11 @@ export function VerdictDrawer({ doc, evidence: ticked, revising, onClose, onReco
         </label>
         <p className="muted">
           Evidence:{" "}
-          {evidence.length === 0
-            ? "none; tick spans in the Trace tab to cite them"
-            : kept > 0
-              ? `${evidence.length} cited: ${kept} from the verdict being revised${evidence.length > kept ? `, ${evidence.length - kept} ticked in the Trace tab` : ""}`
-              : `${evidence.length} span${evidence.length === 1 ? "" : "s"} ticked in the Trace tab`}
+          {evidenceSummary(evidence, kept)}
         </p>
         {tooMuchEvidence && (
           <p className="refusal" role="alert">
-            A verdict cites at most {MAX_EVIDENCE} spans{kept > 0 ? `, the revised verdict's ${kept} included` : ""}; untick some in the Trace tab
+            A verdict cites at most {MAX_EVIDENCE} spans and steps{kept > 0 ? `, the revised verdict's ${kept} included` : ""}; untick spans in the Trace tab or uncite steps in the Transcript tab
           </p>
         )}
         {refusal && (

@@ -144,3 +144,25 @@ pre.body { white-space: pre-wrap; font-family: var(--sans); background: var(--su
 a.button { display: inline-block; background: var(--jade); color: var(--jade-ink); padding: 8px 14px; border-radius: 8px; text-decoration: none; font-weight: 600; }
 .drawer:focus { outline: none; }
 article pre { overflow-x: auto; max-width: 100%; }
+
+.waterfall .span-name { background: none; border: 0; color: inherit; font: inherit; text-align: left; cursor: pointer; padding-top: 0; padding-bottom: 0; padding-right: 0; }
+.waterfall .span-name[aria-pressed="true"] { color: var(--jade); }
+
+/* The span pane: a right-hand panel, the whole screen on a phone. */
+.pane { position: fixed; top: 0; right: 0; bottom: 0; width: min(520px, 100vw); background: var(--surface); border-left: 1px solid var(--line); z-index: 9; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; box-sizing: border-box; }
+.pane-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.pane h2 { margin: 0; font-size: 18px; }
+.pane h3, .transcript h4 { margin: 8px 0 0; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+pre.value { white-space: pre-wrap; word-break: break-word; font-family: var(--mono); font-size: 12px; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 8px; margin: 4px 0; max-height: 360px; overflow: auto; }
+@media (max-width: 759px) {
+  .pane { left: 0; width: auto; border-left: none; } /* left and right 0: the viewport's width, never a scrollbar's more */
+}
+
+/* The Transcript tab. */
+.picker { display: inline-flex; gap: 8px; align-items: center; margin-bottom: 12px; font-size: 13px; color: var(--muted); }
+.transcript { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.transcript > li { padding: 10px 12px; border: 1px solid var(--line); border-left: 3px solid var(--line); border-radius: 8px; background: var(--surface); min-width: 0; }
+.transcript > li.failed { border-left-color: var(--bad); }
+.transcript > li[aria-current="true"] { outline: 2px solid var(--jade); outline-offset: 1px; }
+.card-head { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; font-size: 13px; margin-bottom: 6px; }
+.transcript summary { cursor: pointer; font-size: 13px; }

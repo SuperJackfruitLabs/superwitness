@@ -43,6 +43,7 @@ type App struct {
 type wiring struct {
 	sp, ap, tr, lg, er source.Source
 	spans              source.SpanLister
+	transcripts        source.TranscriptReader
 	logLister          source.LogLister
 	attempts           source.AttemptResolver
 	principals         auth.PrincipalLookup
@@ -102,11 +103,13 @@ func Build(ctx context.Context, cfg config.Config, version string, logger *slog.
 	// Every bearer token names its caller by prn_ id, whatever the hub put in sub.
 	authn := auth.Resolving{Inner: w.authn, Principals: w.principals}
 	ops := &api.Ops{Join: joiner, Spans: w.spans, Logs: w.logLister, Attempts: w.attempts, Timeout: cfg.SourceTimeout,
-		Verdicts:   &verdicts.Service{Store: store, Subjects: subjects},
-		Runs:       &runs.PGStore{Pool: pool, Ready: store.Ready}, // same database, same migration gate
-		RunSources: cfg.RunSources,
-		Rubrics:    store,
-		History:    store}
+		Verdicts:    &verdicts.Service{Store: store, Subjects: subjects},
+		Runs:        &runs.PGStore{Pool: pool, Ready: store.Ready}, // same database, same migration gate
+		RunSources:  cfg.RunSources,
+		Rubrics:     store,
+		History:     store,
+		Transcripts: w.transcripts,
+		Logger:      logger}
 	// One trust list for the edge guard and for the rate limits' client IP.
 	trusted := cfg.TrustedProxies
 	if len(trusted) == 0 {
@@ -225,7 +228,7 @@ func fakeWiring() (wiring, error) {
 		return wiring{}, err
 	}
 	return wiring{sp: d.SP, ap: d.AP, tr: d.Traces, lg: d.Logs, er: d.Errors,
-		spans: d, logLister: d, attempts: d, principals: d, authn: auth.DevAuthenticator{},
+		spans: d, transcripts: d, logLister: d, attempts: d, principals: d, authn: auth.DevAuthenticator{},
 		pingers: map[string]source.Pinger{"superpipeline": d, "agentpod": d, "traces": d, "logs": d}}, nil
 }
 
@@ -249,7 +252,7 @@ func realWiring(cfg config.Config, hc *http.Client) (wiring, error) {
 	lc := logs.NewClient(cfg.LogsURL, logsBearer, hc)
 	lg := logs.New(lc)
 	return wiring{sp: sp, ap: ap, tr: tr, lg: lg, er: errsrc.New(lc),
-		spans: tr, logLister: lg, attempts: ap, principals: ap,
+		spans: tr, transcripts: ap, logLister: lg, attempts: ap, principals: ap,
 		authn:   auth.NewVerifier(cfg.HubURL, cfg.PublicURL, hc),
 		pingers: map[string]source.Pinger{"superpipeline": sp, "agentpod": ap, "traces": tr, "logs": lg}}, nil
 }

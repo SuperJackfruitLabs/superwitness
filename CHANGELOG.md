@@ -3,6 +3,35 @@
 All notable changes to superwitness are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 0.0.4 — unreleased
+
+Transcripts: what an agent was asked, what it sent to each tool and what came back, read live
+from AgentPod for one attempt, redacted there, and never stored, logged or cached here.
+
+### Added
+
+- `GET /v1/runs/superpipeline/{board}/{run}/transcript` (one page of an attempt's transcript, 200
+  steps) and `GET /v1/runs/superpipeline/{board}/{run}/transcript/items/{seq_from}` (one step
+  whole, with an optional `seq_from`/`seq_to` range the step was shown in). A signed-in person may
+  read them; a bearer token needs `transcripts:read`. Answers pass AgentPod's body through with
+  `attempt_id` added and carry `Cache-Control: no-store`. New codes: `transcripts_forbidden`,
+  `attempt_required`, `range_outside_attempt`, `invalid_seq`, `session_not_found`,
+  `item_too_large`, `hub_refused`, `source_unavailable`.
+- The MCP tool `get_transcript`.
+- In the app: a span's details in a pane (timing, status, attributes, log lines, and the request
+  and response where the span maps to the session); a Transcript tab between Trace and Logs;
+  links between the two; citing a step as verdict evidence, and a verdict's link back to it. The
+  address keeps the tab, span, attempt and seq.
+- Every transcript read sends `X-On-Behalf-Of` with the caller's principal, and leaves one
+  `transcript.read` log line without content.
+
+### Upgrading
+
+- superwitness's service credential at AgentPod needs `transcripts:read` beside `evidence:read`.
+  Without it transcript reads answer 502 `hub_refused`; everything else works as before.
+- An AgentPod hub without the transcript routes answers 503 `source_unavailable` for them.
+- No migration and no new setting.
+
 ## 0.0.3 — 2026-10-05
 
 superwitness has a web app. People on an allowlist sign in with AgentPod, browse the runs

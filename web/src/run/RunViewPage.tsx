@@ -5,10 +5,11 @@ import { list } from "../format";
 import { useJSON } from "../hooks";
 import { Link } from "../router";
 import { StatusPill } from "../runs/RunCard";
-import type { Doc, HistoryVerdict, Me } from "../types";
+import type { Doc, EvidenceRef, HistoryVerdict, Me } from "../types";
 import { VerdictDrawer } from "../verdict/Drawer";
 import { facts, TAB_LABEL, TAB_SOURCE, TABS, type Tab, tabOf } from "./facts";
 import { AttemptsPanel, ErrorsPanel, type Failure, LogsPanel, TracePanel, Unavailable, VerdictList } from "./Panels";
+import { TranscriptPanel } from "./TranscriptPanel";
 
 export function Facts({ doc }: { doc: Doc }) {
   return (
@@ -90,8 +91,12 @@ function RunView({ board, run, query, me }: { board: string; run: string; query:
   const base = `/runs/superpipeline/${board}/${run}`;
   const api = `/v1${base}`;
   const doc = useJSON<Doc>(api);
-  const tab = tabOf(new URLSearchParams(query).get("tab"));
-  const [evidence, setEvidence] = useState<string[]>([]);
+  const params = new URLSearchParams(query);
+  const tab = tabOf(params.get("tab"));
+  const selectedSpan = params.get("span");
+  const selectedAttempt = params.get("attempt");
+  const selectedSeq = params.get("seq");
+  const [evidence, setEvidence] = useState<EvidenceRef[]>([]);
   const [drawer, setDrawer] = useState<{ revising?: HistoryVerdict } | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const history = useHistory(doc.data, reloadKey);
@@ -107,14 +112,16 @@ function RunView({ board, run, query, me }: { board: string; run: string; query:
   if (sources[source] !== "ok") {
     panel = <Unavailable source={source} status={sources[source]} />;
   } else if (tab === "trace") {
-    panel = <TracePanel base={api} evidence={evidence} setEvidence={setEvidence} />;
+    panel = <TracePanel base={api} page={base} attempts={list(d.attempts)} selected={selectedSpan} evidence={evidence} setEvidence={setEvidence} />;
+  } else if (tab === "transcript") {
+    panel = <TranscriptPanel api={api} page={base} doc={d} attempt={selectedAttempt} seq={selectedSeq} evidence={evidence} setEvidence={setEvidence} />;
   } else if (tab === "logs") {
     panel = <LogsPanel base={api} />;
   } else if (tab === "errors") {
     panel = <ErrorsPanel doc={d} />;
   } else if (tab === "verdicts") {
     panel = (
-      <VerdictList verdicts={history.verdicts} failures={history.failures} loading={history.loading} onRetry={history.retry} gates={list<Doc>(d.verdicts).filter((v) => v.kind === "gate")} me={me} onRevise={(v) => setDrawer({ revising: v })} />
+      <VerdictList attempts={list(d.attempts)} page={base} verdicts={history.verdicts} failures={history.failures} loading={history.loading} onRetry={history.retry} gates={list<Doc>(d.verdicts).filter((v) => v.kind === "gate")} me={me} onRevise={(v) => setDrawer({ revising: v })} />
     );
   } else {
     panel = <AttemptsPanel doc={d} />;

@@ -86,6 +86,12 @@ The sidebar's dot is green when every source answers `/health`, amber otherwise;
 The app follows the system's light or dark setting; the toggle in the sidebar overrides it for
 this browser. Below 760 px wide the sidebar folds into a menu.
 
+## What an agent did
+
+Click a span's name in the Trace tab for its details, including the request and response where
+the span maps to the agent's session; the Transcript tab reads the attempt as a conversation.
+Either can be cited in a verdict. [Transcripts](/use/transcripts/) has the details.
+
 ## Recording a verdict
 
 **Record verdict** opens a drawer. Choose the subject (the run, or one of its attempts) and a
