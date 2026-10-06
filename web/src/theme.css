@@ -157,3 +157,12 @@ pre.value { white-space: pre-wrap; word-break: break-word; font-family: var(--mo
 @media (max-width: 759px) {
   .pane { left: 0; width: auto; border-left: none; } /* left and right 0: the viewport's width, never a scrollbar's more */
 }
+
+/* The Transcript tab. */
+.picker { display: inline-flex; gap: 8px; align-items: center; margin-bottom: 12px; font-size: 13px; color: var(--muted); }
+.transcript { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.transcript > li { padding: 10px 12px; border: 1px solid var(--line); border-left: 3px solid var(--line); border-radius: 8px; background: var(--surface); min-width: 0; }
+.transcript > li.failed { border-left-color: var(--bad); }
+.transcript > li[aria-current="true"] { outline: 2px solid var(--jade); outline-offset: 1px; }
+.card-head { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; font-size: 13px; margin-bottom: 6px; }
+.transcript summary { cursor: pointer; font-size: 13px; }
