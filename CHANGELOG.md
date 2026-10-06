@@ -3,7 +3,7 @@
 All notable changes to superwitness are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## 0.0.4 — unreleased
+## 0.0.4 — 2026-10-06
 
 Transcripts: what an agent was asked, what it sent to each tool and what came back, read live
 from AgentPod for one attempt, redacted there, and never stored, logged or cached here.

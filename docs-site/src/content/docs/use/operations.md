@@ -28,7 +28,7 @@ monitor can tell "superwitness is down" from "a source is down". Each source's s
 body:
 
 ```json
-{"sources":{"agentpod":"ok","logs":"ok","superpipeline":"ok","traces":"ok","verdicts":"ok"},"status":"ok","version":"v0.0.3"}
+{"sources":{"agentpod":"ok","logs":"ok","superpipeline":"ok","traces":"ok","verdicts":"ok"},"status":"ok","version":"v0.0.4"}
 ```
 
 - `status` is always `ok`, and `version` is the running release.
