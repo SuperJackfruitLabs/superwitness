@@ -370,6 +370,3 @@ func (s *Server) getTranscriptItem(w http.ResponseWriter, r *http.Request) {
 	}
 	writeRaw(w, body)
 }
-
-// auditTranscript writes the read's transcript.read line. A no-op until the audit lands.
-func (o *Ops) auditTranscript(rd transcriptRead, err error) {}
