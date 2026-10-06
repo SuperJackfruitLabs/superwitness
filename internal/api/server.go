@@ -75,6 +75,8 @@ func (s *Server) Build() (http.Handler, error) {
 		r.Get("/v1/runs/superpipeline/{boardId}/{runId}", s.getRun)
 		r.Get("/v1/runs/superpipeline/{boardId}/{runId}/spans", s.listSpans)
 		r.Get("/v1/runs/superpipeline/{boardId}/{runId}/logs", s.listLogs)
+		r.Get("/v1/runs/superpipeline/{boardId}/{runId}/transcript", s.getTranscript)
+		r.Get("/v1/runs/superpipeline/{boardId}/{runId}/transcript/items/{seqFrom}", s.getTranscriptItem)
 		r.Get("/v1/runs/by-attempt/{attemptId}", s.byAttempt)
 		r.Post("/v1/verdicts", s.postVerdict)
 		r.Get("/v1/verdicts", s.verdictHistory)

@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -18,17 +19,19 @@ const (
 )
 
 type Ops struct {
-	Join       *join.Joiner
-	Spans      source.SpanLister
-	Logs       source.LogLister
-	Attempts   source.AttemptResolver
-	Verdicts   *verdicts.Service
-	Timeout    time.Duration
-	Runs       runs.Store
-	RunSources map[string]string // SW_RUN_SOURCES: reporting principal -> its one source
-	Rubrics    verdicts.RubricReader
-	History    verdicts.HistoryReader
-	Now        func() time.Time
+	Join        *join.Joiner
+	Spans       source.SpanLister
+	Logs        source.LogLister
+	Attempts    source.AttemptResolver
+	Verdicts    *verdicts.Service
+	Timeout     time.Duration
+	Runs        runs.Store
+	RunSources  map[string]string // SW_RUN_SOURCES: reporting principal -> its one source
+	Rubrics     verdicts.RubricReader
+	History     verdicts.HistoryReader
+	Now         func() time.Time
+	Transcripts source.TranscriptReader // the hub's session content; nil answers source_unavailable
+	Logger      *slog.Logger            // transcript.read audit lines; nil discards them
 }
 
 func (o *Ops) now() time.Time {
