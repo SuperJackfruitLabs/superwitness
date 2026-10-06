@@ -13,10 +13,17 @@ All notable changes to superwitness are recorded here. The format follows
   `sub` is used as the `prn_` id with no hub lookup. Grant scopes are read only from agent and
   service tokens. A token whose workspace has not enabled superwitness is answered
   `403 {"error":"product_not_enabled","org":"org_…"}`.
+- Under the organization plane, browser sign-in goes through the plane's OAuth 2.1 authorization
+  code flow with PKCE as a public client, with `resource` set to `SW_PUBLIC_URL`. The `sub` is
+  trusted as the `prn_` id. New sign-in refusal reasons: `product_not_enabled` and
+  `issuer_unavailable`.
+- Under the organization plane, superwitness gets its service tokens from the plane, one for each
+  product it reads, with that product's URL as the audience.
 
 ### Changed
 
 - The 401 message for a missing token reads `a bearer token is required`.
+- The app's sign-in link reads "Sign in".
 
 ## 0.0.4 — 2026-10-06
 

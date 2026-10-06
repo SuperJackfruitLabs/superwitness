@@ -8,7 +8,7 @@ const view = (e: ApiError) => renderToString(<ErrorView error={e} next="/runs?x=
 describe("ErrorView", () => {
   it("sends a 401 to sign in, remembering where the person was", () => {
     const html = view(new ApiError(401, "unauthenticated", "x"));
-    expect(html).toContain("Sign in with AgentPod");
+    expect(html).toContain(">Sign in<");
     expect(html).toContain("/auth/login?next=%2Fruns%3Fx%3D1");
   });
   it("says not authorised", () => {

@@ -195,9 +195,21 @@ func signIn(cfg config.Config, srv *api.Server, w wiring, store *verdicts.Gated,
 	}
 	m := &session.Manager{Store: &session.PGStore{Pool: pool, Ready: store.Ready}, Allowed: allowed}
 	cookies := session.Cookies{Secure: strings.HasPrefix(cfg.PublicURL, "https://")}
-	login := &session.Login{HubURL: cfg.HubURL, ClientID: cfg.AppClientID, PublicURL: cfg.PublicURL, Origin: origin,
-		Key: key, Tokens: auth.NewVerifier(cfg.HubURL, cfg.PublicURL, hc), Principals: w.principals, Sessions: m,
-		Cookies: cookies, HTTP: hc, Logger: logger}
+	login := &session.Login{ClientID: cfg.AppClientID, PublicURL: cfg.PublicURL, Origin: origin, Key: key,
+		Sessions: m, Cookies: cookies, HTTP: hc, Logger: logger}
+	if cfg.OrgPlane() {
+		u, err := url.Parse(cfg.OrgPlaneURL)
+		if err != nil {
+			return nil, fmt.Errorf("SW_ORG_PLANE_URL: %w", err)
+		}
+		login.Endpoints = session.PlaneEndpoints{URL: cfg.OrgPlaneURL, Resource: cfg.PublicURL}
+		login.Tokens = auth.NewPlaneVerifier(cfg.OrgPlaneIssuer, cfg.OrgPlaneJWKSURL, cfg.PublicURL, hc)
+		login.SubIsPrincipal, login.Provider = true, u.Host
+	} else {
+		login.Endpoints = session.HubEndpoints{URL: cfg.HubURL}
+		login.Tokens = auth.NewVerifier(cfg.HubURL, cfg.PublicURL, hc)
+		login.Principals, login.Provider = w.principals, "AgentPod"
+	}
 	srv.Sessions, srv.SessionCookie, srv.Login = m, cookies.SessionName(), login.Handler()
 	logger.Info("browser sign-in on", "allowed", len(allowed), "secure_cookies", cookies.Secure)
 	return m, nil
