@@ -274,3 +274,22 @@ func TestMCPClientWorksWithoutASessionID(t *testing.T) {
 		t.Errorf("session = %q", c.session)
 	}
 }
+func TestPlaneServiceTokenAsksForItsAudience(t *testing.T) {
+	var auds []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/token/service" || r.Header.Get("Authorization") != "Bearer svc_canary:s3cret" {
+			t.Errorf("%s %q", r.URL.Path, r.Header.Get("Authorization"))
+		}
+		var b struct{ Audience string }
+		_ = json.NewDecoder(r.Body).Decode(&b)
+		auds = append(auds, b.Audience)
+		fmt.Fprintf(w, `{"access_token":%q,"token_type":"Bearer","expires_in":300}`, fakeJWT("prn_canary"))
+	}))
+	defer srv.Close()
+	cred := filepath.Join(t.TempDir(), "cred")
+	_ = os.WriteFile(cred, []byte("svc_canary:s3cret\n"), 0o600)
+	st := &PlaneServiceToken{PlaneURL: srv.URL, CredentialFile: cred, Audience: "https://superwitness.example"}
+	if _, err := st.Token(context.Background()); err != nil || len(auds) != 1 || auds[0] != "https://superwitness.example" {
+		t.Fatalf("err=%v auds=%v", err, auds)
+	}
+}

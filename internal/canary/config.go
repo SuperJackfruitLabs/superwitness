@@ -18,21 +18,25 @@ type Config struct {
 	HubURL           string
 	ClientID         string
 	ClientSecretFile string
-	TracesURL        string
-	TracesTokenFile  string
-	LogsURL          string
-	LogsTokenFile    string
-	OTLPLogsURL      string
-	BoardID          string
-	WorkStage        string
-	GateStage        string
-	ExpectHarness    string
-	Standard         string
-	ClaimTimeout     time.Duration
-	RunTimeout       time.Duration
-	SettleDelay      time.Duration
-	DocTimeout       time.Duration
-	PollInterval     time.Duration
+	// Under the organization plane (SW_ORG_PLANE_URL set) these replace the three hub settings.
+	OrgPlaneURL            string // SW_ORG_PLANE_URL
+	OrgPlaneCredentialFile string // SWC_ORG_PLANE_SERVICE_CREDENTIAL_FILE: svc_<id>:<secret>
+	SuperwitnessAudience   string // SWC_SUPERWITNESS_AUDIENCE: superwitness's SW_PUBLIC_URL
+	TracesURL              string
+	TracesTokenFile        string
+	LogsURL                string
+	LogsTokenFile          string
+	OTLPLogsURL            string
+	BoardID                string
+	WorkStage              string
+	GateStage              string
+	ExpectHarness          string
+	Standard               string
+	ClaimTimeout           time.Duration
+	RunTimeout             time.Duration
+	SettleDelay            time.Duration
+	DocTimeout             time.Duration
+	PollInterval           time.Duration
 }
 
 func LoadConfig(getenv func(string) string) (Config, error) {
@@ -53,9 +57,6 @@ func LoadConfig(getenv func(string) string) (Config, error) {
 	c := Config{
 		SuperpipelineURL: strings.TrimRight(req("SW_SUPERPIPELINE_URL"), "/"),
 		SuperwitnessURL:  strings.TrimRight(req("SWC_SUPERWITNESS_URL"), "/"),
-		HubURL:           strings.TrimRight(req("SW_HUB_URL"), "/"),
-		ClientID:         req("SWC_HUB_CLIENT_ID"),
-		ClientSecretFile: req("SWC_HUB_CLIENT_SECRET_FILE"),
 		TracesURL:        strings.TrimRight(req("SW_TRACES_URL"), "/"),
 		LogsURL:          strings.TrimRight(req("SW_LOGS_URL"), "/"),
 		BoardID:          req("SWC_BOARD_ID"),
@@ -66,6 +67,15 @@ func LoadConfig(getenv func(string) string) (Config, error) {
 		GateStage:        opt("SWC_GATE_STAGE", "review"),
 		ExpectHarness:    opt("SWC_EXPECT_HARNESS", "hermes"),
 		Standard:         opt("SWC_STANDARD", "rubric:superwitness-canary@1"),
+	}
+	c.OrgPlaneURL = strings.TrimRight(opt("SW_ORG_PLANE_URL", ""), "/")
+	if c.OrgPlaneURL != "" {
+		c.OrgPlaneCredentialFile = req("SWC_ORG_PLANE_SERVICE_CREDENTIAL_FILE")
+		c.SuperwitnessAudience = req("SWC_SUPERWITNESS_AUDIENCE")
+	} else {
+		c.HubURL = strings.TrimRight(req("SW_HUB_URL"), "/")
+		c.ClientID = req("SWC_HUB_CLIENT_ID")
+		c.ClientSecretFile = req("SWC_HUB_CLIENT_SECRET_FILE")
 	}
 	durations := []struct {
 		name string

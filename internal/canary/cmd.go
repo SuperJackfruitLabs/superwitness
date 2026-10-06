@@ -190,19 +190,30 @@ func NewDeps(ctx context.Context, cfg Config, prior []Result) (Deps, error) {
 	// Every client has a finite timeout: one hung call must not outlive the systemd unit's
 	// 75-minute TimeoutStartSec. http.DefaultClient (no timeout) is never used.
 	hc := &http.Client{Timeout: callTimeout}
-	tokens := &ServiceToken{HubURL: cfg.HubURL, ClientID: cfg.ClientID, SecretFile: cfg.ClientSecretFile, HTTP: hc}
-	tok, err := tokens.Token(ctx)
+	// Under the organization plane each audience has its own token: superpipeline's, and
+	// superwitness's for /v1 and /mcp. Under the hub one token serves both.
+	var spTokens, swTokens TokenSource
+	issuer := "hub"
+	if cfg.OrgPlaneURL != "" {
+		issuer = "organization plane"
+		spTokens = &PlaneServiceToken{PlaneURL: cfg.OrgPlaneURL, CredentialFile: cfg.OrgPlaneCredentialFile, Audience: cfg.SuperpipelineURL, HTTP: hc}
+		swTokens = &PlaneServiceToken{PlaneURL: cfg.OrgPlaneURL, CredentialFile: cfg.OrgPlaneCredentialFile, Audience: cfg.SuperwitnessAudience, HTTP: hc}
+	} else {
+		hub := &ServiceToken{HubURL: cfg.HubURL, ClientID: cfg.ClientID, SecretFile: cfg.ClientSecretFile, HTTP: hc}
+		spTokens, swTokens = hub, hub
+	}
+	tok, err := swTokens.Token(ctx)
 	if err != nil {
-		return Deps{}, fmt.Errorf("hub service token: %w", err)
+		return Deps{}, fmt.Errorf("%s service token: %w", issuer, err)
 	}
 	principal, err := PrincipalFromJWT(tok)
 	if err != nil {
 		return Deps{}, err
 	}
 	return Deps{
-		SP:          SuperpipelineClient{BaseURL: cfg.SuperpipelineURL, Tokens: tokens, HTTP: hc},
-		API:         SuperwitnessClient{BaseURL: cfg.SuperwitnessURL, Tokens: tokens, HTTP: hc},
-		MCP:         &MCPClient{URL: cfg.SuperwitnessURL + "/mcp", Tokens: tokens, HTTP: hc},
+		SP:          SuperpipelineClient{BaseURL: cfg.SuperpipelineURL, Tokens: spTokens, HTTP: hc},
+		API:         SuperwitnessClient{BaseURL: cfg.SuperwitnessURL, Tokens: swTokens, HTTP: hc},
+		MCP:         &MCPClient{URL: cfg.SuperwitnessURL + "/mcp", Tokens: swTokens, HTTP: hc},
 		Traces:      TracesClient{BaseURL: cfg.TracesURL, TokenFile: cfg.TracesTokenFile, HTTP: &http.Client{Timeout: tracesScanTimeout}, SearchLimit: 1000},
 		Logs:        LogsClient{BaseURL: cfg.LogsURL, TokenFile: cfg.LogsTokenFile, HTTP: &http.Client{Timeout: logsScanTimeout}},
 		Errors:      OTLPLogs{URL: cfg.OTLPLogsURL, HTTP: hc},

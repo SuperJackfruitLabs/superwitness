@@ -19,6 +19,9 @@ All notable changes to superwitness are recorded here. The format follows
   `issuer_unavailable`.
 - Under the organization plane, superwitness gets its service tokens from the plane, one for each
   product it reads, with that product's URL as the audience.
+- The canary (`superwitness canary run`) gets its tokens from the organization plane when
+  `SW_ORG_PLANE_URL` is set, one for superpipeline and one for superwitness
+  (`SWC_ORG_PLANE_SERVICE_CREDENTIAL_FILE`, `SWC_SUPERWITNESS_AUDIENCE`).
 
 ### Changed
 
