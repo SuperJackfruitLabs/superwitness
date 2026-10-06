@@ -196,6 +196,16 @@ describe("VerdictDrawer", () => {
     expect(postJSON.mock.calls[0][1].evidence_refs).toEqual(["aaaaaaaaaaaaaaaa", range, "bbbbbbbbbbbbbbbb"]);
   });
 
+  it("a step the earlier verdict cites is not cited twice when the database returned its keys reordered", async () => {
+    const stored = { seq_to: 4, seq_from: 3, session_id: "acps_a1" };
+    const prev = { id: "vrd_1", subject_kind: "run", subject_ref: "canary:run_01", standard: "rubric:ok@1", value: { decision: "pass" }, comment: "", evidence_refs: [stored] } as unknown as HistoryVerdict;
+    await open({ revising: prev, evidence: [{ session_id: "acps_a1", seq_from: 3, seq_to: 4 }] });
+    expect(host.textContent).toContain("1 cited: 1 from the verdict being revised");
+    expect(host.textContent).not.toContain("from the transcript");
+    await click(save());
+    expect(postJSON.mock.calls[0][1].evidence_refs).toEqual([stored]);
+  });
+
   it("a revision with no new ticks still cites the earlier evidence", async () => {
     const prev = { id: "vrd_1", subject_kind: "run", subject_ref: "canary:run_01", standard: "rubric:ok@1", value: { decision: "pass" }, comment: "", evidence_refs: ["aaaaaaaaaaaaaaaa"] } as unknown as HistoryVerdict;
     await open({ revising: prev });

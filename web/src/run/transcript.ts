@@ -141,7 +141,7 @@ export function logsOf(lines: LogLine[], span: Span): LogLine[] {
 }
 
 // requestResponse is what the pane shows for a span: a tool call's input and output, a
-// permission's options and outcome, else the prompts and the agent's messages.
+// permission's question, options and outcome, else the prompts and the agent's messages.
 export function requestResponse(spanName: string, items: TranscriptItem[], from: number): { request: Part[]; response: Part[] } {
   if (spanName === "tool_call") {
     const it = items.find((i) => i.kind === "tool_call" && itemRange(i).from === from) ?? items.find((i) => i.kind === "tool_call");
@@ -149,7 +149,9 @@ export function requestResponse(spanName: string, items: TranscriptItem[], from:
   }
   if (spanName === "permission") {
     const it = items.find((i) => i.kind === "permission" && i.seq === from) ?? items.find((i) => i.kind === "permission");
-    return it ? { request: [{ item: it, value: it.options }], response: [{ item: it, value: it.outcome }] } : { request: [], response: [] };
+    if (!it) return { request: [], response: [] };
+    const asked: Part[] = it.title === undefined ? [] : [{ item: it, value: it.title }];
+    return { request: [...asked, { item: it, value: it.options }], response: [{ item: it, value: it.outcome }] };
   }
   return {
     request: items.filter((i) => i.kind === "prompt").map((i) => ({ item: i, value: i.text })),
@@ -202,4 +204,14 @@ export function itemURL(api: string, attempt: string, seqFrom: number, range?: {
 // rangeRef is a cited step, its keys in the order the verdict API documents.
 export const rangeRef = (session: string, from: number, to: number): EvidenceRef => ({ session_id: session, seq_from: from, seq_to: to });
 
-export const sameRef = (a: EvidenceRef, b: EvidenceRef) => JSON.stringify(a) === JSON.stringify(b);
+// refKey names a cited ref by its value: a span id as it is, a step as session|from|to, so refs
+// compare equal whatever order a stored step's keys come back in.
+export const refKey = (r: unknown): string => {
+  if (typeof r === "object" && r !== null && "session_id" in r) {
+    const s = r as { session_id: unknown; seq_from: unknown; seq_to: unknown };
+    return `${s.session_id}|${s.seq_from}|${s.seq_to}`;
+  }
+  return typeof r === "string" ? r : JSON.stringify(r);
+};
+
+export const sameRef = (a: EvidenceRef, b: EvidenceRef) => refKey(a) === refKey(b);

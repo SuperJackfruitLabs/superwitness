@@ -87,7 +87,7 @@ id only. [Read a run](/use/read-a-run/#logs-one-page-at-a-time).
 |---|---|
 | `attempt` | the attempt to read; required when the run has more than one |
 | `seq_from`, `seq_to` | the range, inside the attempt; default the whole attempt |
-| `cursor` | `next_cursor` from the previous page |
+| `cursor` | `next_cursor` from the previous page; send the same `seq_from` and `seq_to` with it |
 
 Needs a signed-in session or a token granted `transcripts:read`. Answers AgentPod's transcript
 page unchanged, plus `attempt_id`, with `Cache-Control: no-store`; 200 steps a page.
@@ -182,7 +182,7 @@ Every error from `/v1` is one JSON object:
 | 403 | `not_original_judge` | superseding someone else's verdict |
 | 404 | `run_not_found` | neither superpipeline nor the hub knows the run |
 | 404 | `attempt_not_found` | the hub does not know the attempt, or the run has no such attempt |
-| 404 | `session_not_found` | AgentPod holds no such session or step |
+| 404 | `session_not_found` | AgentPod holds no such session or step, or the attempt has no session |
 | 404 | `attempt_has_no_run` | the attempt was not dispatched from a superpipeline run |
 | 404 | `subject_not_found` | the verdict's run or attempt does not exist |
 | 404 | `rubric_not_found` | no such rubric version |

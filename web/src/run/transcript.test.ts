@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { LogLine, Span } from "../types";
+import type { EvidenceRef, LogLine, Span } from "../types";
 import {
   hasTruncated, itemFirstSeq, itemRange, itemURL, logsOf, parseSeq, rangeRef, requestResponse, runURL, sameRef, seqParam, showValue,
   spanFor, spanRange, spanStatus, type TranscriptItem, transcriptURL,
@@ -68,14 +68,17 @@ describe("items", () => {
     const items: TranscriptItem[] = [
       { kind: "prompt", seq: 1, text: "ask" },
       { kind: "tool_call", id: "tc", seq_from: 3, seq_to: 4, input: { path: "a" }, output: { content: "b" } },
-      { kind: "permission", seq: 5, answer_seq: 6, options: [{ name: "Allow" }], outcome: "selected:allow" },
+      { kind: "permission", seq: 5, answer_seq: 6, title: "Write out.md", options: [{ name: "Allow" }], outcome: "selected:allow" },
       { kind: "message", seq_from: 9, seq_to: 9, text: "done" },
     ];
     const tool = requestResponse("tool_call", items, 3);
     expect(tool.request.map((p) => p.value)).toEqual([{ path: "a" }]);
     expect(tool.response.map((p) => p.value)).toEqual([{ content: "b" }]);
     const perm = requestResponse("permission", items, 5);
+    expect(perm.request.map((p) => p.value)).toEqual(["Write out.md", [{ name: "Allow" }]]);
     expect(perm.response.map((p) => p.value)).toEqual(["selected:allow"]);
+    const untitled = requestResponse("permission", [{ kind: "permission", seq: 5, options: [{ name: "Allow" }], outcome: "selected:allow" }], 5);
+    expect(untitled.request.map((p) => p.value)).toEqual([[{ name: "Allow" }]]);
     const turn = requestResponse("turn", items, 1);
     expect(turn.request.map((p) => p.value)).toEqual(["ask"]);
     expect(turn.response.map((p) => p.value)).toEqual(["done"]);
@@ -131,5 +134,11 @@ describe("evidence refs", () => {
     expect(sameRef(rangeRef("acps_a1", 3, 4), { session_id: "acps_a1", seq_from: 3, seq_to: 4 })).toBe(true);
     expect(sameRef(rangeRef("acps_a1", 3, 4), rangeRef("acps_a1", 3, 5))).toBe(false);
     expect(sameRef("aaaaaaaaaaaaaaaa", "aaaaaaaaaaaaaaaa")).toBe(true);
+  });
+  it("compares a range whatever order its keys come in", () => {
+    const reordered = { seq_to: 4, seq_from: 3, session_id: "acps_a1" } as EvidenceRef;
+    expect(sameRef(rangeRef("acps_a1", 3, 4), reordered)).toBe(true);
+    expect(sameRef(reordered, rangeRef("acps_a1", 3, 5))).toBe(false);
+    expect(sameRef(reordered, "aaaaaaaaaaaaaaaa")).toBe(false);
   });
 });

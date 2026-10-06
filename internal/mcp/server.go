@@ -60,7 +60,7 @@ type TranscriptArgs struct {
 	AttemptID string `json:"attempt_id,omitempty" jsonschema:"the attempt to read, attempt_…; required when the run has more than one"`
 	SeqFrom   *int64 `json:"seq_from,omitempty" jsonschema:"first session seq to read; default the attempt's first"`
 	SeqTo     *int64 `json:"seq_to,omitempty" jsonschema:"last session seq to read; default the attempt's last"`
-	Cursor    string `json:"cursor,omitempty" jsonschema:"next_cursor from the previous page"`
+	Cursor    string `json:"cursor,omitempty" jsonschema:"next_cursor from the previous page; send the same seq_from and seq_to with it"`
 }
 
 // VerdictArgs is the POST /v1/verdicts body. The judge is always the caller.

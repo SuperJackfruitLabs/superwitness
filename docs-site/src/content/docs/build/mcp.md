@@ -119,7 +119,7 @@ One page (up to 200 steps) of an attempt's transcript, redacted by AgentPod. The
 | `attempt_id` | when the run has several attempts | the attempt to read, `attempt_…` |
 | `seq_from` | no | first session seq; default the attempt's first |
 | `seq_to` | no | last session seq; default the attempt's last |
-| `cursor` | no | `next_cursor` from the previous page |
+| `cursor` | no | `next_cursor` from the previous page; send the same `seq_from` and `seq_to` with it |
 
 Result: the transcript page ([Transcripts](/use/transcripts/#the-api)).
 

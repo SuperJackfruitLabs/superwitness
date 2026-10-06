@@ -166,6 +166,7 @@ function SpanContent({ api, page, range, spanName, running }: { api: string; pag
     <section aria-label="Session content">
       {running && <p className="muted">Attempt still running; refresh for more</p>}
       {body}
+      {tx.data && tx.data.next_cursor !== null && <p className="muted">More steps than shown here; open the transcript for the rest.</p>}
       <p>
         <Link to={runURL(page, { tab: "transcript", attempt: range.attempt, seq: seqParam(range.from, range.to) })}>Open in transcript ↗</Link>
       </p>

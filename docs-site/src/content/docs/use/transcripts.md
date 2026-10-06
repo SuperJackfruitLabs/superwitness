@@ -57,13 +57,14 @@ A field longer than 16 KiB arrives cut, as `{"truncated": true, "bytes": N, "hea
 
 ## Audit
 
-Every read leaves two records, neither holding content:
+Every read that reaches AgentPod leaves two records, neither holding content:
 
 - at AgentPod, an audit row naming superwitness, with the person or agent superwitness read for
   in `on_behalf_of` (superwitness sends their `prn_` id as `X-On-Behalf-Of`);
 - in superwitness's log, one `transcript.read` line with `principal`, `via` (`session` or
   `bearer`), `run`, `attempt`, `seq_from`, `seq_to`, `item`, `full`, and on success `items` and
   `redactions`; a refused read logs at WARN with its `code`.
+  A read superwitness itself refuses never reaches AgentPod, so it leaves only that WARN line.
 
 ## The API
 
@@ -79,7 +80,7 @@ GET /v1/runs/superpipeline/{board}/{run}/transcript/items/{seq_from}?attempt=&se
   which the app forwards on **Show full**. They must lie inside the attempt too.
 - The answer is AgentPod's, unchanged, plus `"attempt_id"`:
   `{"attempt_id", "session_id", "seq_from", "seq_to", "items": […], "next_cursor", "redactions", "truncated_fields"}`.
-  Pass `next_cursor` back as `cursor` for the next page.
+  Pass `next_cursor` back as `cursor`, with the same `seq_from` and `seq_to`, for the next page.
 - Each item has a `kind`: `prompt`, `message`, `reasoning`, `tool_call`, `permission`, `state`,
   `error` or `other`, with its seqs and fields; a tool call or permission that started before
   the range has `"partial": true`.

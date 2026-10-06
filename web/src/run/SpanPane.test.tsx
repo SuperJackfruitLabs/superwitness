@@ -100,6 +100,16 @@ describe("the span pane", () => {
     expect(open.getAttribute("href")).toBe(`${BASE}?tab=transcript&attempt=attempt_a1&seq=3-4`);
   });
 
+  it("says when the span has more steps than the pane shows", async () => {
+    await render("span=sp_tool", { tx: async () => ({ ...page(), next_cursor: "c2" }) });
+    expect(pane()!.textContent).toContain("More steps than shown here; open the transcript for the rest.");
+  });
+
+  it("says nothing of more steps when the span fits the page", async () => {
+    await render("span=sp_tool");
+    expect(pane()!.textContent).not.toContain("More steps than shown here");
+  });
+
   it("Show full replaces the cut field with the whole item", async () => {
     await render("span=sp_tool");
     await click(button("Show full", pane()!));

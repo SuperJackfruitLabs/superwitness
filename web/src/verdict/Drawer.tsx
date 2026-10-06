@@ -3,6 +3,7 @@ import { ApiError, postJSON } from "../api";
 import { list } from "../format";
 import { useJSON } from "../hooks";
 import type { Doc, EvidenceRef, HistoryVerdict, Rubric } from "../types";
+import { refKey } from "../run/transcript";
 import { refusalText } from "./messages";
 import { initialInput, type Input, supported, valueOf } from "./scale";
 import { ScaleInput } from "./ScaleInput";
@@ -18,7 +19,7 @@ export function citedEvidence(ticked: EvidenceRef[], revising?: HistoryVerdict):
   const out: unknown[] = [];
   const seen = new Set<string>();
   for (const ref of [...(Array.isArray(revising?.evidence_refs) ? revising.evidence_refs : []), ...ticked]) {
-    const k = JSON.stringify(ref);
+    const k = refKey(ref);
     if (!seen.has(k)) {
       seen.add(k);
       out.push(ref);
