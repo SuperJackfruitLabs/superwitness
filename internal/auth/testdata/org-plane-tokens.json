@@ -1,0 +1,18 @@
+[
+  {"name": "human, authorization code",
+   "claims": {"iss": "", "sub": "prn_human01", "aud": ["https://superwitness.example"], "exp": 0, "iat": 0, "jti": "jti_01",
+              "principalKind": "human", "org": "org_01", "ent": ["agentpod", "superwitness"], "mayDispatch": [], "mayGrantReach": false,
+              "scope": "openid runs:write", "email": "human01@example.com", "email_verified": true,
+              "client_id": "superwitness-web", "azp": "superwitness-web", "sid": "sid_01"},
+   "want": {"id": "prn_human01", "kind": "human", "org": "org_01", "scopes": [], "email": "human01@example.com", "actor": ""}},
+  {"name": "service exchange",
+   "claims": {"iss": "", "sub": "prn_service01", "aud": "https://superwitness.example", "exp": 0, "iat": 0, "jti": "jti_02",
+              "principalKind": "service", "org": "org_01", "ent": ["superwitness"], "mayDispatch": [], "mayGrantReach": false,
+              "scope": "evidence:read runs:write", "amr": ["service"]},
+   "want": {"id": "prn_service01", "kind": "service", "org": "org_01", "scopes": ["evidence:read", "runs:write"], "email": "", "actor": ""}},
+  {"name": "agent on behalf",
+   "claims": {"iss": "", "sub": "prn_agent01", "aud": ["https://hub.example", "https://superwitness.example"], "exp": 0, "iat": 0, "jti": "jti_03",
+              "principalKind": "agent", "org": "org_01", "ent": ["agentpod", "superwitness"], "mayDispatch": ["prn_agent02"], "mayGrantReach": true,
+              "scope": "transcripts:read", "act": {"sub": "prn_hub01"}, "amr": ["exchange"]},
+   "want": {"id": "prn_agent01", "kind": "agent", "org": "org_01", "scopes": ["transcripts:read"], "email": "", "actor": "prn_hub01"}}
+]
