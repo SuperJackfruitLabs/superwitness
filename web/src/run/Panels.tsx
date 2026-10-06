@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { ApiError, getJSON } from "../api";
 import { display, list } from "../format";
-import type { Doc, HistoryVerdict, LogLine, Me, Span } from "../types";
+import type { Doc, EvidenceRef, HistoryVerdict, LogLine, Me, Span } from "../types";
 import { verdictSummary } from "../format";
 import { MAX_EVIDENCE } from "../verdict/Drawer";
-import { Link } from "../router";
+import { Link, navigate } from "../router";
 import { waterfall } from "./facts";
+import { SpanPane } from "./SpanPane";
 import { runURL, seqParam } from "./transcript";
 
 export { MAX_EVIDENCE };
@@ -27,7 +28,7 @@ interface Page<T> {
 // when key changes (another run, another filter) or the panel unmounts the generation moves on, and
 // a response from an older one is dropped. A first-load failure is `error`; a load-more failure is
 // `moreError` and leaves what was already loaded in place.
-function usePages<T>(key: string, fetchPage: (cursor: string | null) => Promise<Page<T>>) {
+export function usePages<T>(key: string, fetchPage: (cursor: string | null) => Promise<Page<T>>) {
   const [items, setItems] = useState<T[]>([]);
   const [next, setNext] = useState<string | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
@@ -85,8 +86,16 @@ function usePages<T>(key: string, fetchPage: (cursor: string | null) => Promise<
   return { items, next, error, moreError, loading, more, retry: () => setTries((n) => n + 1) };
 }
 
-// TracePanel is the span waterfall, 500 spans a page. Ticked spans become the verdict's evidence.
-export function TracePanel({ base, evidence, setEvidence }: { base: string; evidence: string[]; setEvidence: (ids: string[]) => void }) {
+// TracePanel is the span waterfall, 500 spans a page. Ticked spans become the verdict's evidence;
+// a span's name opens its details, named in the URL.
+export function TracePanel({ base, evidence, setEvidence, page = "", attempts = [], selected = null }: {
+  base: string;
+  evidence: EvidenceRef[];
+  setEvidence: (refs: EvidenceRef[]) => void;
+  page?: string;
+  attempts?: Doc[];
+  selected?: string | null;
+}) {
   const { items: spans, next, error, moreError, loading, more, retry } = usePages<Span>(base, (cursor) =>
     getJSON<{ spans: Span[]; next_cursor?: string }>(`${base}/spans?limit=500${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`).then((p) => ({
       items: list(p.spans),
@@ -103,10 +112,12 @@ export function TracePanel({ base, evidence, setEvidence }: { base: string; evid
   if (loading) return <p className="loading">Loading spans…</p>;
   if (spans.length === 0) return <p className="muted">No spans.</p>;
   const full = evidence.length >= MAX_EVIDENCE;
+  const toggle = (id: string) => setEvidence(evidence.includes(id) ? evidence.filter((r) => r !== id) : [...evidence, id]);
+  const sel = selected ? spans.find((s) => s.span_id === selected) : undefined;
   return (
     <>
       <p className="muted">
-        Tick spans to cite them in a verdict ({evidence.length} of at most {MAX_EVIDENCE}).
+        Tick spans to cite them in a verdict ({evidence.length} of at most {MAX_EVIDENCE}). A span's name opens its details.
       </p>
       <ul className="waterfall">
         {waterfall(spans).map(({ span, depth, left, width }) => {
@@ -118,11 +129,18 @@ export function TracePanel({ base, evidence, setEvidence }: { base: string; evid
                 aria-label={`Cite ${span.name} as evidence`}
                 checked={ticked}
                 disabled={!ticked && full}
-                onChange={() => setEvidence(ticked ? evidence.filter((id) => id !== span.span_id) : [...evidence, span.span_id])}
+                onChange={() => toggle(span.span_id)}
               />
-              <span className="span-name" style={{ paddingLeft: depth * 12 }} title={`${span.service} · ${span.span_id}`}>
+              <button
+                type="button"
+                className="span-name"
+                style={{ paddingLeft: depth * 12 }}
+                title={`${span.service} · ${span.span_id}`}
+                aria-pressed={span.span_id === selected}
+                onClick={() => navigate(runURL(page, { span: span.span_id }))}
+              >
                 {span.name}
-              </span>
+              </button>
               <span className="track">
                 <span className="bar" style={{ left: `${left}%`, width: `${width}%` }} />
               </span>
@@ -133,6 +151,9 @@ export function TracePanel({ base, evidence, setEvidence }: { base: string; evid
       </ul>
       {moreError && <p className="refusal">{moreError.message}</p>}
       {next && <button onClick={more}>{moreError ? "Try loading more spans again" : "Load more spans"}</button>}
+      {sel && (
+        <SpanPane key={sel.span_id} span={sel} api={base} page={page} attempts={attempts} cited={evidence.includes(sel.span_id)} canCite={!full} onCite={() => toggle(sel.span_id)} />
+      )}
     </>
   );
 }
