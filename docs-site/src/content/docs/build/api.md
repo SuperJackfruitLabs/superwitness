@@ -29,6 +29,8 @@ A browser signed in to [the app](/use/the-app/) is authenticated by its session 
 | `GET` | `/v1/runs/superpipeline/{board}/{run}` | 200 with the [run document](/build/contracts/#the-run-document) |
 | `GET` | `/v1/runs/superpipeline/{board}/{run}/spans` | 200 with one page of spans |
 | `GET` | `/v1/runs/superpipeline/{board}/{run}/logs` | 200 with one page of log lines |
+| `GET` | `/v1/runs/superpipeline/{board}/{run}/transcript` | 200 with one page of an attempt's transcript ([Transcripts](/use/transcripts/)) |
+| `GET` | `/v1/runs/superpipeline/{board}/{run}/transcript/items/{seq_from}` | 200 with one transcript step whole |
 | `GET` | `/v1/runs/by-attempt/{attempt}` | 302 to the run document |
 | `POST` | `/v1/runs` | 200 with one result per report ([Run registry API](/build/run-registry/)) |
 | `GET` | `/v1/runs` | 200 with one page of registry runs ([Run registry API](/build/run-registry/#listing-runs)) |
@@ -78,6 +80,20 @@ Answers `{"logs": [...], "next_cursor": "…" or null, "trace_join": "<status>"}
 when the line has them, `trace_id`, `span_id` and `run_id`. `trace_join` is the traces source's
 status while the run's trace ids were looked up; when it is not `ok`, lines were matched by run
 id only. [Read a run](/use/read-a-run/#logs-one-page-at-a-time).
+
+### GET /v1/runs/superpipeline/{board}/{run}/transcript
+
+| Query | Meaning |
+|---|---|
+| `attempt` | the attempt to read; required when the run has more than one |
+| `seq_from`, `seq_to` | the range, inside the attempt; default the whole attempt |
+| `cursor` | `next_cursor` from the previous page |
+
+Needs a signed-in session or a token granted `transcripts:read`. Answers AgentPod's transcript
+page unchanged, plus `attempt_id`, with `Cache-Control: no-store`; 200 steps a page.
+`GET …/transcript/items/{seq_from}?attempt=&full=1` answers one step whole, by its first seq; it
+also accepts `seq_from` and `seq_to`, the range the step was shown in, which must lie inside the
+attempt. [Transcripts](/use/transcripts/) has the shape, the redaction and the audit.
 
 ### GET /v1/runs/by-attempt/{attempt}
 
@@ -133,6 +149,9 @@ Every error from `/v1` is one JSON object:
 | 400 | `invalid_attempt_id` | the attempt id is not `attempt_<id>` |
 | 400 | `invalid_limit` | `limit` is not a whole number of 1 or more |
 | 400 | `invalid_cursor` | `cursor` is not one superwitness issued |
+| 400 | `invalid_seq` | `seq_from` or `seq_to` is not a whole number of 0 or more |
+| 400 | `attempt_required` | a transcript of a run with several attempts names none |
+| 400 | `range_outside_attempt` | the transcript range is not inside the attempt |
 | 400 | `invalid_level` | `level` is not `debug`, `info`, `warn` or `error` |
 | 400 | `invalid_source` | `source` is not a source name |
 | 400 | `invalid_status` | a `status` is not one of the six |
@@ -153,6 +172,7 @@ Every error from `/v1` is one JSON object:
 | 400 | `judge_kind_not_accepted` | `judge_kind` is set; it comes from the caller's principal record |
 | 401 | `unauthenticated` | the bearer token is missing or not valid for this service |
 | 403 | `origin_mismatch` | a change made with a session did not come from `SW_PUBLIC_URL` |
+| 403 | `transcripts_forbidden` | a transcript read with a token that lacks `transcripts:read` |
 | 403 | `not_authorised` | the session's person is no longer on `SW_ALLOWED_PRINCIPALS` |
 | 403 | `bearer_required` | a run report made with a session |
 | 403 | `service_principal_required` | a run report from a principal that is not a service |
@@ -161,7 +181,8 @@ Every error from `/v1` is one JSON object:
 | 403 | `self_judgement` | a non-human judge's verdict on a run or attempt it executed |
 | 403 | `not_original_judge` | superseding someone else's verdict |
 | 404 | `run_not_found` | neither superpipeline nor the hub knows the run |
-| 404 | `attempt_not_found` | the hub does not know the attempt |
+| 404 | `attempt_not_found` | the hub does not know the attempt, or the run has no such attempt |
+| 404 | `session_not_found` | AgentPod holds no such session or step |
 | 404 | `attempt_has_no_run` | the attempt was not dispatched from a superpipeline run |
 | 404 | `subject_not_found` | the verdict's run or attempt does not exist |
 | 404 | `rubric_not_found` | no such rubric version |
@@ -169,6 +190,7 @@ Every error from `/v1` is one JSON object:
 | 405 | `method_not_allowed` | the route exists, but not with this method |
 | 409 | `idempotency_conflict` | the key was already used for a different verdict |
 | 409 | `already_superseded` | the verdict named in `supersedes` already has a successor |
+| 413 | `item_too_large` | the step is over 1 MiB |
 | 413 | `body_too_large` | a run report body over 256 KiB |
 | 422 | `invalid_report` | a run report breaks a rule; a batch's error has `index` |
 | 422 | `missing_standard` | the verdict names no standard |
@@ -178,8 +200,10 @@ Every error from `/v1` is one JSON object:
 | 422 | `supersedes_mismatch` | the correction names a different subject or standard |
 | 429 | `rate_limited` | over a [rate limit](/use/the-app/#rate-limits); `Retry-After` says when to retry |
 | 500 | `internal` | an unexpected failure |
+| 502 | `hub_refused` | AgentPod refused superwitness's credential for transcripts (its grant lacks `transcripts:read`) |
 | 502 | `<source>_unauthorized` | a source refused superwitness's credential |
 | 503 | `<source>_unavailable` | a source could not be reached or failed (retryable) |
+| 503 | `source_unavailable` | AgentPod could not be read for a transcript (retryable) |
 | 503 | `store_unavailable` | the database is unavailable (retryable) |
 | 503 | `principal_unresolved` | AgentPod could not say which principal a person's token names (retryable) |
 | 503 | `subject_unresolved` | superwitness could not confirm the subject or who executed it (retryable) |

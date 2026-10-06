@@ -1,6 +1,6 @@
 ---
 title: MCP tools
-description: The MCP server for agents, with tools for runs, spans, logs, the run registry and verdicts; the by-attempt lookup stays HTTP-only.
+description: The MCP server for agents, with tools for runs, spans, logs, transcripts, the run registry and verdicts; the by-attempt lookup stays HTTP-only.
 ---
 
 superwitness serves an MCP server at `/mcp` on its own address, over MCP's streamable HTTP
@@ -17,10 +17,10 @@ Point an MCP client at it with the token as a header, for example:
 }
 ```
 
-The server names itself `superwitness`, with the running release as its version. It has five
-tools, thin layers over the HTTP operations for runs, spans, logs, the run registry and verdicts. Four
-routes are HTTP-only and have no tool: `GET /v1/runs/by-attempt/{attempt}`, `POST /v1/runs` and the two
-rubric reads.
+The server names itself `superwitness`, with the running release as its version. It has six
+tools, thin layers over the HTTP operations for runs, spans, logs, transcripts, the run registry
+and verdicts. Five routes are HTTP-only and have no tool: `GET /v1/runs/by-attempt/{attempt}`,
+`POST /v1/runs`, the two rubric reads and the transcript step route.
 
 ## The tools
 
@@ -105,6 +105,23 @@ that supersedes it. The same as `POST /v1/verdicts`; [Verdicts](/use/verdicts/) 
 Result: the [verdict](/build/contracts/#verdicts), whether it was just recorded or returned
 for a retry. Unlike the HTTP body, the tool has no `judge` or `judge_kind` argument: the judge
 is always the caller.
+
+### `get_transcript`
+
+One page (up to 200 steps) of an attempt's transcript, redacted by AgentPod. The same as
+`GET /v1/runs/superpipeline/{board}/{run}/transcript`. The token must be granted
+`transcripts:read`; an MCP call is never a browser session.
+
+| Argument | Required | Description |
+|---|---|---|
+| `board_id` | yes | superpipeline board id, `brd_…` |
+| `run_id` | yes | superpipeline run id, `run_…` |
+| `attempt_id` | when the run has several attempts | the attempt to read, `attempt_…` |
+| `seq_from` | no | first session seq; default the attempt's first |
+| `seq_to` | no | last session seq; default the attempt's last |
+| `cursor` | no | `next_cursor` from the previous page |
+
+Result: the transcript page ([Transcripts](/use/transcripts/#the-api)).
 
 ## Results and errors
 
