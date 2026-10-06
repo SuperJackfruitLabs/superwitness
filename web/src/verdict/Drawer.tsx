@@ -179,7 +179,7 @@ export function VerdictDrawer({ doc, evidence: ticked, revising, onClose, onReco
         </p>
         {tooMuchEvidence && (
           <p className="refusal" role="alert">
-            A verdict cites at most {MAX_EVIDENCE} spans{kept > 0 ? `, the revised verdict's ${kept} included` : ""}; untick some in the Trace tab
+            A verdict cites at most {MAX_EVIDENCE} spans and steps{kept > 0 ? `, the revised verdict's ${kept} included` : ""}; untick spans in the Trace tab or uncite steps in the Transcript tab
           </p>
         )}
         {refusal && (

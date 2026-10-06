@@ -211,7 +211,7 @@ describe("VerdictDrawer", () => {
     const prev = { id: "vrd_1", subject_kind: "run", subject_ref: "canary:run_01", standard: "rubric:ok@1", value: { decision: "pass" }, comment: "", evidence_refs: old } as unknown as HistoryVerdict;
     await open({ revising: prev, evidence: now });
     expect(save().disabled).toBe(true);
-    expect(host.textContent).toContain("at most 100 spans, the revised verdict's 60 included");
+    expect(host.textContent).toContain("at most 100 spans and steps, the revised verdict's 60 included");
   });
 
   it("refuses a comment over the limit and shows a counter", async () => {
@@ -230,7 +230,7 @@ describe("VerdictDrawer", () => {
     await open({ evidence: Array.from({ length: 101 }, (_, i) => i.toString(16).padStart(16, "0")) });
     await fillDecision();
     expect(save().disabled).toBe(true);
-    expect(host.textContent).toContain("at most 100 spans");
+    expect(host.textContent).toContain("at most 100 spans and steps");
   });
 
   describe("focus and closing", () => {

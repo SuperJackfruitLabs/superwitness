@@ -300,7 +300,10 @@ export function VerdictList({ verdicts, gates, me, onRevise, failures = [], load
             {list<unknown>(v.evidence_refs).map((r, i) => {
               const ref = r as { session_id?: unknown; seq_from?: unknown; seq_to?: unknown };
               if (typeof r !== "object" || r === null || typeof ref.seq_from !== "number" || typeof ref.seq_to !== "number") return null;
-              const a = attempts.find((x) => x.session_id === ref.session_id);
+              const from = ref.seq_from;
+              const inSession = attempts.filter((x) => x.session_id === ref.session_id);
+              const a =
+                inSession.find((x) => x.seq_from <= from && (x.seq_to === null || from <= x.seq_to)) ?? inSession[0];
               if (!a) return null;
               return (
                 <Link key={i} to={runURL(page, { tab: "transcript", attempt: a.id, seq: seqParam(ref.seq_from, ref.seq_to) })}>

@@ -58,4 +58,21 @@ describe("verdict history", () => {
     expect(html).toContain("transcript 3\u20134 \u2197");
     expect(html.match(/transcript \d/g)).toHaveLength(1); // a range in another run's session has no link here
   });
+  it("links a range to the attempt of its session that holds it", () => {
+    const attempts: Doc[] = [
+      { id: "attempt_a1", session_id: "acps_a1", seq_from: 1, seq_to: 9 },
+      { id: "attempt_a2", session_id: "acps_a1", seq_from: 10, seq_to: null },
+    ];
+    const html = renderToStaticMarkup(
+      <VerdictList
+        verdicts={[v("vrd_9", { evidence_refs: [{ session_id: "acps_a1", seq_from: 12, seq_to: 12 }] })]}
+        gates={[]}
+        me={me}
+        onRevise={() => {}}
+        attempts={attempts}
+        page="/runs/superpipeline/brd_01/run_01"
+      />,
+    );
+    expect(html).toContain("?tab=transcript&amp;attempt=attempt_a2&amp;seq=12\"");
+  });
 });
