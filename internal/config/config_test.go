@@ -226,3 +226,92 @@ func TestAppSettingsInFakeMode(t *testing.T) {
 		t.Errorf("fake mode over loopback http: %v", err)
 	}
 }
+
+func plane(m map[string]string) map[string]string {
+	delete(m, "SW_HUB_CLIENT_ID")
+	delete(m, "SW_HUB_CLIENT_SECRET_FILE")
+	m["SW_ORG_PLANE_ISSUER"] = "https://accounts.example"
+	m["SW_ORG_PLANE_JWKS_URL"] = "https://accounts.example/api/auth/jwks"
+	m["SW_ORG_PLANE_URL"] = "https://accounts.example/"
+	m["SW_ORG_PLANE_SERVICE_CREDENTIAL_FILE"] = "/etc/superwitness/org-plane-service-credential"
+	return m
+}
+
+func TestLoadOrgPlaneIsOffByDefault(t *testing.T) {
+	c, err := Load(env(full()))
+	if err != nil || c.OrgPlane() {
+		t.Fatalf("OrgPlane() = %v, err %v; want off when SW_ORG_PLANE_ISSUER is unset", c.OrgPlane(), err)
+	}
+}
+
+func TestLoadOrgPlane(t *testing.T) {
+	c, err := Load(env(plane(full())))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !c.OrgPlane() || c.OrgPlaneIssuer != "https://accounts.example" ||
+		c.OrgPlaneJWKSURL != "https://accounts.example/api/auth/jwks" || c.OrgPlaneURL != "https://accounts.example" ||
+		c.OrgPlaneCredentialFile != "/etc/superwitness/org-plane-service-credential" {
+		t.Errorf("got %+v", c)
+	}
+	if c.HubClientID != "" || c.HubClientSecretFile != "" {
+		t.Error("the hub credential is not needed under the plane")
+	}
+}
+
+func TestLoadOrgPlaneNamesEveryMissingSetting(t *testing.T) {
+	m := full()
+	delete(m, "SW_HUB_CLIENT_ID")
+	delete(m, "SW_HUB_CLIENT_SECRET_FILE")
+	m["SW_ORG_PLANE_ISSUER"] = "https://accounts.example"
+	_, err := Load(env(m))
+	if err == nil {
+		t.Fatal("accepted")
+	}
+	for _, want := range []string{"SW_ORG_PLANE_JWKS_URL", "SW_ORG_PLANE_URL", "SW_ORG_PLANE_SERVICE_CREDENTIAL_FILE"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("%v does not name %s", err, want)
+		}
+	}
+	if strings.Contains(err.Error(), "SW_HUB_CLIENT") {
+		t.Errorf("%v asks for the hub credential under the plane", err)
+	}
+}
+
+func TestLoadOrgPlaneSettingsWithoutTheIssuerAreRefused(t *testing.T) {
+	for _, name := range []string{"SW_ORG_PLANE_JWKS_URL", "SW_ORG_PLANE_URL", "SW_ORG_PLANE_SERVICE_CREDENTIAL_FILE"} {
+		m := full()
+		m[name] = plane(full())[name]
+		_, err := Load(env(m))
+		if err == nil || !strings.Contains(err.Error(), name) || !strings.Contains(err.Error(), "SW_ORG_PLANE_ISSUER") {
+			t.Errorf("%s alone: %v; want a refusal naming it and the issuer", name, err)
+		}
+	}
+}
+
+func TestLoadOrgPlaneIssuerIsComparedExactly(t *testing.T) {
+	for _, bad := range []string{"https://accounts.example/", "accounts.example", "https://"} {
+		m := plane(full())
+		m["SW_ORG_PLANE_ISSUER"] = bad
+		if _, err := Load(env(m)); err == nil || !strings.Contains(err.Error(), "SW_ORG_PLANE_ISSUER") {
+			t.Errorf("issuer %q: %v", bad, err)
+		}
+	}
+	m := plane(full())
+	m["SW_ORG_PLANE_JWKS_URL"] = "ftp://accounts.example/jwks"
+	if _, err := Load(env(m)); err == nil || !strings.Contains(err.Error(), "SW_ORG_PLANE_JWKS_URL") {
+		t.Errorf("ftp JWKS URL: %v", err)
+	}
+}
+
+func TestLoadOrgPlaneInFakeModeSignsInWithoutAHub(t *testing.T) {
+	c, err := Load(env(map[string]string{
+		"SW_FAKE_SOURCES": "1", "SW_DATABASE_URL": "postgres://x",
+		"SW_ALLOWED_PRINCIPALS": "prn_human01", "SW_APP_CLIENT_ID": "superwitness-web", "SW_SESSION_SECRET_FILE": "/tmp/s",
+		"SW_ORG_PLANE_ISSUER": "https://accounts.example", "SW_ORG_PLANE_JWKS_URL": "https://accounts.example/api/auth/jwks",
+		"SW_ORG_PLANE_URL": "https://accounts.example",
+	}))
+	if err != nil || !c.OrgPlane() {
+		t.Fatalf("fake mode with the plane: %+v %v; want no SW_HUB_URL and no service credential needed", c, err)
+	}
+}

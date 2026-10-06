@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"regexp"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -21,6 +23,18 @@ const (
 	minMissGap  = 10 * time.Second
 	clockLeeway = 30 * time.Second
 )
+
+// Product is superwitness's name in the organization plane's ent claim.
+const Product = "superwitness"
+
+var planeSubject = regexp.MustCompile(`^prn_[A-Za-z0-9_-]{1,64}$`)
+
+// NotEnabledError is a valid plane token whose workspace has not enabled superwitness. It
+// unwraps to ErrUnauthenticated, so a caller that only checks err != nil still refuses it.
+type NotEnabledError struct{ Org string }
+
+func (e *NotEnabledError) Error() string { return "superwitness is not enabled for " + e.Org }
+func (e *NotEnabledError) Unwrap() error { return ErrUnauthenticated }
 
 var (
 	ErrUnauthenticated = errors.New("unauthenticated")
@@ -43,11 +57,13 @@ type keySet struct {
 	fetchedAt time.Time
 }
 
-// Verifier checks hub-issued JWTs offline against the hub's published JWKS. The hub is the
-// one issuer; no request is made to it to verify a token.
+// Verifier checks JWTs offline against one issuer's JWKS: the hub's, or the organization
+// plane's (NewPlaneVerifier). No request is made to the issuer to verify a token.
 type Verifier struct {
 	issuer   string
 	audience string
+	jwksURL  string
+	plane    bool
 	hc       *http.Client
 	Now      func() time.Time
 
@@ -59,10 +75,23 @@ type Verifier struct {
 }
 
 func NewVerifier(issuer, audience string, hc *http.Client) *Verifier {
+	issuer = strings.TrimRight(issuer, "/")
+	return newVerifier(issuer, issuer+"/api/auth/jwks", audience, false, hc)
+}
+
+// NewPlaneVerifier checks organization-plane tokens offline. iss must equal issuer exactly (it
+// is never trimmed or prefix-matched), keys come from jwksURL, aud must equal or contain
+// audience, sub must be a prn_ id, and org and ent must be present. ent without Product is a
+// NotEnabledError. Grant scopes are read only from agent and service tokens.
+func NewPlaneVerifier(issuer, jwksURL, audience string, hc *http.Client) *Verifier {
+	return newVerifier(issuer, jwksURL, audience, true, hc)
+}
+
+func newVerifier(issuer, jwksURL, audience string, plane bool, hc *http.Client) *Verifier {
 	if hc == nil {
 		hc = http.DefaultClient
 	}
-	return &Verifier{issuer: strings.TrimRight(issuer, "/"), audience: audience, hc: hc, Now: time.Now}
+	return &Verifier{issuer: issuer, jwksURL: jwksURL, audience: audience, plane: plane, hc: hc, Now: time.Now}
 }
 
 type hubClaims struct {
@@ -71,6 +100,18 @@ type hubClaims struct {
 	Tenant        string `json:"tenant"`
 	Scope         string `json:"scope"` // OAuth's space-delimited list; absent when the grant holds none
 	Email         string `json:"email"` // present only for a principal with a linked account
+	Act           *struct {
+		Sub string `json:"sub"`
+	} `json:"act,omitempty"`
+}
+
+type planeClaims struct {
+	jwt.RegisteredClaims
+	PrincipalKind string   `json:"principalKind"`
+	Org           string   `json:"org"`
+	Ent           []string `json:"ent"`   // nil when absent; [] when present and empty
+	Scope         string   `json:"scope"` // grant scopes on agent and service tokens; OAuth scopes on a person's
+	Email         string   `json:"email"`
 	Act           *struct {
 		Sub string `json:"sub"`
 	} `json:"act,omitempty"`
@@ -85,8 +126,14 @@ func (v *Verifier) Verify(ctx context.Context, raw string) (Principal, error) {
 	if err != nil {
 		return Principal{}, ErrUnauthenticated
 	}
-	var c hubClaims
-	_, err = jwt.ParseWithClaims(raw, &c, func(*jwt.Token) (any, error) { return key, nil },
+	if v.plane {
+		return v.verifyPlane(raw, key)
+	}
+	return v.verifyHub(raw, key)
+}
+
+func (v *Verifier) parse(raw string, key ed25519.PublicKey, c jwt.Claims) error {
+	_, err := jwt.ParseWithClaims(raw, c, func(*jwt.Token) (any, error) { return key, nil },
 		jwt.WithValidMethods([]string{jwt.SigningMethodEdDSA.Alg()}),
 		jwt.WithIssuer(v.issuer),
 		jwt.WithAudience(v.audience),
@@ -95,14 +142,44 @@ func (v *Verifier) Verify(ctx context.Context, raw string) (Principal, error) {
 		jwt.WithLeeway(clockLeeway),
 		jwt.WithTimeFunc(v.Now),
 	)
-	if err != nil || c.IssuedAt == nil || c.Subject == "" || c.Tenant == "" {
+	return err
+}
+
+func validKind(k PrincipalKind) bool { return k == KindHuman || k == KindAgent || k == KindService }
+
+func (v *Verifier) verifyHub(raw string, key ed25519.PublicKey) (Principal, error) {
+	var c hubClaims
+	if err := v.parse(raw, key, &c); err != nil || c.IssuedAt == nil || c.Subject == "" || c.Tenant == "" {
 		return Principal{}, ErrUnauthenticated
 	}
 	kind := PrincipalKind(c.PrincipalKind)
-	if kind != KindHuman && kind != KindAgent && kind != KindService {
+	if !validKind(kind) {
 		return Principal{}, ErrUnauthenticated
 	}
 	p := Principal{ID: c.Subject, Kind: kind, Tenant: c.Tenant, Scopes: strings.Fields(c.Scope), Email: c.Email}
+	if c.Act != nil {
+		p.Actor = c.Act.Sub
+	}
+	return p, nil
+}
+
+func (v *Verifier) verifyPlane(raw string, key ed25519.PublicKey) (Principal, error) {
+	var c planeClaims
+	if err := v.parse(raw, key, &c); err != nil || c.IssuedAt == nil || !planeSubject.MatchString(c.Subject) ||
+		!strings.HasPrefix(c.Org, "org_") || len(c.Org) == len("org_") || c.Ent == nil {
+		return Principal{}, ErrUnauthenticated
+	}
+	kind := PrincipalKind(c.PrincipalKind)
+	if !validKind(kind) {
+		return Principal{}, ErrUnauthenticated
+	}
+	if !slices.Contains(c.Ent, Product) {
+		return Principal{}, &NotEnabledError{Org: c.Org}
+	}
+	p := Principal{ID: c.Subject, Kind: kind, Tenant: c.Org, Email: c.Email}
+	if kind == KindAgent || kind == KindService { // a person's scope claim is OAuth's, not a grant
+		p.Scopes = strings.Fields(c.Scope)
+	}
 	if c.Act != nil {
 		p.Actor = c.Act.Sub
 	}
@@ -211,7 +288,7 @@ func (v *Verifier) fetchInto(c *call) {
 func (v *Verifier) fetch() (*keySet, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, v.issuer+"/api/auth/jwks", nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, v.jwksURL, nil)
 	if err != nil {
 		return nil, err
 	}

@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -253,5 +254,50 @@ func TestRunCmdFailsWhenTheResultCannotBeRecorded(t *testing.T) {
 	if code != 1 || r.Pass || !strings.Contains(r.Error, "recording the result:") ||
 		!strings.Contains(out, "canary FAIL") || !strings.Contains(errs, "recording the result") {
 		t.Fatalf("code=%d result=%s out=%q stderr=%q", code, b, out, errs)
+	}
+}
+
+func TestNewDepsUnderThePlaneUsesOneTokenPerAudience(t *testing.T) {
+	var auds []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var b struct{ Audience string }
+		_ = json.NewDecoder(r.Body).Decode(&b)
+		auds = append(auds, b.Audience)
+		fmt.Fprintf(w, `{"access_token":%q,"token_type":"Bearer","expires_in":300}`, fakeJWT("prn_canary"))
+	}))
+	defer srv.Close()
+	cred := filepath.Join(t.TempDir(), "cred")
+	_ = os.WriteFile(cred, []byte("svc_canary:s3cret\n"), 0o600)
+	env := fullEnv()
+	delete(env, "SWC_HUB_CLIENT_ID")
+	delete(env, "SWC_HUB_CLIENT_SECRET_FILE")
+	delete(env, "SW_HUB_URL")
+	env["SW_ORG_PLANE_URL"] = srv.URL
+	env["SWC_ORG_PLANE_SERVICE_CREDENTIAL_FILE"] = cred
+	env["SWC_SUPERWITNESS_AUDIENCE"] = "https://superwitness.example"
+	cfg, err := LoadConfig(envFrom(env))
+	if err != nil {
+		t.Fatal(err)
+	}
+	d, err := NewDeps(context.Background(), cfg, nil)
+	if err != nil || d.Principal != "prn_canary" {
+		t.Fatalf("deps=%+v err=%v", d, err)
+	}
+	if _, err := d.SP.(SuperpipelineClient).Tokens.Token(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"https://superwitness.example", cfg.SuperpipelineURL}
+	if !slices.Equal(auds, want) {
+		t.Errorf("audiences = %v, want %v", auds, want)
+	}
+}
+
+func TestLoadConfigUnderThePlaneNeedsTheSuperwitnessAudience(t *testing.T) {
+	env := fullEnv()
+	env["SW_ORG_PLANE_URL"] = "https://accounts.example"
+	env["SWC_ORG_PLANE_SERVICE_CREDENTIAL_FILE"] = "/etc/superwitness/canary-credential"
+	_, err := LoadConfig(envFrom(env))
+	if err == nil || !strings.Contains(err.Error(), "SWC_SUPERWITNESS_AUDIENCE") {
+		t.Errorf("err = %v", err)
 	}
 }

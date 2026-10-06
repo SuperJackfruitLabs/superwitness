@@ -33,14 +33,25 @@ func render(w http.ResponseWriter, status int, d pageData) {
 	_ = page.Execute(w, d)
 }
 
-var (
-	pageNotAuthorised = pageData{"Not authorised", "This AgentPod account is not allowed to use this superwitness. Ask its operator to add you.", "/", "Back"}
-	pageHubDown       = pageData{"AgentPod sign-in is unavailable", "AgentPod did not answer, so you could not be signed in. Sessions that are already open keep working.", "/auth/login", "Try again"}
-	pageExpired       = pageData{"Sign-in expired", "This sign-in took too long or was started in another tab. Start again.", "/auth/login", "Sign in with AgentPod"}
-	pageFailed        = pageData{"Sign-in failed", "AgentPod did not confirm this sign-in. Start again.", "/auth/login", "Sign in with AgentPod"}
-	pageDatabase      = pageData{"Can't reach the database", "superwitness could not record your session. Try again in a minute.", "/auth/login", "Sign in with AgentPod"}
-	pageOff           = pageData{"Sign-in is off", "This superwitness has no one allowed to sign in, so its app is off. Its API still answers hub tokens.", "", ""}
-)
+type pageSet struct{ notAuthorised, down, expired, failed, database pageData }
+
+// pagesFor names the sign-in service on each page: "AgentPod" under the hub, the plane's host
+// under the organization plane.
+func pagesFor(provider string) pageSet {
+	if provider == "" {
+		provider = "AgentPod"
+	}
+	signIn := "Sign in with " + provider
+	return pageSet{
+		notAuthorised: pageData{"Not authorised", "This " + provider + " account is not allowed to use this superwitness. Ask its operator to add you.", "/", "Back"},
+		down:          pageData{provider + " sign-in is unavailable", provider + " did not answer, so you could not be signed in. Sessions that are already open keep working.", "/auth/login", "Try again"},
+		expired:       pageData{"Sign-in expired", "This sign-in took too long or was started in another tab. Start again.", "/auth/login", signIn},
+		failed:        pageData{"Sign-in failed", provider + " did not confirm this sign-in. Start again.", "/auth/login", signIn},
+		database:      pageData{"Can't reach the database", "superwitness could not record your session. Try again in a minute.", "/auth/login", signIn},
+	}
+}
+
+var pageOff = pageData{"Sign-in is off", "This superwitness has no one allowed to sign in, so its app is off. Its API still answers bearer tokens.", "", ""}
 
 // Off answers /auth/* when sign-in is off.
 func Off() http.Handler {

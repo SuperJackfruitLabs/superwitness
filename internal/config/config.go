@@ -51,7 +51,18 @@ type Config struct {
 	AllowedPrincipals   []string          // SW_ALLOWED_PRINCIPALS: who may sign in; empty turns sign-in off
 	SessionSecretFile   string            // SW_SESSION_SECRET_FILE: 32+ bytes that key the login cookie
 	TrustedProxies      []netip.Prefix    // SW_TRUSTED_PROXIES; nil means this host's own addresses
+
+	// The organization plane. SW_ORG_PLANE_ISSUER set switches every token path to the plane:
+	// caller verification, browser sign-in and superwitness's own service tokens. There is no
+	// dual-accept: unset, the hub does all three exactly as before.
+	OrgPlaneIssuer         string // SW_ORG_PLANE_ISSUER: compared exactly with iss, so never trimmed
+	OrgPlaneJWKSURL        string // SW_ORG_PLANE_JWKS_URL
+	OrgPlaneURL            string // SW_ORG_PLANE_URL: base of /api/auth/oauth2/* and /api/token/service
+	OrgPlaneCredentialFile string // SW_ORG_PLANE_SERVICE_CREDENTIAL_FILE: one line, svc_<id>:<secret>
 }
+
+// OrgPlane reports whether the organization plane is the issuer.
+func (c Config) OrgPlane() bool { return c.OrgPlaneIssuer != "" }
 
 // AppEnabled reports whether browser sign-in is on: someone is allowed to sign in.
 func (c Config) AppEnabled() bool { return len(c.AllowedPrincipals) > 0 }
@@ -72,6 +83,23 @@ func Load(getenv func(string) string) (Config, error) {
 		LogsTokenFile:       strings.TrimSpace(getenv("SW_LOGS_TOKEN_FILE")),
 		OTLPEndpoint:        trimURL(getenv("SW_OTLP_ENDPOINT")),
 		SourceTimeout:       DefaultSourceTimeout,
+	}
+	c.OrgPlaneIssuer = strings.TrimSpace(getenv("SW_ORG_PLANE_ISSUER"))
+	c.OrgPlaneJWKSURL = strings.TrimSpace(getenv("SW_ORG_PLANE_JWKS_URL"))
+	c.OrgPlaneURL = trimURL(getenv("SW_ORG_PLANE_URL"))
+	c.OrgPlaneCredentialFile = strings.TrimSpace(getenv("SW_ORG_PLANE_SERVICE_CREDENTIAL_FILE"))
+	if !c.OrgPlane() {
+		var stray []string
+		for _, s := range []struct{ name, v string }{{"SW_ORG_PLANE_JWKS_URL", c.OrgPlaneJWKSURL},
+			{"SW_ORG_PLANE_URL", c.OrgPlaneURL}, {"SW_ORG_PLANE_SERVICE_CREDENTIAL_FILE", c.OrgPlaneCredentialFile}} {
+			if s.v != "" {
+				stray = append(stray, s.name)
+			}
+		}
+		if len(stray) > 0 {
+			return Config{}, fmt.Errorf("%s set without SW_ORG_PLANE_ISSUER: set the issuer to switch to the organization plane, or remove them",
+				strings.Join(stray, ", "))
+		}
 	}
 
 	fake, err := parseBool(getenv("SW_FAKE_SOURCES"))
@@ -128,15 +156,23 @@ func Load(getenv func(string) string) (Config, error) {
 		need("SW_PUBLIC_URL", c.PublicURL)
 		need("SW_SUPERPIPELINE_URL", c.SuperpipelineURL)
 		need("SW_HUB_URL", c.HubURL)
-		need("SW_HUB_CLIENT_ID", c.HubClientID)
-		need("SW_HUB_CLIENT_SECRET_FILE", c.HubClientSecretFile)
+		if c.OrgPlane() {
+			need("SW_ORG_PLANE_SERVICE_CREDENTIAL_FILE", c.OrgPlaneCredentialFile)
+		} else {
+			need("SW_HUB_CLIENT_ID", c.HubClientID)
+			need("SW_HUB_CLIENT_SECRET_FILE", c.HubClientSecretFile)
+		}
 		need("SW_TRACES_URL", c.TracesURL)
 		need("SW_LOGS_URL", c.LogsURL)
+	}
+	if c.OrgPlane() {
+		need("SW_ORG_PLANE_JWKS_URL", c.OrgPlaneJWKSURL)
+		need("SW_ORG_PLANE_URL", c.OrgPlaneURL)
 	}
 	if c.AppEnabled() {
 		need("SW_APP_CLIENT_ID", c.AppClientID)
 		need("SW_SESSION_SECRET_FILE", c.SessionSecretFile)
-		if c.FakeSources {
+		if c.FakeSources && !c.OrgPlane() {
 			need("SW_HUB_URL", c.HubURL) // sign-in still goes through a hub
 		}
 	}
@@ -152,6 +188,7 @@ func Load(getenv func(string) string) (Config, error) {
 	for _, u := range []struct{ name, v string }{
 		{"SW_PUBLIC_URL", c.PublicURL}, {"SW_SUPERPIPELINE_URL", c.SuperpipelineURL}, {"SW_HUB_URL", c.HubURL},
 		{"SW_TRACES_URL", c.TracesURL}, {"SW_LOGS_URL", c.LogsURL}, {"SW_OTLP_ENDPOINT", c.OTLPEndpoint},
+		{"SW_ORG_PLANE_ISSUER", c.OrgPlaneIssuer}, {"SW_ORG_PLANE_JWKS_URL", c.OrgPlaneJWKSURL}, {"SW_ORG_PLANE_URL", c.OrgPlaneURL},
 	} {
 		if u.v == "" {
 			continue
@@ -160,6 +197,9 @@ func Load(getenv func(string) string) (Config, error) {
 		if err != nil || (p.Scheme != "http" && p.Scheme != "https") || p.Host == "" {
 			return Config{}, fmt.Errorf("%s: want an absolute http(s) URL, got %q", u.name, u.v)
 		}
+	}
+	if strings.HasSuffix(c.OrgPlaneIssuer, "/") {
+		return Config{}, fmt.Errorf("SW_ORG_PLANE_ISSUER is compared exactly with each token's iss; remove the trailing slash from %q", c.OrgPlaneIssuer)
 	}
 	return c, nil
 }

@@ -51,6 +51,16 @@ type wiring struct {
 	pingers            map[string]source.Pinger
 }
 
+// bearerAuth is how a bearer token names its caller. Under the organization plane, sub is always
+// the prn_ id, so the token is the answer. Under the hub, a person's sub is their hub account id,
+// which Resolving turns into the prn_ id through the hub's principals route.
+func bearerAuth(cfg config.Config, w wiring) auth.Authenticator {
+	if cfg.OrgPlane() {
+		return w.authn
+	}
+	return auth.Resolving{Inner: w.authn, Principals: w.principals}
+}
+
 // Migration retry backoff while the verdict Postgres is unreachable.
 const (
 	migrateMinWait = time.Second
@@ -100,8 +110,7 @@ func Build(ctx context.Context, cfg config.Config, version string, logger *slog.
 	joiner := &join.Joiner{Superpipeline: w.sp, AgentPod: w.ap, Traces: w.tr, Logs: w.lg, Errors: w.er,
 		Verdicts: store, Principals: w.principals, Timeout: cfg.SourceTimeout, Observe: telemetry.SourceObserver(logger)}
 	subjects := &join.Subjects{Superpipeline: w.sp, AgentPod: w.ap, Attempts: w.attempts, Timeout: cfg.SourceTimeout}
-	// Every bearer token names its caller by prn_ id, whatever the hub put in sub.
-	authn := auth.Resolving{Inner: w.authn, Principals: w.principals}
+	authn := bearerAuth(cfg, w)
 	ops := &api.Ops{Join: joiner, Spans: w.spans, Logs: w.logLister, Attempts: w.attempts, Timeout: cfg.SourceTimeout,
 		Verdicts:    &verdicts.Service{Store: store, Subjects: subjects},
 		Runs:        &runs.PGStore{Pool: pool, Ready: store.Ready}, // same database, same migration gate
@@ -186,9 +195,21 @@ func signIn(cfg config.Config, srv *api.Server, w wiring, store *verdicts.Gated,
 	}
 	m := &session.Manager{Store: &session.PGStore{Pool: pool, Ready: store.Ready}, Allowed: allowed}
 	cookies := session.Cookies{Secure: strings.HasPrefix(cfg.PublicURL, "https://")}
-	login := &session.Login{HubURL: cfg.HubURL, ClientID: cfg.AppClientID, PublicURL: cfg.PublicURL, Origin: origin,
-		Key: key, Tokens: auth.NewVerifier(cfg.HubURL, cfg.PublicURL, hc), Principals: w.principals, Sessions: m,
-		Cookies: cookies, HTTP: hc, Logger: logger}
+	login := &session.Login{ClientID: cfg.AppClientID, PublicURL: cfg.PublicURL, Origin: origin, Key: key,
+		Sessions: m, Cookies: cookies, HTTP: hc, Logger: logger}
+	if cfg.OrgPlane() {
+		u, err := url.Parse(cfg.OrgPlaneURL)
+		if err != nil {
+			return nil, fmt.Errorf("SW_ORG_PLANE_URL: %w", err)
+		}
+		login.Endpoints = session.PlaneEndpoints{URL: cfg.OrgPlaneURL, Resource: cfg.PublicURL}
+		login.Tokens = auth.NewPlaneVerifier(cfg.OrgPlaneIssuer, cfg.OrgPlaneJWKSURL, cfg.PublicURL, hc)
+		login.SubIsPrincipal, login.Provider = true, u.Host
+	} else {
+		login.Endpoints = session.HubEndpoints{URL: cfg.HubURL}
+		login.Tokens = auth.NewVerifier(cfg.HubURL, cfg.PublicURL, hc)
+		login.Principals, login.Provider = w.principals, "AgentPod"
+	}
 	srv.Sessions, srv.SessionCookie, srv.Login = m, cookies.SessionName(), login.Handler()
 	logger.Info("browser sign-in on", "allowed", len(allowed), "secure_cookies", cookies.Secure)
 	return m, nil
@@ -233,9 +254,9 @@ func fakeWiring() (wiring, error) {
 }
 
 func realWiring(cfg config.Config, hc *http.Client) (wiring, error) {
-	secret, err := auth.ReadSecretFile(cfg.HubClientSecretFile)
+	hubTokens, spTokens, authn, err := identity(cfg, hc)
 	if err != nil {
-		return wiring{}, fmt.Errorf("SW_HUB_CLIENT_SECRET_FILE: %w", err)
+		return wiring{}, err
 	}
 	tracesBearer, err := optionalSecret(cfg.TracesTokenFile)
 	if err != nil {
@@ -245,16 +266,36 @@ func realWiring(cfg config.Config, hc *http.Client) (wiring, error) {
 	if err != nil {
 		return wiring{}, fmt.Errorf("SW_LOGS_TOKEN_FILE: %w", err)
 	}
-	tokens := auth.NewHubTokenSource(cfg.HubURL, cfg.HubClientID, secret, hc)
-	sp := superpipeline.New(cfg.SuperpipelineURL, tokens, hc)
-	ap := agentpod.New(cfg.HubURL, tokens, hc)
+	sp := superpipeline.New(cfg.SuperpipelineURL, spTokens, hc)
+	ap := agentpod.New(cfg.HubURL, hubTokens, hc)
 	tr := traces.New(cfg.TracesURL, tracesBearer, hc)
 	lc := logs.NewClient(cfg.LogsURL, logsBearer, hc)
 	lg := logs.New(lc)
 	return wiring{sp: sp, ap: ap, tr: tr, lg: lg, er: errsrc.New(lc),
 		spans: tr, transcripts: ap, logLister: lg, attempts: ap, principals: ap,
-		authn:   auth.NewVerifier(cfg.HubURL, cfg.PublicURL, hc),
+		authn:   authn,
 		pingers: map[string]source.Pinger{"superpipeline": sp, "agentpod": ap, "traces": tr, "logs": lg}}, nil
+}
+
+// identity picks the one issuer. Under the organization plane, superwitness verifies plane
+// tokens and asks the plane for one service token per product, each with that product's base
+// URL as its audience. Otherwise the hub does both, with one token for every source.
+func identity(cfg config.Config, hc *http.Client) (hub, sp auth.TokenSource, authn auth.Authenticator, err error) {
+	if cfg.OrgPlane() {
+		cred, err := auth.ReadServiceCredential(cfg.OrgPlaneCredentialFile)
+		if err != nil {
+			return nil, nil, nil, fmt.Errorf("SW_ORG_PLANE_SERVICE_CREDENTIAL_FILE: %w", err)
+		}
+		return auth.NewPlaneTokenSource(cfg.OrgPlaneURL, cred, cfg.HubURL, hc),
+			auth.NewPlaneTokenSource(cfg.OrgPlaneURL, cred, cfg.SuperpipelineURL, hc),
+			auth.NewPlaneVerifier(cfg.OrgPlaneIssuer, cfg.OrgPlaneJWKSURL, cfg.PublicURL, hc), nil
+	}
+	secret, err := auth.ReadSecretFile(cfg.HubClientSecretFile)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("SW_HUB_CLIENT_SECRET_FILE: %w", err)
+	}
+	tokens := auth.NewHubTokenSource(cfg.HubURL, cfg.HubClientID, secret, hc)
+	return tokens, tokens, auth.NewVerifier(cfg.HubURL, cfg.PublicURL, hc), nil
 }
 
 func optionalSecret(path string) (string, error) {

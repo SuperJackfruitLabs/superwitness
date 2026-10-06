@@ -98,3 +98,34 @@ func splitJWT(token string) []string {
 	}
 	return parts
 }
+
+// PlaneServiceToken mints the canary's token for one audience at the organization plane. It
+// reads the credential file on first use, as ServiceToken does, and builds the source once.
+type PlaneServiceToken struct {
+	PlaneURL       string
+	CredentialFile string
+	Audience       string
+	HTTP           *http.Client
+	Now            func() time.Time
+
+	mu  sync.Mutex
+	src *auth.PlaneTokenSource
+}
+
+func (c *PlaneServiceToken) Token(ctx context.Context) (string, error) {
+	c.mu.Lock()
+	if c.src == nil {
+		cred, err := auth.ReadServiceCredential(c.CredentialFile)
+		if err != nil {
+			c.mu.Unlock()
+			return "", fmt.Errorf("reading the plane service credential: %w", err)
+		}
+		c.src = auth.NewPlaneTokenSource(c.PlaneURL, cred, c.Audience, c.HTTP)
+		if c.Now != nil {
+			c.src.Now = c.Now
+		}
+	}
+	src := c.src
+	c.mu.Unlock()
+	return src.Token(ctx)
+}

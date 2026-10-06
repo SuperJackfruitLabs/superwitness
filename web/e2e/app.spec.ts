@@ -9,7 +9,7 @@ async function signInAs(request: APIRequestContext, sub: string, email = "") {
 test("someone the allowlist does not name is refused", async ({ page, request }) => {
   await signInAs(request, "hubuser_7f3a"); // the development set's prn_human02
   await page.goto("/");
-  await page.getByRole("link", { name: "Sign in with AgentPod" }).click();
+  await page.getByRole("link", { name: "Sign in", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Not authorised" })).toBeVisible();
 });
 
@@ -18,7 +18,7 @@ test("sign in, browse, record a verdict and revise it", async ({ page, request }
 
   await test.step("sign in", async () => {
     await page.goto("/");
-    await page.getByRole("link", { name: "Sign in with AgentPod" }).click();
+    await page.getByRole("link", { name: "Sign in", exact: true }).click();
     await expect(page.getByRole("heading", { name: "All runs" })).toBeVisible();
     await expect(page.getByText("human01@example.com")).toBeVisible();
   });
@@ -87,7 +87,7 @@ test("sign in, browse, record a verdict and revise it", async ({ page, request }
 
   await test.step("sign out", async () => {
     await page.getByRole("button", { name: "Sign out" }).click();
-    await expect(page.getByRole("link", { name: "Sign in with AgentPod" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Sign in", exact: true })).toBeVisible();
     await expect(page.getByRole("alert")).toHaveCount(0);
   });
 });
@@ -96,7 +96,7 @@ test("on a phone the sidebar folds into a menu", async ({ page, request }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await signInAs(request, "hubuser_01", "human01@example.com");
   await page.goto("/");
-  await page.getByRole("link", { name: "Sign in with AgentPod" }).click();
+  await page.getByRole("link", { name: "Sign in", exact: true }).click();
   await expect(page.getByRole("heading", { name: "All runs" })).toBeVisible();
   const nav = page.getByRole("navigation", { name: "Main" });
   await expect(nav).toBeHidden();

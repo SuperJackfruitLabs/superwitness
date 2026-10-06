@@ -18,9 +18,13 @@ are trimmed from every value.
 | `SW_DATABASE_URL` | yes / yes | none | the Postgres DSN for the runtime role. |
 | `SW_MIGRATE_DATABASE_URL` | no / no | `SW_DATABASE_URL` | the Postgres DSN migrations run over: the owner role. |
 | `SW_SUPERPIPELINE_URL` | yes / no | none | superpipeline, where runs, cards, gates and usage are read. |
-| `SW_HUB_URL` | yes / no | none | the AgentPod hub: attempts, principals, the service token, and the issuer of caller tokens. |
+| `SW_HUB_URL` | yes / no | none | the AgentPod hub: attempts, principals, the service token, and, without the plane, the issuer of caller tokens. |
 | `SW_HUB_CLIENT_ID` | yes / no | none | superwitness's AgentPod service credential id, `svc_…`. |
 | `SW_HUB_CLIENT_SECRET_FILE` | yes / no | none | a file holding that credential's secret. |
+| `SW_ORG_PLANE_ISSUER` | no / no | none: the hub issues every token | the organization plane's issuer, compared exactly with each token's `iss` (no trailing slash). Setting it switches caller tokens, browser sign-in and superwitness's own service tokens to the plane; nothing accepts both. |
+| `SW_ORG_PLANE_JWKS_URL` | with the plane | none | the plane's key set. Keys are cached for at most 10 minutes, refetched on an unknown `kid`, and the last good set is used while the plane is unreachable. |
+| `SW_ORG_PLANE_URL` | with the plane | none | the plane's base URL, for sign-in (`/api/auth/oauth2/*`) and service tokens (`/api/token/service`). |
+| `SW_ORG_PLANE_SERVICE_CREDENTIAL_FILE` | with the plane (not in fake mode) | none | a file holding superwitness's plane service credential, `svc_<id>:<secret>`, on one line; not readable by group or others. Under the plane, `SW_HUB_CLIENT_ID` and `SW_HUB_CLIENT_SECRET_FILE` are not used. |
 | `SW_TRACES_URL` | yes / no | none | VictoriaTraces. |
 | `SW_TRACES_TOKEN_FILE` | no / no | none | a file holding a bearer token to send to VictoriaTraces. |
 | `SW_LOGS_URL` | yes / no | none | VictoriaLogs. |
@@ -33,6 +37,10 @@ are trimmed from every value.
 | `SW_SOURCE_TIMEOUT` | no / no | `2s` | how long each source has to answer, as a Go duration such as `2s` or `1500ms`; it must be positive. |
 | `SW_OTLP_ENDPOINT` | no / no | none: superwitness sends no telemetry of its own | the OTLP/HTTP endpoint for superwitness's own traces and metrics ([Sending telemetry](/use/telemetry/#superwitnesss-own-telemetry)). |
 | `SW_FAKE_SOURCES` | no / – | `false` | `1` or `true` serves the built-in development run and accepts development tokens ([Install](/install/#try-it-without-the-other-products)). Accepts `true`/`false`/`1`/`0`; empty is false. |
+
+With the plane, superwitness asks for its hub token with audience `SW_HUB_URL` and its
+superpipeline token with audience `SW_SUPERPIPELINE_URL`, so both must be those products' public
+resource URLs.
 
 In fake mode, the product, engine and credential settings are not used: the sources are built
 in. A URL among them that is set is still validated. `SW_OTLP_ENDPOINT` and `SW_SOURCE_TIMEOUT`

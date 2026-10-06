@@ -3,6 +3,31 @@
 All notable changes to superwitness are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Unreleased
+
+### Added
+
+- **Organization plane.** `SW_ORG_PLANE_ISSUER`, `SW_ORG_PLANE_JWKS_URL`, `SW_ORG_PLANE_URL` and
+  `SW_ORG_PLANE_SERVICE_CREDENTIAL_FILE`. Unset, nothing changes.
+- Under the organization plane, caller tokens are verified against the plane's keys and their
+  `sub` is used as the `prn_` id with no hub lookup. Grant scopes are read only from agent and
+  service tokens. A token whose workspace has not enabled superwitness is answered
+  `403 {"error":"product_not_enabled","org":"org_…"}`.
+- Under the organization plane, browser sign-in goes through the plane's OAuth 2.1 authorization
+  code flow with PKCE as a public client, with `resource` set to `SW_PUBLIC_URL`. The `sub` is
+  trusted as the `prn_` id. New sign-in refusal reasons: `product_not_enabled` and
+  `issuer_unavailable`.
+- Under the organization plane, superwitness gets its service tokens from the plane, one for each
+  product it reads, with that product's URL as the audience.
+- The canary (`superwitness canary run`) gets its tokens from the organization plane when
+  `SW_ORG_PLANE_URL` is set, one for superpipeline and one for superwitness
+  (`SWC_ORG_PLANE_SERVICE_CREDENTIAL_FILE`, `SWC_SUPERWITNESS_AUDIENCE`).
+
+### Changed
+
+- The 401 message for a missing token reads `a bearer token is required`.
+- The app's sign-in link reads "Sign in".
+
 ## 0.0.4 — 2026-10-06
 
 Transcripts: what an agent was asked, what it sent to each tool and what came back, read live

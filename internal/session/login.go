@@ -36,20 +36,24 @@ func DeriveLoginKey(secret []byte) ([]byte, error) {
 }
 
 // Login is the browser sign-in: GET /auth/login, GET /auth/callback and POST /auth/logout,
-// against the hub's authorize and token-exchange routes, with PKCE (S256).
+// against an issuer's authorize and token routes (the hub's or the organization plane's), with
+// PKCE (S256).
 type Login struct {
-	HubURL     string // SW_HUB_URL, the token issuer
-	ClientID   string // SW_APP_CLIENT_ID
-	PublicURL  string // SW_PUBLIC_URL; the callback is {PublicURL}/auth/callback
-	Origin     string // auth.PublicOrigin(SW_PUBLIC_URL): what a sign-out's Origin header must equal
-	Key        []byte // DeriveLoginKey(secret)
-	Tokens     auth.Authenticator
-	Principals auth.PrincipalLookup
-	Sessions   *Manager
-	Cookies    Cookies
-	HTTP       *http.Client
-	Logger     *slog.Logger
-	Now        func() time.Time
+	Endpoints      Endpoints // the issuer's authorize and token routes: HubEndpoints or PlaneEndpoints
+	HubURL         string    // SW_HUB_URL: used as HubEndpoints when Endpoints is nil
+	SubIsPrincipal bool      // the issuer's sub is always a prn_ id (the organization plane): no lookup
+	Provider       string    // what the pages call the sign-in service; empty means "AgentPod"
+	ClientID       string    // SW_APP_CLIENT_ID
+	PublicURL      string    // SW_PUBLIC_URL; the callback is {PublicURL}/auth/callback
+	Origin         string    // auth.PublicOrigin(SW_PUBLIC_URL): what a sign-out's Origin header must equal
+	Key            []byte    // DeriveLoginKey(secret)
+	Tokens         auth.Authenticator
+	Principals     auth.PrincipalLookup // used only when SubIsPrincipal is false
+	Sessions       *Manager
+	Cookies        Cookies
+	HTTP           *http.Client
+	Logger         *slog.Logger
+	Now            func() time.Time
 }
 
 func (l *Login) now() time.Time {
@@ -76,6 +80,125 @@ func (l *Login) Handler() http.Handler {
 }
 
 func (l *Login) redirectURI() string { return l.PublicURL + "/auth/callback" }
+
+func (l *Login) endpoints() Endpoints {
+	if l.Endpoints != nil {
+		return l.Endpoints
+	}
+	return HubEndpoints{URL: l.HubURL}
+}
+
+func (l *Login) pages() pageSet { return pagesFor(l.Provider) }
+
+// unavailableReason is the log reason when the issuer cannot be reached at sign-in.
+func (l *Login) unavailableReason() string {
+	if l.SubIsPrincipal {
+		return "issuer_unavailable"
+	}
+	return "hub_unavailable"
+}
+
+// Endpoints is the issuer a browser signs in through.
+type Endpoints interface {
+	// AuthorizeURL is where the browser goes to sign in.
+	AuthorizeURL(clientID, redirectURI, state, challenge string) string
+	// Exchange trades the code for an access token, server to server, with no Origin header.
+	Exchange(ctx context.Context, hc *http.Client, clientID, code, verifier, redirectURI string) (string, error)
+}
+
+// HubEndpoints is the AgentPod hub's authorize page and JSON token exchange.
+type HubEndpoints struct{ URL string }
+
+func (e HubEndpoints) AuthorizeURL(clientID, redirectURI, state, challenge string) string {
+	q := url.Values{}
+	q.Set("client", clientID)
+	q.Set("redirect_uri", redirectURI)
+	q.Set("state", state)
+	q.Set("code_challenge", challenge)
+	q.Set("code_challenge_method", "S256")
+	return e.URL + "/api/auth/authorize?" + q.Encode()
+}
+
+func (e HubEndpoints) Exchange(ctx context.Context, hc *http.Client, _, code, verifier, redirectURI string) (string, error) {
+	body, _ := json.Marshal(map[string]string{"code": code, "code_verifier": verifier, "redirect_uri": redirectURI})
+	var out struct {
+		Token string `json:"token"`
+	}
+	if err := postForToken(ctx, hc, e.URL+"/api/auth/token/exchange", "application/json", bytes.NewReader(body), &out); err != nil {
+		return "", err
+	}
+	if out.Token == "" {
+		return "", errExchangeRefused
+	}
+	return out.Token, nil
+}
+
+// PlaneEndpoints is the organization plane's OAuth 2.1 authorization code flow with PKCE (S256)
+// for a first-party public client. Both requests carry resource=<SW_PUBLIC_URL>, so the token's
+// aud is this deployment. The refresh token in the answer is not kept: superwitness's own session
+// holds the sign-in, and signing in again re-runs authorize.
+type PlaneEndpoints struct {
+	URL      string // SW_ORG_PLANE_URL
+	Resource string // SW_PUBLIC_URL
+}
+
+func (e PlaneEndpoints) AuthorizeURL(clientID, redirectURI, state, challenge string) string {
+	q := url.Values{}
+	q.Set("response_type", "code")
+	q.Set("client_id", clientID)
+	q.Set("redirect_uri", redirectURI)
+	q.Set("scope", "openid")
+	q.Set("state", state)
+	q.Set("code_challenge", challenge)
+	q.Set("code_challenge_method", "S256")
+	q.Set("resource", e.Resource)
+	return e.URL + "/api/auth/oauth2/authorize?" + q.Encode()
+}
+
+func (e PlaneEndpoints) Exchange(ctx context.Context, hc *http.Client, clientID, code, verifier, redirectURI string) (string, error) {
+	form := url.Values{"grant_type": {"authorization_code"}, "code": {code}, "redirect_uri": {redirectURI},
+		"client_id": {clientID}, "code_verifier": {verifier}, "resource": {e.Resource}}
+	var out struct {
+		AccessToken string `json:"access_token"`
+		TokenType   string `json:"token_type"`
+	}
+	if err := postForToken(ctx, hc, e.URL+"/api/auth/oauth2/token", "application/x-www-form-urlencoded",
+		strings.NewReader(form.Encode()), &out); err != nil {
+		return "", err
+	}
+	if out.AccessToken == "" || !strings.EqualFold(out.TokenType, "Bearer") {
+		return "", errExchangeRefused
+	}
+	return out.AccessToken, nil
+}
+
+// postForToken POSTs body and decodes a 200 answer into out. A transport error or 5xx is
+// errIssuerUnavailable; any other answer is errExchangeRefused.
+func postForToken(ctx context.Context, hc *http.Client, u, contentType string, body io.Reader, out any) error {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u, body)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", contentType)
+	req.Header.Set("Accept", "application/json")
+	if hc == nil {
+		hc = http.DefaultClient
+	}
+	resp, err := hc.Do(req)
+	if err != nil {
+		return fmt.Errorf("%w: %v", errIssuerUnavailable, err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode >= 500 {
+		return fmt.Errorf("%w: HTTP %d", errIssuerUnavailable, resp.StatusCode)
+	}
+	if resp.StatusCode != http.StatusOK || json.NewDecoder(io.LimitReader(resp.Body, 64<<10)).Decode(out) != nil {
+		return errExchangeRefused
+	}
+	return nil
+}
 
 // loginCookie is what the browser carries to the hub and back: the state the callback must
 // echo, the PKCE verifier and where to go after. It is signed, not encrypted: it holds nothing
@@ -152,13 +275,7 @@ func (l *Login) login(w http.ResponseWriter, r *http.Request) {
 	lc := loginCookie{State: randomToken(), Verifier: randomToken(), Next: SafeNext(r.URL.Query().Get("next")),
 		Expires: l.now().Add(LoginTTL).Unix()}
 	l.Cookies.Set(w, l.Cookies.LoginName(), lc.seal(l.Key), LoginTTL)
-	q := url.Values{}
-	q.Set("client", l.ClientID)
-	q.Set("redirect_uri", l.redirectURI())
-	q.Set("state", lc.State)
-	q.Set("code_challenge", Challenge(lc.Verifier))
-	q.Set("code_challenge_method", "S256")
-	http.Redirect(w, r, l.HubURL+"/api/auth/authorize?"+q.Encode(), http.StatusFound)
+	http.Redirect(w, r, l.endpoints().AuthorizeURL(l.ClientID, l.redirectURI(), lc.State, Challenge(lc.Verifier)), http.StatusFound)
 }
 
 func (l *Login) refuse(w http.ResponseWriter, status int, reason string, p pageData, attrs ...any) {
@@ -171,68 +288,80 @@ func (l *Login) callback(w http.ResponseWriter, r *http.Request) {
 	ck, cerr := r.Cookie(l.Cookies.LoginName())
 	l.Cookies.Clear(w, l.Cookies.LoginName()) // one use, whatever happens next
 	if cerr != nil {
-		l.refuse(w, http.StatusBadRequest, "login_missing", pageExpired)
+		l.refuse(w, http.StatusBadRequest, "login_missing", l.pages().expired)
 		return
 	}
 	lc, err := openLoginCookie(ck.Value, l.Key, l.now())
 	switch {
 	case errors.Is(err, errLoginExpired):
-		l.refuse(w, http.StatusBadRequest, "login_expired", pageExpired)
+		l.refuse(w, http.StatusBadRequest, "login_expired", l.pages().expired)
 		return
 	case err != nil:
-		l.refuse(w, http.StatusBadRequest, "login_invalid", pageExpired)
+		l.refuse(w, http.StatusBadRequest, "login_invalid", l.pages().expired)
 		return
 	}
 	if subtle.ConstantTimeCompare([]byte(q.Get("state")), []byte(lc.State)) != 1 {
-		l.refuse(w, http.StatusBadRequest, "state_mismatch", pageExpired)
+		l.refuse(w, http.StatusBadRequest, "state_mismatch", l.pages().expired)
 		return
 	}
 	code := q.Get("code")
 	if code == "" {
-		l.refuse(w, http.StatusBadRequest, "no_code", pageFailed)
+		l.refuse(w, http.StatusBadRequest, "no_code", l.pages().failed)
 		return
 	}
-	tok, err := l.exchange(r.Context(), code, lc.Verifier)
-	if errors.Is(err, errHubUnavailable) {
-		l.refuse(w, http.StatusServiceUnavailable, "hub_unavailable", pageHubDown)
+	tok, err := l.endpoints().Exchange(r.Context(), l.HTTP, l.ClientID, code, lc.Verifier, l.redirectURI())
+	if errors.Is(err, errIssuerUnavailable) {
+		l.refuse(w, http.StatusServiceUnavailable, l.unavailableReason(), l.pages().down)
 		return
 	}
 	if err != nil {
-		l.refuse(w, http.StatusBadRequest, "exchange_refused", pageFailed)
+		l.refuse(w, http.StatusBadRequest, "exchange_refused", l.pages().failed)
 		return
 	}
 	p, err := l.Tokens.Verify(r.Context(), tok)
-	if err != nil {
-		l.refuse(w, http.StatusBadRequest, "token_invalid", pageFailed)
-		return
-	}
-	// The exchanged token's sub is the hub account, not always the principal id: resolve it.
-	rec, err := l.Principals.Lookup(r.Context(), p.ID)
+	var ne *auth.NotEnabledError
 	switch {
-	case errors.Is(err, auth.ErrPrincipalNotFound):
-		l.refuse(w, http.StatusForbidden, "no_principal", pageNotAuthorised)
+	case errors.As(err, &ne):
+		l.refuse(w, http.StatusForbidden, "product_not_enabled", l.pages().notAuthorised, "org", ne.Org)
 		return
 	case err != nil:
-		l.refuse(w, http.StatusServiceUnavailable, "hub_unavailable", pageHubDown)
+		l.refuse(w, http.StatusBadRequest, "token_invalid", l.pages().failed)
 		return
 	}
-	if rec.Suspended {
-		l.refuse(w, http.StatusForbidden, "suspended", pageNotAuthorised, "principal", rec.ID)
+	if !l.SubIsPrincipal {
+		// The hub's browser token names the hub account, not always the principal id: resolve it.
+		rec, err := l.Principals.Lookup(r.Context(), p.ID)
+		switch {
+		case errors.Is(err, auth.ErrPrincipalNotFound):
+			l.refuse(w, http.StatusForbidden, "no_principal", l.pages().notAuthorised)
+			return
+		case err != nil:
+			l.refuse(w, http.StatusServiceUnavailable, "hub_unavailable", l.pages().down)
+			return
+		}
+		if rec.Suspended {
+			l.refuse(w, http.StatusForbidden, "suspended", l.pages().notAuthorised, "principal", rec.ID)
+			return
+		}
+		if rec.Kind != auth.KindHuman {
+			l.refuse(w, http.StatusForbidden, "not_human", l.pages().notAuthorised, "principal", rec.ID)
+			return
+		}
+		p.ID = rec.ID
+	}
+	// The token's principalKind claim must say human; under the plane it is the only word on it.
+	if p.Kind != auth.KindHuman {
+		l.refuse(w, http.StatusForbidden, "not_human", l.pages().notAuthorised, "principal", p.ID)
 		return
 	}
-	if p.Kind != auth.KindHuman || rec.Kind != auth.KindHuman { // the token's claim and the record must both say human
-		l.refuse(w, http.StatusForbidden, "not_human", pageNotAuthorised, "principal", rec.ID)
-		return
-	}
-	p.ID = rec.ID
 	if !l.Sessions.Allowed[p.ID] {
-		l.refuse(w, http.StatusForbidden, "not_allowlisted", pageNotAuthorised, "principal", p.ID)
+		l.refuse(w, http.StatusForbidden, "not_allowlisted", l.pages().notAuthorised, "principal", p.ID)
 		return
 	}
 	l.revokePrevious(r)
 	token, err := l.Sessions.Issue(r.Context(), p)
 	if err != nil {
-		l.refuse(w, http.StatusServiceUnavailable, "store_unavailable", pageDatabase, "principal", p.ID)
+		l.refuse(w, http.StatusServiceUnavailable, "store_unavailable", l.pages().database, "principal", p.ID)
 		return
 	}
 	l.Cookies.Set(w, l.Cookies.SessionName(), token, AbsoluteTTL)
@@ -263,41 +392,9 @@ func (l *Login) revokePrevious(r *http.Request) {
 }
 
 var (
-	errHubUnavailable  = errors.New("hub unavailable")
-	errExchangeRefused = errors.New("hub refused the code")
+	errIssuerUnavailable = errors.New("issuer unavailable")
+	errExchangeRefused   = errors.New("the issuer refused the code")
 )
-
-// exchange trades the code for a token, server to server. It sends no Origin header: the hub
-// refuses an exchange that carries one, because only a page would.
-func (l *Login) exchange(ctx context.Context, code, verifier string) (string, error) {
-	body, _ := json.Marshal(map[string]string{"code": code, "code_verifier": verifier, "redirect_uri": l.redirectURI()})
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
-	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, l.HubURL+"/api/auth/token/exchange", bytes.NewReader(body))
-	if err != nil {
-		return "", err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	hc := l.HTTP
-	if hc == nil {
-		hc = http.DefaultClient
-	}
-	resp, err := hc.Do(req)
-	if err != nil {
-		return "", fmt.Errorf("%w: %v", errHubUnavailable, err)
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode >= 500 {
-		return "", fmt.Errorf("%w: HTTP %d", errHubUnavailable, resp.StatusCode)
-	}
-	var out struct {
-		Token string `json:"token"`
-	}
-	if resp.StatusCode != http.StatusOK || json.NewDecoder(io.LimitReader(resp.Body, 64<<10)).Decode(&out) != nil || out.Token == "" {
-		return "", errExchangeRefused
-	}
-	return out.Token, nil
-}
 
 func (l *Login) logout(w http.ResponseWriter, r *http.Request) {
 	// Compare against the normalised origin, as the gate does for session writes: the browser

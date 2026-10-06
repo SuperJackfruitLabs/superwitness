@@ -36,7 +36,7 @@ who signed in.
 
 ## Signing in
 
-**Sign in with AgentPod** sends the browser to AgentPod, which signs the person in if they are
+**Sign in** sends the browser to AgentPod, which signs the person in if they are
 not already and sends them back to `/auth/callback` with a one-time code. superwitness trades
 the code for a token server to server, with PKCE, checks the token, and looks up the AgentPod
 principal behind it. It then checks that the principal is a person, is not suspended, and is on
@@ -44,6 +44,15 @@ principal behind it. It then checks that the principal is a person, is not suspe
 services, sees **Not authorised**. Each refusal is logged as `auth.signin_refused` with a reason,
 for example `not_allowlisted`, `login_missing` (the sign-in cookie was absent) or `no_code` (the
 callback carried no code); the log never holds a token or a cookie.
+
+With `SW_ORG_PLANE_ISSUER` set, the app signs people in through the organization plane as the
+OAuth client named by `SW_APP_CLIENT_ID` (the plane registers it with the redirect
+`SW_PUBLIC_URL/auth/callback`). Both the authorize and the token request carry
+`resource=SW_PUBLIC_URL`, and the refresh token the plane returns is not kept. The token's `sub`
+is the person's `prn_` id, checked against `SW_ALLOWED_PRINCIPALS` with no lookup. Two more
+refusal reasons apply: `product_not_enabled` (the person's workspace has not enabled
+superwitness) and `issuer_unavailable` (the plane did not answer). The pages then name the
+plane's host instead of AgentPod.
 
 The sign-in itself rides on a signed `__Host-sw_login` cookie that lives ten minutes and is used
 once. A signed-in browser then holds a `__Host-sw_session` cookie and a superwitness session,

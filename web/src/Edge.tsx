@@ -13,7 +13,7 @@ export function SignedOut({ next }: { next: string }) {
       <p>Sign in to browse runs and record verdicts.</p>
       <p>
         <a className="button" href={`/auth/login?next=${encodeURIComponent(next)}`}>
-          Sign in with AgentPod
+          Sign in
         </a>
       </p>
     </main>

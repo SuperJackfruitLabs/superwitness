@@ -111,7 +111,7 @@ func TestGateWithoutSessionsIsTheOldMiddleware(t *testing.T) {
 	h := Gate{Bearer: DevAuthenticator{}}.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		seen = true
 	}))
-	if rec := send(h, "GET", "", "good", ""); rec.Code != 401 || seen || !strings.Contains(rec.Body.String(), "a hub-issued bearer token is required") {
+	if rec := send(h, "GET", "", "good", ""); rec.Code != 401 || seen || !strings.Contains(rec.Body.String(), "a bearer token is required") {
 		t.Errorf("cookie with sign-in off: %d %s", rec.Code, rec.Body)
 	}
 }

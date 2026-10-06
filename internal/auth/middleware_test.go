@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -65,5 +66,25 @@ func TestDevAuthenticatorScopes(t *testing.T) {
 	p, err = (DevAuthenticator{}).Verify(t.Context(), "dev:prn_reporter01:service")
 	if err != nil || p.HasScope("runs:write") {
 		t.Errorf("no scopes segment: %+v %v", p, err)
+	}
+}
+
+type notEnabled struct{}
+
+func (notEnabled) Verify(context.Context, string) (Principal, error) {
+	return Principal{}, &NotEnabledError{Org: "org_01"}
+}
+
+func TestMiddlewareAnswersProductNotEnabled(t *testing.T) {
+	h := Middleware(notEnabled{})(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(204) }))
+	req := httptest.NewRequest("GET", "/v1/x", nil)
+	req.Header.Set("Authorization", "Bearer anything")
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != 403 || rec.Header().Get("Content-Type") != "application/json" {
+		t.Fatalf("%d %q", rec.Code, rec.Header().Get("Content-Type"))
+	}
+	if got := strings.TrimSpace(rec.Body.String()); got != `{"error":"product_not_enabled","org":"org_01"}` {
+		t.Errorf("body = %s; want the contract's exact shape", got)
 	}
 }

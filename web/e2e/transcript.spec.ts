@@ -8,7 +8,7 @@ const FAILED_CALL = "00f067aa0ba902bc"; // the development set's failing tool_ca
 async function signIn(page: Page, request: APIRequestContext) {
   await request.post(`${HUB}/__stub/sign-in-as`, { data: { sub: "hubuser_01", kind: "human", email: "human01@example.com" } });
   await page.goto("/");
-  await page.getByRole("link", { name: "Sign in with AgentPod" }).click();
+  await page.getByRole("link", { name: "Sign in", exact: true }).click();
   await expect(page.getByRole("heading", { name: "All runs" })).toBeVisible();
 }
 
