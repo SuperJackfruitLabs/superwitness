@@ -242,9 +242,9 @@ func fakeWiring() (wiring, error) {
 }
 
 func realWiring(cfg config.Config, hc *http.Client) (wiring, error) {
-	secret, err := auth.ReadSecretFile(cfg.HubClientSecretFile)
+	hubTokens, spTokens, authn, err := identity(cfg, hc)
 	if err != nil {
-		return wiring{}, fmt.Errorf("SW_HUB_CLIENT_SECRET_FILE: %w", err)
+		return wiring{}, err
 	}
 	tracesBearer, err := optionalSecret(cfg.TracesTokenFile)
 	if err != nil {
@@ -254,16 +254,36 @@ func realWiring(cfg config.Config, hc *http.Client) (wiring, error) {
 	if err != nil {
 		return wiring{}, fmt.Errorf("SW_LOGS_TOKEN_FILE: %w", err)
 	}
-	tokens := auth.NewHubTokenSource(cfg.HubURL, cfg.HubClientID, secret, hc)
-	sp := superpipeline.New(cfg.SuperpipelineURL, tokens, hc)
-	ap := agentpod.New(cfg.HubURL, tokens, hc)
+	sp := superpipeline.New(cfg.SuperpipelineURL, spTokens, hc)
+	ap := agentpod.New(cfg.HubURL, hubTokens, hc)
 	tr := traces.New(cfg.TracesURL, tracesBearer, hc)
 	lc := logs.NewClient(cfg.LogsURL, logsBearer, hc)
 	lg := logs.New(lc)
 	return wiring{sp: sp, ap: ap, tr: tr, lg: lg, er: errsrc.New(lc),
 		spans: tr, transcripts: ap, logLister: lg, attempts: ap, principals: ap,
-		authn:   auth.NewVerifier(cfg.HubURL, cfg.PublicURL, hc),
+		authn:   authn,
 		pingers: map[string]source.Pinger{"superpipeline": sp, "agentpod": ap, "traces": tr, "logs": lg}}, nil
+}
+
+// identity picks the one issuer. Under the organization plane, superwitness verifies plane
+// tokens and asks the plane for one service token per product, each with that product's base
+// URL as its audience. Otherwise the hub does both, with one token for every source.
+func identity(cfg config.Config, hc *http.Client) (hub, sp auth.TokenSource, authn auth.Authenticator, err error) {
+	if cfg.OrgPlane() {
+		cred, err := auth.ReadServiceCredential(cfg.OrgPlaneCredentialFile)
+		if err != nil {
+			return nil, nil, nil, fmt.Errorf("SW_ORG_PLANE_SERVICE_CREDENTIAL_FILE: %w", err)
+		}
+		return auth.NewPlaneTokenSource(cfg.OrgPlaneURL, cred, cfg.HubURL, hc),
+			auth.NewPlaneTokenSource(cfg.OrgPlaneURL, cred, cfg.SuperpipelineURL, hc),
+			auth.NewPlaneVerifier(cfg.OrgPlaneIssuer, cfg.OrgPlaneJWKSURL, cfg.PublicURL, hc), nil
+	}
+	secret, err := auth.ReadSecretFile(cfg.HubClientSecretFile)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("SW_HUB_CLIENT_SECRET_FILE: %w", err)
+	}
+	tokens := auth.NewHubTokenSource(cfg.HubURL, cfg.HubClientID, secret, hc)
+	return tokens, tokens, auth.NewVerifier(cfg.HubURL, cfg.PublicURL, hc), nil
 }
 
 func optionalSecret(path string) (string, error) {
