@@ -55,7 +55,7 @@ func TestBuildAllSourcesOK(t *testing.T) {
 		t.Errorf("run = %+v", doc.Run)
 	}
 	if len(doc.Attempts) != 1 || doc.Attempts[0].Fingerprint.Harness != "hermes" ||
-		doc.Attempts[0].SpanCount != KnownCount(2) || doc.Attempts[0].Station != "stn_01" {
+		doc.Attempts[0].SpanCount != KnownCount(5) || doc.Attempts[0].Station != "stn_01" {
 		t.Errorf("attempts = %+v", doc.Attempts)
 	}
 	if doc.Trace.Status != TracePartial || len(doc.Trace.TraceIDs) != 2 {

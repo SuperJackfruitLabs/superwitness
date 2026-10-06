@@ -111,19 +111,19 @@ func spanPage(t *testing.T, srv *httptest.Server, query string) (int, api.SpanPa
 // Span paging at its edges.
 func TestSpanPagingEdges(t *testing.T) {
 	srv := newTestServer(t, nil)
-	code, p1, _ := spanPage(t, srv, "?limit=3")
-	if code != 200 || len(p1.Spans) != 3 || p1.NextCursor == "" {
+	code, p1, _ := spanPage(t, srv, "?limit=5")
+	if code != 200 || len(p1.Spans) != 5 || p1.NextCursor == "" {
 		t.Fatalf("page 1: %d %+v", code, p1)
 	}
-	code, p2, _ := spanPage(t, srv, "?limit=3&cursor="+p1.NextCursor)
-	if code != 200 || len(p2.Spans) != 1 || p2.NextCursor != "" {
+	code, p2, _ := spanPage(t, srv, "?limit=5&cursor="+p1.NextCursor)
+	if code != 200 || len(p2.Spans) != 2 || p2.NextCursor != "" {
 		t.Errorf("page 2: %d %+v", code, p2)
 	}
 	past := base64.RawURLEncoding.EncodeToString([]byte(`{"o":99}`))
 	if code, p, _ := spanPage(t, srv, "?cursor="+past); code != 200 || len(p.Spans) != 0 || p.NextCursor != "" || p.Spans == nil {
 		t.Errorf("past the end: %d %+v", code, p)
 	}
-	if code, p, _ := spanPage(t, srv, "?limit=99999"); code != 200 || len(p.Spans) != 4 {
+	if code, p, _ := spanPage(t, srv, "?limit=99999"); code != 200 || len(p.Spans) != 7 {
 		t.Errorf("clamped limit: %d %d", code, len(p.Spans))
 	}
 	if code, _, ec := spanPage(t, srv, "?limit=-1"); code != 400 || ec != "invalid_limit" {
