@@ -12,7 +12,7 @@ vi.mock("../api", async (orig) => ({
   getJSON: (...a: unknown[]) => getJSON(...a),
   postJSON: (...a: unknown[]) => postJSON(...a),
 }));
-import { MAX_COMMENT, VerdictDrawer } from "./Drawer";
+import { evidenceSummary, MAX_COMMENT, VerdictDrawer } from "./Drawer";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -164,6 +164,27 @@ describe("VerdictDrawer", () => {
     const o = [...host.querySelectorAll("option")].find((x) => x.value === "rubric:flat@1")!;
     expect(o.disabled).toBe(true);
     expect(o.textContent).toContain("scale not supported in the app");
+  });
+
+  it("counts cited transcript steps beside ticked spans", async () => {
+    const step = { session_id: "acps_a1", seq_from: 3, seq_to: 4 };
+    await open({ evidence: [step] });
+    expect(host.textContent).toContain("1 cited: 1 step from the transcript");
+    await fillDecision();
+    await click(save());
+    expect(postJSON.mock.calls[0][1].evidence_refs).toEqual([step]);
+  });
+
+  it("words the evidence line for every mix", () => {
+    const step = { session_id: "acps_a1", seq_from: 3, seq_to: 4 };
+    expect(evidenceSummary([], 0)).toBe("none; tick spans in the Trace tab or cite steps in the Transcript tab");
+    expect(evidenceSummary(["aaaaaaaaaaaaaaaa"], 0)).toBe("1 span ticked in the Trace tab");
+    expect(evidenceSummary(["aaaaaaaaaaaaaaaa", "bbbbbbbbbbbbbbbb"], 0)).toBe("2 spans ticked in the Trace tab");
+    expect(evidenceSummary([step, step], 0)).toBe("2 cited: 2 steps from the transcript");
+    expect(evidenceSummary(["aaaaaaaaaaaaaaaa", step], 0)).toBe("2 cited: 1 ticked in the Trace tab, 1 step from the transcript");
+    expect(evidenceSummary(["aaaaaaaaaaaaaaaa", step], 1)).toBe("2 cited: 1 from the verdict being revised, 1 step from the transcript");
+    expect(evidenceSummary(["aaaaaaaaaaaaaaaa", "bbbbbbbbbbbbbbbb"], 1)).toBe("2 cited: 1 from the verdict being revised, 1 ticked in the Trace tab");
+    expect(evidenceSummary(["aaaaaaaaaaaaaaaa"], 1)).toBe("1 cited: 1 from the verdict being revised");
   });
 
   it("a revision keeps the earlier evidence, merged with spans ticked now, without repeats", async () => {

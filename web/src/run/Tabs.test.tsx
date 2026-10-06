@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { Unavailable, VerdictList } from "./Panels";
 import { Facts, Tabs } from "./RunViewPage";
-import type { HistoryVerdict, Me } from "../types";
+import type { Doc, HistoryVerdict, Me } from "../types";
 
 describe("tabs", () => {
   it("marks the tab from the URL as selected, and puts each tab in the URL", () => {
@@ -41,5 +41,21 @@ describe("verdict history", () => {
     expect(html.match(/Revise/g)).toHaveLength(1);
     expect(html.indexOf("Revise")).toBeGreaterThan(html.indexOf('id="vrd_2"'));
     expect(html.indexOf("Revise")).toBeLessThan(html.indexOf('id="vrd_3"'));
+  });
+  it("links a cited transcript range back to the Transcript at that range", () => {
+    const attempts: Doc[] = [{ id: "attempt_a1", session_id: "acps_a1", seq_from: 1, seq_to: 9 }];
+    const html = renderToStaticMarkup(
+      <VerdictList
+        verdicts={[v("vrd_9", { evidence_refs: ["aaaaaaaaaaaaaaaa", { session_id: "acps_a1", seq_from: 3, seq_to: 4 }, { session_id: "acps_zz", seq_from: 1, seq_to: 1 }] })]}
+        gates={[]}
+        me={me}
+        onRevise={() => {}}
+        attempts={attempts}
+        page="/runs/superpipeline/brd_01/run_01"
+      />,
+    );
+    expect(html).toContain('href="/runs/superpipeline/brd_01/run_01?tab=transcript&amp;attempt=attempt_a1&amp;seq=3-4"');
+    expect(html).toContain("transcript 3\u20134 \u2197");
+    expect(html.match(/transcript \d/g)).toHaveLength(1); // a range in another run's session has no link here
   });
 });

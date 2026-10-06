@@ -83,6 +83,9 @@ export interface HistoryVerdict {
   created_at: string;
 }
 
+// What a verdict cites: a span id, or a range of one session's events.
+export type EvidenceRef = string | { session_id: string; seq_from: number; seq_to: number };
+
 export interface Span {
   trace_id: string;
   span_id: string;

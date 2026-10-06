@@ -4,7 +4,9 @@ import { display, list } from "../format";
 import type { Doc, HistoryVerdict, LogLine, Me, Span } from "../types";
 import { verdictSummary } from "../format";
 import { MAX_EVIDENCE } from "../verdict/Drawer";
+import { Link } from "../router";
 import { waterfall } from "./facts";
+import { runURL, seqParam } from "./transcript";
 
 export { MAX_EVIDENCE };
 
@@ -244,7 +246,7 @@ export interface Failure {
   message: string;
 }
 
-export function VerdictList({ verdicts, gates, me, onRevise, failures = [], loading = false, onRetry }: {
+export function VerdictList({ verdicts, gates, me, onRevise, failures = [], loading = false, onRetry, attempts = [], page = "" }: {
   verdicts: HistoryVerdict[];
   gates: Doc[];
   me: Me;
@@ -252,6 +254,8 @@ export function VerdictList({ verdicts, gates, me, onRevise, failures = [], load
   failures?: Failure[];
   loading?: boolean;
   onRetry?: () => void;
+  attempts?: Doc[];
+  page?: string;
 }) {
   const failed =
     failures.length > 0 ? (
@@ -293,6 +297,17 @@ export function VerdictList({ verdicts, gates, me, onRevise, failures = [], load
             {v.superseded_by && (
               <a href={`#${v.superseded_by}`}>superseded by {v.superseded_by}</a>
             )}
+            {list<unknown>(v.evidence_refs).map((r, i) => {
+              const ref = r as { session_id?: unknown; seq_from?: unknown; seq_to?: unknown };
+              if (typeof r !== "object" || r === null || typeof ref.seq_from !== "number" || typeof ref.seq_to !== "number") return null;
+              const a = attempts.find((x) => x.session_id === ref.session_id);
+              if (!a) return null;
+              return (
+                <Link key={i} to={runURL(page, { tab: "transcript", attempt: a.id, seq: seqParam(ref.seq_from, ref.seq_to) })}>
+                  transcript {ref.seq_from}–{ref.seq_to} ↗
+                </Link>
+              );
+            })}
             {!v.superseded_by && v.judge === me.principal && v.standard.startsWith("rubric:") && (
               <button onClick={() => onRevise(v)}>Revise</button>
             )}
