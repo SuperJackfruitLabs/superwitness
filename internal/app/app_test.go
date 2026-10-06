@@ -3,12 +3,14 @@
 package app
 
 import (
+	"bytes"
 	"context"
 	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -22,7 +24,8 @@ func TestBuildFakeMode(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	a, err := Build(context.Background(), cfg, "test", slog.New(slog.NewTextHandler(io.Discard, nil)))
+	var logs lockedBuffer
+	a, err := Build(context.Background(), cfg, "test", slog.New(slog.NewJSONHandler(&logs, nil)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,6 +61,17 @@ func TestBuildFakeMode(t *testing.T) {
 	if code, body := get("/v1/runs/superpipeline/brd_01/run_01", "dev:prn_human01:human"); code != 200 || !strings.Contains(body, `"trace_ids"`) {
 		t.Errorf("run: %d %s", code, body)
 	}
+	if code, body := get("/v1/runs/superpipeline/brd_01/run_01/transcript", "dev:prn_grader01:agent:transcripts:read"); code != 200 ||
+		!strings.Contains(body, "[redacted:anthropic-key]") {
+		t.Errorf("transcript: %d %s", code, body)
+	}
+	if code, body := get("/v1/runs/superpipeline/brd_01/run_01/transcript", "dev:prn_grader01:agent"); code != 403 ||
+		!strings.Contains(body, "transcripts_forbidden") {
+		t.Errorf("transcript without the scope: %d %s", code, body)
+	}
+	if n := strings.Count(logs.String(), `"msg":"transcript.read"`); n != 2 {
+		t.Errorf("%d transcript.read lines on the binary's logger, want 2", n)
+	}
 	if code, body := get("/runs/superpipeline/brd_01/run_01", ""); code != 200 || !strings.Contains(body, `<div id="root">`) {
 		t.Errorf("page: %d", code)
 	}
@@ -83,3 +97,16 @@ func TestBuildFakeMode(t *testing.T) {
 		t.Errorf("post verdict: %d", resp.StatusCode)
 	}
 }
+
+// lockedBuffer collects log output from the server's goroutines.
+type lockedBuffer struct {
+	mu sync.Mutex
+	b  bytes.Buffer
+}
+
+func (l *lockedBuffer) Write(p []byte) (int, error) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.b.Write(p)
+}
+func (l *lockedBuffer) String() string { l.mu.Lock(); defer l.mu.Unlock(); return l.b.String() }

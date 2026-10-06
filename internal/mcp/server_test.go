@@ -31,7 +31,7 @@ func mcpServer(t *testing.T) *httptest.Server {
 	ops := &api.Ops{
 		Join: &join.Joiner{Superpipeline: d.SP, AgentPod: d.AP, Traces: d.Traces, Logs: d.Logs, Errors: d.Errors,
 			Verdicts: store, Principals: d},
-		Spans: d, Logs: d, Attempts: d,
+		Spans: d, Logs: d, Attempts: d, Transcripts: d,
 		Verdicts: &verdicts.Service{Store: store, Subjects: &join.Subjects{Superpipeline: d.SP, AgentPod: d.AP, Attempts: d}},
 	}
 	rs := runs.NewMemStore(store)
@@ -100,7 +100,7 @@ func TestToolsListed(t *testing.T) {
 		names = append(names, tool.Name)
 	}
 	slices.Sort(names)
-	if strings.Join(names, ",") != "get_run,list_run_logs,list_run_spans,list_runs,record_verdict" {
+	if strings.Join(names, ",") != "get_run,get_transcript,list_run_logs,list_run_spans,list_runs,record_verdict" {
 		t.Errorf("tools = %v", names)
 	}
 }
@@ -195,5 +195,45 @@ func TestListRunsTool(t *testing.T) {
 	text, isErr = call(t, cs, "list_runs", map[string]any{"status": []string{"done"}})
 	if !isErr || !strings.Contains(text, "invalid_status") {
 		t.Errorf("bad status: %v %s", isErr, text)
+	}
+}
+
+func TestGetTranscriptTool(t *testing.T) {
+	srv := mcpServer(t)
+	plain, err := connect(t, srv, "dev:prn_grader01:agent:evidence:read")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer plain.Close()
+	run := map[string]any{"board_id": "brd_01", "run_id": "run_01"}
+	if text, isErr := call(t, plain, "get_transcript", run); !isErr || !strings.Contains(text, "transcripts_forbidden") {
+		t.Errorf("an evidence-only token: %v %s", isErr, text)
+	}
+
+	cs, err := connect(t, srv, "dev:prn_grader01:agent:transcripts:read")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cs.Close()
+	text, isErr := call(t, cs, "get_transcript", run)
+	if isErr || !strings.HasPrefix(text, `{"attempt_id":"attempt_01",`) || !strings.Contains(text, "[redacted:anthropic-key]") {
+		t.Errorf("whole attempt: %v %s", isErr, text)
+	}
+	text, isErr = call(t, cs, "get_transcript", map[string]any{"board_id": "brd_01", "run_id": "run_01", "attempt_id": "attempt_01",
+		"seq_from": 3, "seq_to": 4})
+	var page struct {
+		Items []map[string]any `json:"items"`
+	}
+	_ = json.Unmarshal([]byte(text), &page)
+	if isErr || len(page.Items) != 1 || page.Items[0]["id"] != "tc_01" {
+		t.Errorf("3..4: %v %s", isErr, text)
+	}
+	if text, isErr := call(t, cs, "get_transcript", map[string]any{"board_id": "brd_01", "run_id": "run_01", "seq_to": 10}); !isErr ||
+		!strings.Contains(text, "range_outside_attempt") {
+		t.Errorf("past the attempt: %v %s", isErr, text)
+	}
+	if text, isErr := call(t, cs, "get_transcript", map[string]any{"board_id": "brd_01", "run_id": "run_01", "attempt_id": "attempt_09"}); !isErr ||
+		!strings.Contains(text, "attempt_not_found") {
+		t.Errorf("unknown attempt: %v %s", isErr, text)
 	}
 }
