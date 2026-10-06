@@ -91,7 +91,7 @@ func (g Gate) Middleware(next http.Handler) http.Handler {
 		}
 		c, err := r.Cookie(g.Cookie)
 		if err != nil || c.Value == "" {
-			unauthorized(w, "sign in, or send a hub-issued bearer token")
+			unauthorized(w, "sign in, or send a bearer token")
 			return
 		}
 		p, err := g.Sessions.Resolve(r.Context(), c.Value)

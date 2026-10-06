@@ -1,5 +1,5 @@
-// Package auth holds hub identity: caller principals, the outbound service-token client,
-// and offline verification of hub-issued JWTs.
+// Package auth holds identity: caller principals, the outbound service-token client,
+// and offline verification of issuer-signed JWTs (the hub's or the organization plane's).
 package auth
 
 import (

@@ -104,6 +104,12 @@ If the token has a `scope` claim, superwitness reads it as a space-separated lis
 ([Run registry API](/build/run-registry/#who-may-report)). A `scope` claim that is not a string
 makes the token invalid.
 
+Under the organization plane (`SW_ORG_PLANE_ISSUER` set), the issuer is that exact value, the
+keys come from `SW_ORG_PLANE_JWKS_URL`, `sub` must be a `prn_` id, and `org` and `ent` must be
+present in place of `tenant`. superwitness reads `scope` only from agent and service tokens. A
+token whose `ent` claim lacks `superwitness` is answered
+`403 {"error":"product_not_enabled","org":"org_…"}`.
+
 Every such principal is admitted; which principals can get a token for superwitness's audience
 is decided at the hub. The principal kind decides how its verdicts are recorded: their
 `judge_kind`, their default `kind`, and whether it may judge work it executed
@@ -120,7 +126,7 @@ A missing or refused token is 401 `unauthenticated`, with
 {"error":{"code":"unauthenticated","message":"the bearer token is not valid for this service"}}
 ```
 
-With no token at all, the message is `a hub-issued bearer token is required`.
+With no token at all, the message is `a bearer token is required`.
 
 In fake mode (`SW_FAKE_SOURCES=1`) none of this applies: superwitness reads no product and
 accepts development tokens of the form `dev:<principal>:<human|agent|service>` instead

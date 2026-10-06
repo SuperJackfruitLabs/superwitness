@@ -51,6 +51,16 @@ type wiring struct {
 	pingers            map[string]source.Pinger
 }
 
+// bearerAuth is how a bearer token names its caller. Under the organization plane, sub is always
+// the prn_ id, so the token is the answer. Under the hub, a person's sub is their hub account id,
+// which Resolving turns into the prn_ id through the hub's principals route.
+func bearerAuth(cfg config.Config, w wiring) auth.Authenticator {
+	if cfg.OrgPlane() {
+		return w.authn
+	}
+	return auth.Resolving{Inner: w.authn, Principals: w.principals}
+}
+
 // Migration retry backoff while the verdict Postgres is unreachable.
 const (
 	migrateMinWait = time.Second
@@ -100,8 +110,7 @@ func Build(ctx context.Context, cfg config.Config, version string, logger *slog.
 	joiner := &join.Joiner{Superpipeline: w.sp, AgentPod: w.ap, Traces: w.tr, Logs: w.lg, Errors: w.er,
 		Verdicts: store, Principals: w.principals, Timeout: cfg.SourceTimeout, Observe: telemetry.SourceObserver(logger)}
 	subjects := &join.Subjects{Superpipeline: w.sp, AgentPod: w.ap, Attempts: w.attempts, Timeout: cfg.SourceTimeout}
-	// Every bearer token names its caller by prn_ id, whatever the hub put in sub.
-	authn := auth.Resolving{Inner: w.authn, Principals: w.principals}
+	authn := bearerAuth(cfg, w)
 	ops := &api.Ops{Join: joiner, Spans: w.spans, Logs: w.logLister, Attempts: w.attempts, Timeout: cfg.SourceTimeout,
 		Verdicts:    &verdicts.Service{Store: store, Subjects: subjects},
 		Runs:        &runs.PGStore{Pool: pool, Ready: store.Ready}, // same database, same migration gate

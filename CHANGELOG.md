@@ -9,6 +9,14 @@ All notable changes to superwitness are recorded here. The format follows
 
 - **Organization plane.** `SW_ORG_PLANE_ISSUER`, `SW_ORG_PLANE_JWKS_URL`, `SW_ORG_PLANE_URL` and
   `SW_ORG_PLANE_SERVICE_CREDENTIAL_FILE`. Unset, nothing changes.
+- Under the organization plane, caller tokens are verified against the plane's keys and their
+  `sub` is used as the `prn_` id with no hub lookup. Grant scopes are read only from agent and
+  service tokens. A token whose workspace has not enabled superwitness is answered
+  `403 {"error":"product_not_enabled","org":"org_…"}`.
+
+### Changed
+
+- The 401 message for a missing token reads `a bearer token is required`.
 
 ## 0.0.4 — 2026-10-06
 

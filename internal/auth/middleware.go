@@ -10,14 +10,14 @@ import (
 )
 
 // Middleware authenticates the bearer token. The token's aud must be this service, which
-// the hub only mints for clients granted it, so every verified kind is admitted.
+// the issuer only mints for clients granted it, so every verified kind is admitted.
 func Middleware(a Authenticator) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			tok, ok := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
 			tok = strings.TrimSpace(tok)
 			if !ok || tok == "" {
-				unauthorized(w, "a hub-issued bearer token is required")
+				unauthorized(w, "a bearer token is required")
 				return
 			}
 			p, err := a.Verify(r.Context(), tok)
@@ -27,6 +27,11 @@ func Middleware(a Authenticator) func(http.Handler) http.Handler {
 					"the hub could not say which principal this token names; retry")
 				return
 			}
+			var ne *NotEnabledError
+			if errors.As(err, &ne) {
+				WriteNotEnabled(w, ne.Org)
+				return
+			}
 			if err != nil {
 				unauthorized(w, "the bearer token is not valid for this service")
 				return
@@ -34,6 +39,14 @@ func Middleware(a Authenticator) func(http.Handler) http.Handler {
 			next.ServeHTTP(w, r.WithContext(WithPrincipal(r.Context(), p)))
 		})
 	}
+}
+
+// WriteNotEnabled answers the issuer contract's entitlement refusal, in its shape rather than the
+// API's: 403 {"error":"product_not_enabled","org":"<org_ id>"}.
+func WriteNotEnabled(w http.ResponseWriter, org string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusForbidden)
+	_ = json.NewEncoder(w).Encode(map[string]string{"error": "product_not_enabled", "org": org})
 }
 
 func unauthorized(w http.ResponseWriter, msg string) {
