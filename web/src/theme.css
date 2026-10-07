@@ -57,11 +57,18 @@ button.link { background: none; border: none; padding: 0; color: var(--link); te
 .side a[aria-current="page"] { background: var(--jade-tint); color: var(--jade); }
 .wordmark { font-family: var(--display); font-weight: 600; font-size: 21px; color: var(--text); text-decoration: none; padding: 0 10px 12px; }
 .navhead { margin: 16px 10px 4px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
-.navfoot { margin-top: auto; padding: 16px 10px 0; display: flex; flex-direction: column; gap: 8px; font-size: 13px; }
+.navfoot { margin-top: auto; padding: 16px 10px 0; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; font-size: 13px; }
+.navfoot > * { max-width: 100%; }
+.navfoot button.link { text-align: left; }
 .who { color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
 .content { padding: 24px 32px 64px; min-width: 0; }
 @media (max-width: 759px) {
-  .shell { grid-template-columns: minmax(0, 1fr); }
+  /* Three explicit rows: the bar and the open menu keep their own height, the page takes the rest.
+     With auto rows, min-height: 100vh shares the spare height out and the sticky bar balloons. */
+  .shell { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto 1fr; }
+  .topbar { grid-row: 1; }
+  .side { grid-row: 2; }
+  .content { grid-row: 3; }
   .topbar { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--surface); position: sticky; top: 0; z-index: 5; }
   .topbar .wordmark { padding: 0; }
   .side { display: none; position: static; height: auto; border-right: none; border-bottom: 1px solid var(--line); }
@@ -93,6 +100,12 @@ a.card:hover { border-color: var(--jade); }
 .card-top { display: flex; gap: 10px; align-items: baseline; }
 .card-title { font-weight: 500; overflow-wrap: anywhere; }
 .card-meta { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 6px; font-size: 13px; color: var(--muted); }
+/* With room to spare, a card is one line: what ran on the left, its facts on the right. */
+@media (min-width: 1100px) {
+  .card { display: flex; align-items: baseline; justify-content: space-between; gap: 8px 32px; }
+  .card-top { min-width: 0; }
+  .card-meta { margin-top: 0; flex: none; justify-content: flex-end; max-width: 50%; }
+}
 .empty { padding: 32px; border: 1px dashed var(--line); border-radius: 10px; text-align: center; color: var(--muted); }
 
 /* Run view. */
@@ -102,7 +115,14 @@ a.card:hover { border-color: var(--jade); }
 .facts div { display: flex; flex-direction: column; }
 .facts dt { font-size: 12px; color: var(--muted); }
 .facts dd { margin: 0; font-family: var(--mono); font-size: 13px; }
-.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 16px; overflow-x: auto; }
+.tabs { position: relative; display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 16px; overflow-x: auto; scrollbar-width: none;
+  --fade-l: 0px; --fade-r: 0px;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent); }
+.tabs::-webkit-scrollbar { display: none; }
+/* More tabs past an edge: that edge fades out (set by Tabs as the strip scrolls). */
+.tabs[data-more~="left"] { --fade-l: 32px; }
+.tabs[data-more~="right"] { --fade-r: 32px; }
 .tabs a { padding: 8px 12px; color: var(--muted); text-decoration: none; border-bottom: 2px solid transparent; white-space: nowrap; }
 .tabs a[aria-selected="true"] { color: var(--text); border-bottom-color: var(--jade); }
 .unavailable { padding: 16px; border-radius: 10px; background: var(--warn-tint); color: var(--warn); }
@@ -112,7 +132,9 @@ th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line
 
 /* The span waterfall. */
 .waterfall { list-style: none; margin: 0; padding: 0; font-size: 13px; }
-.waterfall li { display: grid; grid-template-columns: 24px minmax(120px, 34%) minmax(0, 1fr) 72px; gap: 8px; align-items: center; padding: 3px 0; border-bottom: 1px solid var(--line); }
+.waterfall li { display: grid; grid-template-columns: var(--cite, 24px) minmax(120px, 34%) minmax(0, 1fr) 72px; gap: 8px; align-items: center; padding: 3px 0; border-bottom: 1px solid var(--line); }
+.cite { display: flex; align-items: center; justify-content: center; align-self: stretch; cursor: pointer; }
+.cite input { margin: 0; cursor: inherit; }
 .span-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .track { position: relative; height: 10px; background: var(--inset); border-radius: 3px; }
 .bar { position: absolute; top: 0; bottom: 0; background: var(--jade); border-radius: 3px; min-width: 2px; }
@@ -166,3 +188,18 @@ pre.value { white-space: pre-wrap; word-break: break-word; font-family: var(--mo
 .transcript > li[aria-current="true"] { outline: 2px solid var(--jade); outline-offset: 1px; }
 .card-head { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; font-size: 13px; margin-bottom: 6px; }
 .transcript summary { cursor: pointer; font-size: 13px; }
+
+/* Touch: every control is at least 44px tall (and the cite tick 44px square), on phones, tablets
+   and any coarse pointer. The look stays the same; the hit area grows around it. */
+@media (max-width: 1023px), (pointer: coarse) {
+  button, a.button, .drawer select { min-height: 44px; }
+  button.link { display: inline-flex; align-items: center; }
+  .side a, .tabs a { display: flex; align-items: center; min-height: 44px; }
+  .chips a { display: inline-flex; align-items: center; min-height: 44px; }
+  .waterfall { --cite: 44px; }
+  .waterfall li { padding: 0; }
+  .cite { min-height: 44px; }
+  .cite input { width: 20px; height: 20px; }
+  .picker select { min-height: 44px; }
+  .transcript summary { padding: 12px 0; }
+}

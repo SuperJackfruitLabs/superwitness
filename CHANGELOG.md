@@ -20,6 +20,14 @@ All notable changes to superwitness are recorded here. The format follows
 
 - The app has a favicon: the product mark, served at `/favicon.svg` and linked from the page.
   `/favicon.ico` redirects to it instead of answering 404.
+- On a phone, the top bar keeps its own height on short pages instead of stretching to fill the
+  spare screen.
+- On phones, tablets and touch screens, buttons, menu links, run tabs, status chips and the span
+  cite box are at least 44px tall.
+- The run tab strip scrolls the selected tab into view and fades the edge that has more tabs past
+  it.
+- On wide screens a run card is one line, its facts on the right; the sidebar's theme and sign-out
+  controls line up with the rest of the menu.
 
 ## 0.0.5 — 2026-10-07
 

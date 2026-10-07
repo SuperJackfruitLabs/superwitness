@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { type ApiError, getJSON } from "../api";
 import { ErrorView } from "../Edge";
 import { list } from "../format";
@@ -24,9 +24,37 @@ export function Facts({ doc }: { doc: Doc }) {
   );
 }
 
+// tabEdges says which ends of a scrolling strip have tabs past them, for the fade that hints at them.
+export function tabEdges(scrollLeft: number, clientWidth: number, scrollWidth: number): string | undefined {
+  const more = [scrollLeft > 1 && "left", scrollLeft + clientWidth < scrollWidth - 1 && "right"].filter(Boolean);
+  return more.length ? more.join(" ") : undefined;
+}
+
+// tabScroll is where a strip scrolls to so the selected tab sits in view, centred when it can be.
+export function tabScroll(tabLeft: number, tabWidth: number, clientWidth: number, scrollWidth: number): number {
+  const centred = tabLeft - (clientWidth - tabWidth) / 2;
+  return Math.max(0, Math.min(centred, scrollWidth - clientWidth));
+}
+
 export function Tabs({ current, base }: { current: Tab; base: string }) {
+  const strip = useRef<HTMLElement>(null);
+  const [more, setMore] = useState<string | undefined>();
+  useLayoutEffect(() => {
+    const el = strip.current;
+    if (!el) return;
+    const edges = () => setMore(tabEdges(el.scrollLeft, el.clientWidth, el.scrollWidth));
+    const sel = el.querySelector<HTMLElement>('[aria-selected="true"]');
+    if (sel && el.scrollWidth > el.clientWidth) el.scrollLeft = tabScroll(sel.offsetLeft, sel.offsetWidth, el.clientWidth, el.scrollWidth);
+    edges();
+    el.addEventListener("scroll", edges, { passive: true });
+    window.addEventListener("resize", edges);
+    return () => {
+      el.removeEventListener("scroll", edges);
+      window.removeEventListener("resize", edges);
+    };
+  }, [current]);
   return (
-    <nav className="tabs" role="tablist" aria-label="Run">
+    <nav className="tabs" role="tablist" aria-label="Run" ref={strip} data-more={more}>
       {TABS.map((t) => (
         <Link key={t} to={t === "trace" ? base : `${base}?tab=${t}`} role="tab" aria-selected={t === current}>
           {TAB_LABEL[t]}
