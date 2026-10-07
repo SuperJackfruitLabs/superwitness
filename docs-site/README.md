@@ -32,7 +32,8 @@ about the product is checked against the product.
 onto Starlight's gray ramp and accent, with the measured contrast of every accent pairing in a
 comment at the top. `src/components/SiteTitle.astro` puts the mark beside the name, as the
 landing page does. `public/favicon.svg`, `src/assets/mark.svg` and `public/og.png` are copies of
-`landing/public/favicon.svg` and `landing/public/og.png`; change them there and copy them here.
+`landing/public/favicon.svg` and `landing/public/og.png`; change them there and copy them here
+(`go test ./internal/web` checks the two mark copies, and the app's).
 
 **The install commands match the landing page's.** The download-and-verify block in
 `src/content/docs/install.md` is the `install` array in `landing/src/pages/index.astro`, line for
