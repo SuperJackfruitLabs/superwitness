@@ -1,11 +1,17 @@
 package app
 
 import (
+	"log/slog"
+	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/SuperJackfruitLabs/superwitness/internal/api"
+	"github.com/SuperJackfruitLabs/superwitness/internal/config"
+	"github.com/SuperJackfruitLabs/superwitness/internal/session"
 )
 
 func TestSignInGoesThroughTheIssuerInUse(t *testing.T) {
@@ -42,7 +48,32 @@ func TestSignInGoesThroughTheIssuerInUse(t *testing.T) {
 	u := authorize(plane)
 	q := u.Query()
 	if u.Host != "accounts.example" || u.Path != "/api/auth/oauth2/authorize" || q.Get("client_id") != "superwitness-web" ||
-		q.Get("resource") != "http://127.0.0.1:8790" || q.Get("redirect_uri") != "http://127.0.0.1:8790/auth/callback" {
+		q.Get("resource") != "http://127.0.0.1:8790" || q.Get("redirect_uri") != "http://127.0.0.1:8790/auth/callback" ||
+		q.Get("scope") != "openid offline_access" {
 		t.Errorf("plane mode sent the browser to %s", u)
+	}
+}
+
+// Under the plane each session is bound to the plane's refresh-token grant; under the hub, never.
+func TestOnlyPlaneSessionsHoldAGrant(t *testing.T) {
+	secret := filepath.Join(t.TempDir(), "secret")
+	_ = os.WriteFile(secret, []byte(strings.Repeat("s", 48)), 0o600)
+	cfg := config.Config{AllowedPrincipals: []string{"prn_human01"}, AppClientID: "superwitness-web",
+		SessionSecretFile: secret, PublicURL: "https://witness.example", HubURL: "https://hub.example"}
+	logger := slog.New(slog.DiscardHandler)
+	m, err := signIn(cfg, &api.Server{}, wiring{}, nil, nil, http.DefaultClient, nil, logger)
+	if err != nil || m == nil || m.Grants != nil {
+		t.Fatalf("hub mode: %v, grants %v", err, m)
+	}
+	cfg.OrgPlaneIssuer, cfg.OrgPlaneURL = "https://accounts.example", "https://accounts.example"
+	cfg.OrgPlaneJWKSURL = "https://accounts.example/api/auth/jwks"
+	m, err = signIn(cfg, &api.Server{}, wiring{}, nil, nil, http.DefaultClient, nil, logger)
+	if err != nil || m == nil {
+		t.Fatal(err)
+	}
+	g, ok := m.Grants.(*session.PlaneGrants)
+	if !ok || g.ClientID != "superwitness-web" || g.Endpoints.URL != "https://accounts.example" ||
+		g.Endpoints.Resource != "https://witness.example" || g.Tokens == nil {
+		t.Errorf("plane mode grants = %+v", m.Grants)
 	}
 }

@@ -92,18 +92,19 @@ func TestRuntimeRoleMigrationPass(t *testing.T) {
 	if err := Migrate(ctx, roles.AppDSN); err != nil {
 		t.Errorf("runtime role, nothing pending: %v", err)
 	}
-	// Make the newest migration pending again (its table gone, its version row removed); the
-	// runtime role cannot apply it, because that needs CREATE on the schema.
-	if _, err := owner.Exec(ctx, `DROP TABLE sessions`); err != nil {
+	// Make the newest migration pending again (its columns gone, its version row removed); the
+	// runtime role cannot apply it, because altering sessions needs the owner.
+	if _, err := owner.Exec(ctx, `ALTER TABLE sessions DROP COLUMN refresh_sealed, DROP COLUMN access_expires_at,
+		DROP COLUMN unreachable_since`); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := owner.Exec(ctx, `DELETE FROM goose_db_version WHERE version_id = 3`); err != nil {
+	if _, err := owner.Exec(ctx, `DELETE FROM goose_db_version WHERE version_id = 4`); err != nil {
 		t.Fatal(err)
 	}
 	if err := Migrate(ctx, roles.AppDSN); err == nil {
 		t.Error("runtime role applied a pending migration")
 	}
-	// The owner re-runs the pass: sessions comes back, and README's grants (re-applied here, as
+	// The owner re-runs the pass: the columns come back, and README's grants (re-applied here, as
 	// an operator would after an upgrade) give the runtime role what it needs on it.
 	if err := Migrate(ctx, roles.OwnerDSN); err != nil {
 		t.Fatalf("owner re-ran the pending migration: %v", err)

@@ -5,6 +5,17 @@ All notable changes to superwitness are recorded here. The format follows
 
 ## Unreleased
 
+### Changed
+
+- Under the organization plane, browser sign-in asks for `offline_access` and the session keeps
+  the plane's refresh token server side, encrypted with a key derived from the session cookie.
+  The app then appears among the person's connected apps at the plane, and the session follows
+  the grant: a stale access token is refreshed (rotating, one refresh per session at a time), a
+  refused refresh ends the session, and an unreachable plane is tolerated for 10 minutes. Sign
+  out revokes the refresh token at the plane. Migration 4 adds the grant's columns to `sessions`;
+  the runtime role needs no new grant. Sessions signed in before the upgrade end at their next
+  request. Hub mode is unchanged.
+
 ### Fixed
 
 - The app has a favicon: the product mark, served at `/favicon.svg` and linked from the page.

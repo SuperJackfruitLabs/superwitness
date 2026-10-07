@@ -43,6 +43,23 @@ func storeContract(t *testing.T, s Store) {
 	if got, _ := s.Get(ctx, live.IDHash); !got.LastSeenAt.Equal(now) {
 		t.Errorf("touch: last_seen_at = %v", got.LastSeenAt)
 	}
+	g := PlaneGrant{Sealed: []byte{1, 2, 3}, AccessExpiresAt: now.Add(5 * time.Minute), UnreachableSince: now.Add(-time.Minute)}
+	if err := s.SetGrant(ctx, live.IDHash, g); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := s.Get(ctx, live.IDHash); string(got.Grant.Sealed) != string(g.Sealed) ||
+		!got.Grant.AccessExpiresAt.Equal(g.AccessExpiresAt) || !got.Grant.UnreachableSince.Equal(g.UnreachableSince) {
+		t.Errorf("set grant: %+v; want %+v", got.Grant, g)
+	}
+	if err := s.SetGrant(ctx, live.IDHash, PlaneGrant{Sealed: g.Sealed, AccessExpiresAt: g.AccessExpiresAt}); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := s.Get(ctx, live.IDHash); !got.Grant.UnreachableSince.IsZero() || got.LastSeenAt != now {
+		t.Errorf("clearing the outage: %+v, last seen %v", got.Grant, got.LastSeenAt)
+	}
+	if err := s.SetGrant(ctx, make([]byte, 32), g); err != nil {
+		t.Errorf("a grant for a missing session: %v", err)
+	}
 	if n, err := s.Sweep(ctx, now); err != nil || n != 2 {
 		t.Errorf("sweep deleted %d %v; want 2 (the 12h-old and the 2h-idle)", n, err)
 	}
