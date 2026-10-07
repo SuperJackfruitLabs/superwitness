@@ -12,7 +12,7 @@ vi.mock("../api", async (orig) => ({
 }));
 import { LogsPanel, MAX_EVIDENCE, TracePanel } from "./Panels";
 import { ApiError } from "../api";
-import { RunViewPage } from "./RunViewPage";
+import { RunViewPage, Tabs } from "./RunViewPage";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -57,6 +57,45 @@ beforeEach(() => {
 afterEach(() => {
   act(() => root.unmount());
   host.remove();
+});
+
+describe("the tab strip on a narrow screen", () => {
+  // jsdom lays nothing out, so the strip is 358px showing 458px of tabs, each 76px wide, as on a phone.
+  const box = (o: object) => Object.entries(o).map(([k, v]) => [k, Object.getOwnPropertyDescriptor(HTMLElement.prototype, k), v] as const);
+  let saved: ReturnType<typeof box> = [];
+  beforeEach(() => {
+    saved = box({ clientWidth: 0, scrollWidth: 0, offsetWidth: 0, offsetLeft: 0 });
+    const tabs = (e: HTMLElement) => e.getAttribute("role") === "tablist";
+    Object.defineProperty(HTMLElement.prototype, "clientWidth", { configurable: true, get() { return tabs(this) ? 358 : 0; } });
+    Object.defineProperty(HTMLElement.prototype, "scrollWidth", { configurable: true, get() { return tabs(this) ? 458 : 0; } });
+    Object.defineProperty(HTMLElement.prototype, "offsetWidth", { configurable: true, get() { return 76; } });
+    Object.defineProperty(HTMLElement.prototype, "offsetLeft", { configurable: true, get() { return [...(this.parentElement?.children ?? [])].indexOf(this) * 76; } });
+  });
+  afterEach(() => {
+    for (const [k, d] of saved) d ? Object.defineProperty(HTMLElement.prototype, k, d) : delete (HTMLElement.prototype as unknown as Record<string, unknown>)[k];
+  });
+  const strip = () => host.querySelector<HTMLElement>('[role="tablist"]')!;
+
+  it("scrolls the selected last tab into view and fades only the edge with tabs past it", async () => {
+    await act(async () => root.render(<Tabs current="attempts" base="/runs/superpipeline/brd_01/run_01" />));
+    expect(strip().scrollLeft).toBe(100);
+    expect(strip().dataset.more).toBe("left");
+  });
+
+  it("leaves the first tab where it is and fades the right edge", async () => {
+    await act(async () => root.render(<Tabs current="trace" base="/runs/superpipeline/brd_01/run_01" />));
+    expect(strip().scrollLeft).toBe(0);
+    expect(strip().dataset.more).toBe("right");
+  });
+
+  it("updates the fade as the strip scrolls", async () => {
+    await act(async () => root.render(<Tabs current="trace" base="/runs/superpipeline/brd_01/run_01" />));
+    await act(async () => {
+      strip().scrollLeft = 50;
+      strip().dispatchEvent(new Event("scroll"));
+    });
+    expect(strip().dataset.more).toBe("left right");
+  });
 });
 
 describe("RunViewPage", () => {

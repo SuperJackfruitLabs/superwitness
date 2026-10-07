@@ -124,13 +124,15 @@ export function TracePanel({ base, evidence, setEvidence, page = "", attempts = 
           const ticked = evidence.includes(span.span_id);
           return (
             <li key={span.span_id}>
-              <input
-                type="checkbox"
-                aria-label={`Cite ${span.name} as evidence`}
-                checked={ticked}
-                disabled={!ticked && full}
-                onChange={() => toggle(span.span_id)}
-              />
+              <label className="cite">
+                <input
+                  type="checkbox"
+                  aria-label={`Cite ${span.name} as evidence`}
+                  checked={ticked}
+                  disabled={!ticked && full}
+                  onChange={() => toggle(span.span_id)}
+                />
+              </label>
               <button
                 type="button"
                 className="span-name"

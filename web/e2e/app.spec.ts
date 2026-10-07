@@ -105,4 +105,28 @@ test("on a phone the sidebar folds into a menu", async ({ page, request }) => {
   await expect(page.getByRole("heading", { name: "Rubrics" })).toBeVisible();
   await expect(nav).toBeHidden();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  // A short page: the sticky bar keeps its own height rather than sharing out the spare screen.
+  expect((await page.locator(".topbar").boundingBox())!.height).toBeLessThanOrEqual(72);
+
+  // The last run tab, selected, is scrolled into view, and every control is a 44px touch target.
+  await page.goto("/runs/superpipeline/brd_01/run_01?tab=attempts");
+  const strip = page.getByRole("tablist", { name: "Run" });
+  const tab = strip.getByRole("tab", { name: "Attempts" });
+  await expect(tab).toHaveAttribute("aria-selected", "true");
+  const [s, t] = [(await strip.boundingBox())!, (await tab.boundingBox())!];
+  expect(t.x).toBeGreaterThanOrEqual(s.x);
+  expect(t.x + t.width).toBeLessThanOrEqual(s.x + s.width + 1);
+  await expect(strip).toHaveAttribute("data-more", /left/);
+  await expect(page.getByText("attempt_01")).toBeVisible();
+  const small = await page.evaluate(() =>
+    [...document.querySelectorAll<HTMLElement>("button, [role=tab], .chips a, .cite")]
+      .filter((e) => e.offsetParent !== null && e.getBoundingClientRect().height < 44)
+      .map((e) => e.textContent || e.outerHTML.slice(0, 60)),
+  );
+  expect(small).toEqual([]);
+  await page.goto("/runs/superpipeline/brd_01/run_01");
+  await page.locator(".cite").first().waitFor();
+  const ticks = await page.locator(".cite").evaluateAll((es) => es.map((e) => e.getBoundingClientRect()).map((r) => Math.min(r.width, r.height)));
+  expect(ticks.length).toBeGreaterThan(0);
+  expect(Math.min(...ticks)).toBeGreaterThanOrEqual(44);
 });
