@@ -17,7 +17,7 @@ cards, runs and approval gates; [supermessage](https://github.com/SuperJackfruit
 is the Matrix client that puts agents in the conversation. superwitness records what happened and
 whether it was any good.
 
-> **Status: v0.0.4** ([changelog](CHANGELOG.md)). Run documents cover superpipeline runs, with attempts read from the
+> **Status: v0.0.5** ([changelog](CHANGELOG.md)). Run documents cover superpipeline runs, with attempts read from the
 > AgentPod hub, and a run registry lists the runs sources report; a web app reads and judges them. To try it without either product, `SW_FAKE_SOURCES=1` serves one development run
 > on loopback.
 
