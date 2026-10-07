@@ -28,17 +28,17 @@ superwitness itself needs no disk: it reads over HTTP and writes only to its Pos
 Each release has a tarball per architecture and a `SHA256SUMS` file covering them:
 
 ```sh
-curl -LO https://github.com/SuperJackfruitLabs/superwitness/releases/download/v0.0.4/superwitness_0.0.4_linux_amd64.tar.gz
-curl -LO https://github.com/SuperJackfruitLabs/superwitness/releases/download/v0.0.4/SHA256SUMS
+curl -LO https://github.com/SuperJackfruitLabs/superwitness/releases/download/v0.0.5/superwitness_0.0.5_linux_amd64.tar.gz
+curl -LO https://github.com/SuperJackfruitLabs/superwitness/releases/download/v0.0.5/SHA256SUMS
 sha256sum --ignore-missing -c SHA256SUMS
-tar xzf superwitness_0.0.4_linux_amd64.tar.gz
+tar xzf superwitness_0.0.5_linux_amd64.tar.gz
 ```
 
 On arm64, replace `amd64` with `arm64`. The tarball holds the binary, `LICENSE`, `NOTICE`, `licenses/`
 (the bundled fonts' licences), `deploy/superwitness.service` and `deploy/env.example`. Install the binary:
 
 ```sh
-sudo install -m 0755 superwitness_0.0.4_linux_amd64/superwitness /usr/local/bin/
+sudo install -m 0755 superwitness_0.0.5_linux_amd64/superwitness /usr/local/bin/
 superwitness version
 ```
 
@@ -124,7 +124,7 @@ Create the service user and its settings file. The file is readable by root and 
 ```sh
 sudo useradd -r -s /usr/sbin/nologin superwitness
 sudo install -d -m 0750 -o root -g superwitness /etc/superwitness
-sudo install -m 0640 -o root -g superwitness superwitness_0.0.4_linux_amd64/deploy/env.example /etc/superwitness/env
+sudo install -m 0640 -o root -g superwitness superwitness_0.0.5_linux_amd64/deploy/env.example /etc/superwitness/env
 ```
 
 Edit `/etc/superwitness/env`. These are the settings `deploy/env.example` holds, with this guide's
@@ -218,7 +218,7 @@ background migration pass as the runtime role, which succeeds when nothing is pe
 ## Start
 
 ```sh
-sudo install -m 0644 superwitness_0.0.4_linux_amd64/deploy/superwitness.service /etc/systemd/system/
+sudo install -m 0644 superwitness_0.0.5_linux_amd64/deploy/superwitness.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now superwitness
 curl -s localhost:8790/health
@@ -229,7 +229,7 @@ The unit runs `superwitness serve` as the `superwitness` user with its settings 
 whenever the process is alive; each source's state is in the body:
 
 ```json
-{"sources":{"agentpod":"ok","logs":"ok","superpipeline":"ok","traces":"ok","verdicts":"ok"},"status":"ok","version":"v0.0.4"}
+{"sources":{"agentpod":"ok","logs":"ok","superpipeline":"ok","traces":"ok","verdicts":"ok"},"status":"ok","version":"v0.0.5"}
 ```
 
 A source that cannot be reached shows `unavailable` or `timeout` there, and `/health` stays 200.
