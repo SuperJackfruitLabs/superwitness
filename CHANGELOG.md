@@ -3,6 +3,13 @@
 All notable changes to superwitness are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Unreleased
+
+### Fixed
+
+- The app has a favicon: the product mark, served at `/favicon.svg` and linked from the page.
+  `/favicon.ico` redirects to it instead of answering 404.
+
 ## 0.0.5 — 2026-10-07
 
 ### Added

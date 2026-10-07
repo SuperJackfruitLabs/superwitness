@@ -26,6 +26,11 @@ func Handler() http.Handler {
 		w.Header().Set("Content-Security-Policy", CSP)
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		p := strings.TrimPrefix(path.Clean(r.URL.Path), "/")
+		if p == "favicon.ico" {
+			// Browsers ask for /favicon.ico unprompted; the mark exists only as SVG.
+			http.Redirect(w, r, "/favicon.svg", http.StatusMovedPermanently)
+			return
+		}
 		if p == "" || p == "." {
 			files.ServeHTTP(w, r)
 			return

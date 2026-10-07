@@ -61,6 +61,10 @@ diff <(grep -o 'd="[^"]*"\|r="[^"]*"' public/favicon.svg) \
      <(grep -o 'd="[^"]*"\|r="[^"]*"' src/components/Mark.astro) && echo mark ok
 ```
 
+The app (`web/public/favicon.svg`, embedded in the binary) and the docs site carry byte-for-byte
+copies of `public/favicon.svg`; `go test ./internal/web` fails until a changed mark is copied to
+both.
+
 The link preview is rendered from `og/` — see the README there.
 
 **No analytics, no scripts, no sign-in.** There is nothing to sign in to: superwitness is
