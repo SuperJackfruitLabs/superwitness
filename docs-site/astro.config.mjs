@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import starlightLlmsTxt from 'starlight-llms-txt';
 
 export default defineConfig({
   site: 'https://docs.superwitness.dev',
@@ -9,6 +10,27 @@ export default defineConfig({
       title: 'superwitness',
       description:
         'Observability and evaluation for agent fleets: what your agents did, how your products behaved, and whether the work was any good, joined on one run.',
+      // /llms.txt, /llms-full.txt and /llms-small.txt, for agents reading these docs. The
+      // full file carries every page, reference pages included; the small one drops asides
+      // and <details> but keeps every page too, since nothing here is noise.
+      plugins: [
+        starlightLlmsTxt({
+          projectName: 'superwitness',
+          description:
+            'superwitness is observability and evaluation for agent fleets: what your agents did, how ' +
+            'your products behaved while they did it, and whether the work was any good, joined on ' +
+            'one run. A run document answers three questions: what did it do (the attempts, the agent ' +
+            'configuration behind each, and their trace spans), how did the products run (the logs ' +
+            "and errors that share the run's id or trace), and was it any good (gate decisions read " +
+            'from superpipeline and verdicts recorded in superwitness). It is a single Go binary and ' +
+            'a Postgres database, self-hosted and MIT licensed, with an HTTP API and MCP tools for ' +
+            'building on it.',
+          optionalLinks: [
+            { label: 'superwitness', url: 'https://superwitness.dev', description: 'The product site.' },
+            { label: 'Source', url: 'https://github.com/SuperJackfruitLabs/superwitness', description: 'The superwitness repository on GitHub.' },
+          ],
+        }),
+      ],
       // The mark beside the name, as on the landing page. See the component for why it
       // replaces Starlight's own rather than using the `logo` option.
       components: { SiteTitle: './src/components/SiteTitle.astro' },
