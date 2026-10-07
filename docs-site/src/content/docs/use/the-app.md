@@ -48,11 +48,29 @@ callback carried no code); the log never holds a token or a cookie.
 With `SW_ORG_PLANE_ISSUER` set, the app signs people in through the organization plane as the
 OAuth client named by `SW_APP_CLIENT_ID` (the plane registers it with the redirect
 `SW_PUBLIC_URL/auth/callback`). Both the authorize and the token request carry
-`resource=SW_PUBLIC_URL`, and the refresh token the plane returns is not kept. The token's `sub`
-is the person's `prn_` id, checked against `SW_ALLOWED_PRINCIPALS` with no lookup. Two more
-refusal reasons apply: `product_not_enabled` (the person's workspace has not enabled
-superwitness) and `issuer_unavailable` (the plane did not answer). The pages then name the
-plane's host instead of AgentPod.
+`resource=SW_PUBLIC_URL`, and the authorize asks for `scope=openid offline_access`. The token's
+`sub` is the person's `prn_` id, checked against `SW_ALLOWED_PRINCIPALS` with no lookup. Three
+more refusal reasons apply: `product_not_enabled` (the person's workspace has not enabled
+superwitness), `issuer_unavailable` (the plane did not answer) and `no_refresh_token` (the plane
+issued no refresh token). The pages then name the plane's host instead of AgentPod.
+
+Under the plane the session holds the plane's refresh token, server side: it is encrypted in the
+database with a key derived from the session cookie, which the database never holds, and it never
+reaches the browser. That makes superwitness one of the person's connected apps at the plane, and
+the session lives only as long as that grant:
+
+- when the plane's access token is past its five-minute life, the next request refreshes it with
+  the stored refresh token and keeps the rotated one. Requests on one session share a single
+  refresh. If the new refresh token cannot be saved, the request answers 503 and a retry within
+  the plane's 30-second replay window gets the same answer back;
+- if the plane refuses the refresh (the person signed superwitness out at the plane, left the
+  workspace, or the workspace turned superwitness off), the session ends at that request and the
+  app shows the sign-in screen (`auth.session_ended`, reason `grant_refused`);
+- if the plane cannot be reached, the session carries on, retrying every 30 seconds and logging
+  `auth.refresh_unavailable`. It ends if the plane is still unreachable 10 minutes after the first
+  failure (reason `issuer_unreachable`);
+- a session signed in before sessions held a grant ends at its next request (reason `no_grant`);
+  signing in again is silent while the plane's own session lasts.
 
 The sign-in itself rides on a signed `__Host-sw_login` cookie that lives ten minutes and is used
 once. A signed-in browser then holds a `__Host-sw_session` cookie and a superwitness session,
@@ -62,7 +80,10 @@ never an AgentPod token. Over plain http (fake mode only) the cookies are `sw_lo
 - the session lasts at most 12 hours, and ends after 2 hours unused;
 - every request checks the allowlist again, so taking someone off it (and restarting
   superwitness) ends their access at their next click;
-- **Sign out** (`POST /auth/logout`) ends the session at once and clears the cookie. If the
+- **Sign out** (`POST /auth/logout`) ends the session at once and clears the cookie. Under the
+  plane it first revokes the session's refresh token at the plane's revocation endpoint (found
+  through the plane's discovery document, and used only on the plane's own origin); a revocation
+  that fails is logged as `auth.revoke_failed` and the session ends all the same. If the
   database cannot be reached the answer is 503 `store_unavailable`, with the cookie cleared
   all the same, and the session expires on its own;
 - sessions do not need AgentPod: if AgentPod is down, open sessions keep working and only new

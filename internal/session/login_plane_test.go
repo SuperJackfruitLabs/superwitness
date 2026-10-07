@@ -34,12 +34,16 @@ func newPlaneRig(t *testing.T) (*rig, *testutil.PlaneStub) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	r.login = &Login{Endpoints: PlaneEndpoints{URL: plane.URL, Resource: sw.URL}, ClientID: "superwitness-web",
+	endpoints := PlaneEndpoints{URL: plane.URL, Resource: sw.URL}
+	tokens := auth.NewPlaneVerifier(plane.URL, plane.URL+"/api/auth/jwks", sw.URL, nil)
+	logger := slog.New(slog.NewJSONHandler(r.logs, nil))
+	now := func() time.Time { return r.now }
+	r.login = &Login{Endpoints: endpoints, ClientID: "superwitness-web",
 		PublicURL: sw.URL, Origin: sw.URL, Key: key, Provider: "accounts.example", SubIsPrincipal: true,
-		Tokens:     auth.NewPlaneVerifier(plane.URL, plane.URL+"/api/auth/jwks", sw.URL, nil),
-		Principals: noLookups{t},
-		Sessions:   &Manager{Store: r.store, Allowed: map[string]bool{"prn_human01": true, "prn_agent01": true}},
-		Logger:     slog.New(slog.NewJSONHandler(r.logs, nil)), Now: func() time.Time { return r.now }}
+		Tokens: tokens, Principals: noLookups{t},
+		Sessions: &Manager{Store: r.store, Allowed: map[string]bool{"prn_human01": true, "prn_agent01": true}, Now: now,
+			Logger: logger, Grants: &PlaneGrants{Endpoints: endpoints, ClientID: "superwitness-web", Tokens: tokens}},
+		Logger: logger, Now: now}
 	mux := http.NewServeMux()
 	mux.Handle("/auth/", http.StripPrefix("/auth", r.login.Handler()))
 	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) { _, _ = io.WriteString(w, "app:"+req.URL.RequestURI()) })
@@ -60,7 +64,7 @@ func TestPlaneSignIn(t *testing.T) {
 		t.Errorf("session principal = %+v %v", p, err)
 	}
 	a, tk := plane.LastAuthorize, plane.LastToken
-	if a.Get("client_id") != "superwitness-web" || a.Get("resource") != r.sw.URL || a.Get("scope") != "openid" ||
+	if a.Get("client_id") != "superwitness-web" || a.Get("resource") != r.sw.URL || a.Get("scope") != "openid offline_access" ||
 		a.Get("redirect_uri") != r.sw.URL+"/auth/callback" {
 		t.Errorf("authorize query = %v", a)
 	}
@@ -70,8 +74,10 @@ func TestPlaneSignIn(t *testing.T) {
 	if plane.SawOrigin.Load() {
 		t.Error("the code exchange carried an Origin header")
 	}
-	if strings.Contains(r.logs.String(), "rt_never_kept") {
-		t.Error("the refresh token reached the logs")
+	for _, rt := range plane.LiveRefreshTokens() {
+		if strings.Contains(r.logs.String(), rt) {
+			t.Error("the refresh token reached the logs")
+		}
 	}
 }
 

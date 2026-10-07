@@ -193,7 +193,7 @@ func signIn(cfg config.Config, srv *api.Server, w wiring, store *verdicts.Gated,
 	if err != nil {
 		return nil, fmt.Errorf("sign-in needs SW_PUBLIC_URL's origin: %w", err)
 	}
-	m := &session.Manager{Store: &session.PGStore{Pool: pool, Ready: store.Ready}, Allowed: allowed}
+	m := &session.Manager{Store: &session.PGStore{Pool: pool, Ready: store.Ready}, Allowed: allowed, Logger: logger}
 	cookies := session.Cookies{Secure: strings.HasPrefix(cfg.PublicURL, "https://")}
 	login := &session.Login{ClientID: cfg.AppClientID, PublicURL: cfg.PublicURL, Origin: origin, Key: key,
 		Sessions: m, Cookies: cookies, HTTP: hc, Logger: logger}
@@ -202,8 +202,11 @@ func signIn(cfg config.Config, srv *api.Server, w wiring, store *verdicts.Gated,
 		if err != nil {
 			return nil, fmt.Errorf("SW_ORG_PLANE_URL: %w", err)
 		}
-		login.Endpoints = session.PlaneEndpoints{URL: cfg.OrgPlaneURL, Resource: cfg.PublicURL}
+		endpoints := session.PlaneEndpoints{URL: cfg.OrgPlaneURL, Resource: cfg.PublicURL}
+		login.Endpoints = endpoints
 		login.Tokens = auth.NewPlaneVerifier(cfg.OrgPlaneIssuer, cfg.OrgPlaneJWKSURL, cfg.PublicURL, hc)
+		// Each session holds the plane's refresh token and lives only as long as that grant.
+		m.Grants = &session.PlaneGrants{Endpoints: endpoints, ClientID: cfg.AppClientID, Tokens: login.Tokens, HTTP: hc}
 		login.SubIsPrincipal, login.Provider = true, u.Host
 	} else {
 		login.Endpoints = session.HubEndpoints{URL: cfg.HubURL}

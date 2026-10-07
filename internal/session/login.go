@@ -102,8 +102,8 @@ func (l *Login) unavailableReason() string {
 type Endpoints interface {
 	// AuthorizeURL is where the browser goes to sign in.
 	AuthorizeURL(clientID, redirectURI, state, challenge string) string
-	// Exchange trades the code for an access token, server to server, with no Origin header.
-	Exchange(ctx context.Context, hc *http.Client, clientID, code, verifier, redirectURI string) (string, error)
+	// Exchange trades the code for tokens, server to server, with no Origin header.
+	Exchange(ctx context.Context, hc *http.Client, clientID, code, verifier, redirectURI string) (TokenSet, error)
 }
 
 // HubEndpoints is the AgentPod hub's authorize page and JSON token exchange.
@@ -119,24 +119,24 @@ func (e HubEndpoints) AuthorizeURL(clientID, redirectURI, state, challenge strin
 	return e.URL + "/api/auth/authorize?" + q.Encode()
 }
 
-func (e HubEndpoints) Exchange(ctx context.Context, hc *http.Client, _, code, verifier, redirectURI string) (string, error) {
+func (e HubEndpoints) Exchange(ctx context.Context, hc *http.Client, _, code, verifier, redirectURI string) (TokenSet, error) {
 	body, _ := json.Marshal(map[string]string{"code": code, "code_verifier": verifier, "redirect_uri": redirectURI})
 	var out struct {
 		Token string `json:"token"`
 	}
 	if err := postForToken(ctx, hc, e.URL+"/api/auth/token/exchange", "application/json", bytes.NewReader(body), &out); err != nil {
-		return "", err
+		return TokenSet{}, err
 	}
 	if out.Token == "" {
-		return "", errExchangeRefused
+		return TokenSet{}, errExchangeRefused
 	}
-	return out.Token, nil
+	return TokenSet{Access: out.Token}, nil
 }
 
 // PlaneEndpoints is the organization plane's OAuth 2.1 authorization code flow with PKCE (S256)
 // for a first-party public client. Both requests carry resource=<SW_PUBLIC_URL>, so the token's
-// aud is this deployment. The refresh token in the answer is not kept: superwitness's own session
-// holds the sign-in, and signing in again re-runs authorize.
+// aud is this deployment. The scope asks for offline_access: the session keeps the refresh token
+// server side (see PlaneGrants), so the plane lists the app as connected and can end its session.
 type PlaneEndpoints struct {
 	URL      string // SW_ORG_PLANE_URL
 	Resource string // SW_PUBLIC_URL
@@ -147,7 +147,7 @@ func (e PlaneEndpoints) AuthorizeURL(clientID, redirectURI, state, challenge str
 	q.Set("response_type", "code")
 	q.Set("client_id", clientID)
 	q.Set("redirect_uri", redirectURI)
-	q.Set("scope", "openid")
+	q.Set("scope", "openid offline_access")
 	q.Set("state", state)
 	q.Set("code_challenge", challenge)
 	q.Set("code_challenge_method", "S256")
@@ -155,21 +155,23 @@ func (e PlaneEndpoints) AuthorizeURL(clientID, redirectURI, state, challenge str
 	return e.URL + "/api/auth/oauth2/authorize?" + q.Encode()
 }
 
-func (e PlaneEndpoints) Exchange(ctx context.Context, hc *http.Client, clientID, code, verifier, redirectURI string) (string, error) {
+func (e PlaneEndpoints) Exchange(ctx context.Context, hc *http.Client, clientID, code, verifier, redirectURI string) (TokenSet, error) {
 	form := url.Values{"grant_type": {"authorization_code"}, "code": {code}, "redirect_uri": {redirectURI},
 		"client_id": {clientID}, "code_verifier": {verifier}, "resource": {e.Resource}}
 	var out struct {
-		AccessToken string `json:"access_token"`
-		TokenType   string `json:"token_type"`
+		AccessToken  string `json:"access_token"`
+		TokenType    string `json:"token_type"`
+		RefreshToken string `json:"refresh_token"`
+		ExpiresIn    int    `json:"expires_in"`
 	}
 	if err := postForToken(ctx, hc, e.URL+"/api/auth/oauth2/token", "application/x-www-form-urlencoded",
 		strings.NewReader(form.Encode()), &out); err != nil {
-		return "", err
+		return TokenSet{}, err
 	}
 	if out.AccessToken == "" || !strings.EqualFold(out.TokenType, "Bearer") {
-		return "", errExchangeRefused
+		return TokenSet{}, errExchangeRefused
 	}
-	return out.AccessToken, nil
+	return TokenSet{Access: out.AccessToken, Refresh: out.RefreshToken, ExpiresIn: out.ExpiresIn}, nil
 }
 
 // postForToken POSTs body and decodes a 200 answer into out. A transport error or 5xx is
@@ -309,7 +311,7 @@ func (l *Login) callback(w http.ResponseWriter, r *http.Request) {
 		l.refuse(w, http.StatusBadRequest, "no_code", l.pages().failed)
 		return
 	}
-	tok, err := l.endpoints().Exchange(r.Context(), l.HTTP, l.ClientID, code, lc.Verifier, l.redirectURI())
+	set, err := l.endpoints().Exchange(r.Context(), l.HTTP, l.ClientID, code, lc.Verifier, l.redirectURI())
 	if errors.Is(err, errIssuerUnavailable) {
 		l.refuse(w, http.StatusServiceUnavailable, l.unavailableReason(), l.pages().down)
 		return
@@ -318,7 +320,7 @@ func (l *Login) callback(w http.ResponseWriter, r *http.Request) {
 		l.refuse(w, http.StatusBadRequest, "exchange_refused", l.pages().failed)
 		return
 	}
-	p, err := l.Tokens.Verify(r.Context(), tok)
+	p, err := l.Tokens.Verify(r.Context(), set.Access)
 	var ne *auth.NotEnabledError
 	switch {
 	case errors.As(err, &ne):
@@ -358,8 +360,14 @@ func (l *Login) callback(w http.ResponseWriter, r *http.Request) {
 		l.refuse(w, http.StatusForbidden, "not_allowlisted", l.pages().notAuthorised, "principal", p.ID)
 		return
 	}
+	if l.Sessions.Grants != nil && set.Refresh == "" {
+		// Without a refresh token the session could not follow the grant: the plane could not
+		// end it, nor list it among the person's connected apps.
+		l.refuse(w, http.StatusBadRequest, "no_refresh_token", l.pages().failed, "principal", p.ID)
+		return
+	}
 	l.revokePrevious(r)
-	token, err := l.Sessions.Issue(r.Context(), p)
+	token, err := l.Sessions.IssueGranted(r.Context(), p, set)
 	if err != nil {
 		l.refuse(w, http.StatusServiceUnavailable, "store_unavailable", l.pages().database, "principal", p.ID)
 		return
