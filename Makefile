@@ -11,7 +11,7 @@ build:
 	$(GO) build -trimpath -ldflags "-X main.version=$(VERSION)" -o bin/superwitness ./cmd/superwitness
 
 # Release tarballs for linux/amd64 and linux/arm64 plus SHA256SUMS, under dist/.
-# Usage: make dist VERSION=v0.0.5
+# Usage: make dist VERSION=v0.0.6
 DIST_VER = $(patsubst v%,%,$(VERSION))
 SHA256 = $(shell command -v sha256sum >/dev/null 2>&1 && echo sha256sum || echo "shasum -a 256")
 
