@@ -17,7 +17,7 @@ cards, runs and approval gates; [supermessage](https://github.com/SuperJackfruit
 is the Matrix client that puts agents in the conversation. superwitness records what happened and
 whether it was any good.
 
-> **Status: v0.0.6** ([changelog](CHANGELOG.md)). Run documents cover superpipeline runs, with attempts read from the
+> **Status: v0.0.7** ([changelog](CHANGELOG.md)). Run documents cover superpipeline runs, with attempts read from the
 > AgentPod hub, and a run registry lists the runs sources report; a web app reads and judges them. To try it without either product, `SW_FAKE_SOURCES=1` serves one development run
 > on loopback.
 
@@ -75,19 +75,12 @@ against the release's `SHA256SUMS`, and installs `superwitness` and a short alia
 program at either name, and refuses a download it cannot verify. `VERSION=v0.0.7` pins a release;
 `BIN_DIR=/some/dir` changes where it installs.
 
-`superwitness skill` prints an operations skill for agents (what each command does and which ones change data); `suwi skill install` writes it to `~/.claude/skills`, and `SKILL_DIR=<dir>` on the installer does the same. Needs a release after v0.0.6.
+`superwitness skill` prints an operations skill for agents (what each command does and which ones change data); `suwi skill install` writes it to `~/.claude/skills`, and `SKILL_DIR=<dir>` on the installer does the same. Needs v0.0.7 or later.
 
 superwitness is a server. The installer sets up no service, writes no configuration and starts
 nothing; for running it as a server see [Deploying](#deploying) and `deploy/`.
 
-The one-liner works from the first release that publishes `install.sh` (the one after v0.0.6).
-Until then, run the script from a checkout or raw `main` against v0.0.6 (Linux only; macOS builds
-start with the next release):
-
-```bash
-VERSION=v0.0.6 bash scripts/install.sh
-# or: curl -fsSL https://raw.githubusercontent.com/SuperJackfruitLabs/superwitness/main/scripts/install.sh | VERSION=v0.0.6 bash
-```
+The installer and the macOS builds are published from v0.0.7 on; v0.0.6 and earlier have neither.
 
 ## Running superwitness
 

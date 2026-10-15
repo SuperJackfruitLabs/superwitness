@@ -32,26 +32,26 @@ curl -fsSL https://github.com/SuperJackfruitLabs/superwitness/releases/latest/do
 This verifies the download against `SHA256SUMS` and installs `superwitness` and the alias `suwi` into
 `~/.local/bin` (`BIN_DIR=` changes it, `VERSION=` pins a release). It installs no service and starts
 nothing; the steps below still set up the server.
-`superwitness skill` prints an operations skill for agents (what each command does and which ones change data); `suwi skill install` writes it to `~/.claude/skills`, and `SKILL_DIR=<dir>` on the installer does the same. Needs a release after v0.0.6.
- The script is published with releases after v0.0.6,
-and darwin builds start there too.
+`superwitness skill` prints an operations skill for agents (what each command does and which ones change data); `suwi skill install` writes it to `~/.claude/skills`, and `SKILL_DIR=<dir>` on the installer does the same. Needs v0.0.7 or later.
+
+The script and the macOS builds are published from v0.0.7 on; v0.0.6 and earlier have neither.
 
 ## Download and verify
 
 Each release has a tarball per architecture and a `SHA256SUMS` file covering them:
 
 ```sh
-curl -LO https://github.com/SuperJackfruitLabs/superwitness/releases/download/v0.0.6/superwitness_0.0.6_linux_amd64.tar.gz
-curl -LO https://github.com/SuperJackfruitLabs/superwitness/releases/download/v0.0.6/SHA256SUMS
+curl -LO https://github.com/SuperJackfruitLabs/superwitness/releases/download/v0.0.7/superwitness_0.0.7_linux_amd64.tar.gz
+curl -LO https://github.com/SuperJackfruitLabs/superwitness/releases/download/v0.0.7/SHA256SUMS
 sha256sum --ignore-missing -c SHA256SUMS
-tar xzf superwitness_0.0.6_linux_amd64.tar.gz
+tar xzf superwitness_0.0.7_linux_amd64.tar.gz
 ```
 
 On arm64, replace `amd64` with `arm64`. The tarball holds the binary, `LICENSE`, `NOTICE`, `licenses/`
 (the bundled fonts' licences), `deploy/superwitness.service` and `deploy/env.example`. Install the binary:
 
 ```sh
-sudo install -m 0755 superwitness_0.0.6_linux_amd64/superwitness /usr/local/bin/
+sudo install -m 0755 superwitness_0.0.7_linux_amd64/superwitness /usr/local/bin/
 superwitness version
 ```
 
@@ -137,7 +137,7 @@ Create the service user and its settings file. The file is readable by root and 
 ```sh
 sudo useradd -r -s /usr/sbin/nologin superwitness
 sudo install -d -m 0750 -o root -g superwitness /etc/superwitness
-sudo install -m 0640 -o root -g superwitness superwitness_0.0.6_linux_amd64/deploy/env.example /etc/superwitness/env
+sudo install -m 0640 -o root -g superwitness superwitness_0.0.7_linux_amd64/deploy/env.example /etc/superwitness/env
 ```
 
 Edit `/etc/superwitness/env`. These are the settings `deploy/env.example` holds, with this guide's
@@ -231,7 +231,7 @@ background migration pass as the runtime role, which succeeds when nothing is pe
 ## Start
 
 ```sh
-sudo install -m 0644 superwitness_0.0.6_linux_amd64/deploy/superwitness.service /etc/systemd/system/
+sudo install -m 0644 superwitness_0.0.7_linux_amd64/deploy/superwitness.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now superwitness
 curl -s localhost:8790/health
@@ -242,7 +242,7 @@ The unit runs `superwitness serve` as the `superwitness` user with its settings 
 whenever the process is alive; each source's state is in the body:
 
 ```json
-{"sources":{"agentpod":"ok","logs":"ok","superpipeline":"ok","traces":"ok","verdicts":"ok"},"status":"ok","version":"v0.0.6"}
+{"sources":{"agentpod":"ok","logs":"ok","superpipeline":"ok","traces":"ok","verdicts":"ok"},"status":"ok","version":"v0.0.7"}
 ```
 
 A source that cannot be reached shows `unavailable` or `timeout` there, and `/health` stays 200.
