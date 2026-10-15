@@ -23,6 +23,19 @@ To look around first without the other products, skip to
 
 superwitness itself needs no disk: it reads over HTTP and writes only to its Postgres.
 
+## Quick install of the binary
+
+```sh
+curl -fsSL https://github.com/SuperJackfruitLabs/superwitness/releases/latest/download/install.sh | bash
+```
+
+This verifies the download against `SHA256SUMS` and installs `superwitness` and the alias `suwi` into
+`~/.local/bin` (`BIN_DIR=` changes it, `VERSION=` pins a release). It installs no service and starts
+nothing; the steps below still set up the server.
+`superwitness skill` prints an operations skill for agents (what each command does and which ones change data); `suwi skill install` writes it to `~/.claude/skills`, and `SKILL_DIR=<dir>` on the installer does the same. Needs a release after v0.0.6.
+ The script is published with releases after v0.0.6,
+and darwin builds start there too.
+
 ## Download and verify
 
 Each release has a tarball per architecture and a `SHA256SUMS` file covering them:

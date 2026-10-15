@@ -10,7 +10,7 @@ UNIT_PKGS = ./cmd/... ./internal/...
 build:
 	$(GO) build -trimpath -ldflags "-X main.version=$(VERSION)" -o bin/superwitness ./cmd/superwitness
 
-# Release tarballs for linux/amd64 and linux/arm64 plus SHA256SUMS, under dist/.
+# Release tarballs for linux and darwin, each amd64 and arm64 (CGO-free, so all cross-compile), plus SHA256SUMS, under dist/.
 # Usage: make dist VERSION=v0.0.6
 DIST_VER = $(patsubst v%,%,$(VERSION))
 SHA256 = $(shell command -v sha256sum >/dev/null 2>&1 && echo sha256sum || echo "shasum -a 256")
@@ -18,17 +18,18 @@ SHA256 = $(shell command -v sha256sum >/dev/null 2>&1 && echo sha256sum || echo 
 dist:
 	rm -rf dist
 	mkdir -p dist
-	set -e; for arch in amd64 arm64; do \
-	  name=superwitness_$(DIST_VER)_linux_$$arch; \
+	set -e; for target in linux_amd64 linux_arm64 darwin_arm64 darwin_amd64; do \
+	  os=$${target%_*}; arch=$${target#*_}; \
+	  name=superwitness_$(DIST_VER)_$$target; \
 	  mkdir -p dist/$$name/deploy; \
-	  CGO_ENABLED=0 GOOS=linux GOARCH=$$arch $(GO) build -trimpath -ldflags "-s -w -X main.version=$(VERSION)" -o dist/$$name/superwitness ./cmd/superwitness; \
+	  CGO_ENABLED=0 GOOS=$$os GOARCH=$$arch $(GO) build -trimpath -ldflags "-s -w -X main.version=$(VERSION)" -o dist/$$name/superwitness ./cmd/superwitness; \
 	  cp LICENSE NOTICE dist/$$name/; \
 	  cp -R licenses dist/$$name/; \
 	  cp deploy/superwitness.service deploy/env.example dist/$$name/deploy/; \
 	  COPYFILE_DISABLE=1 tar -C dist -czf dist/$$name.tar.gz $$name; \
 	  rm -rf dist/$$name; \
 	done
-	cd dist && $(SHA256) superwitness_$(DIST_VER)_linux_*.tar.gz > SHA256SUMS
+	cd dist && $(SHA256) superwitness_$(DIST_VER)_*.tar.gz > SHA256SUMS
 
 test:
 	$(GO) test $(UNIT_PKGS)

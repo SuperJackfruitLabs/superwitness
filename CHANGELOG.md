@@ -3,6 +3,17 @@
 All notable changes to superwitness are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Unreleased
+
+### Added
+
+- `scripts/install.sh`, published with each release: a curl installer that verifies the tarball
+  against `SHA256SUMS` and installs `superwitness` plus the alias `suwi` into `~/.local/bin`
+  (no sudo, no service, never overwrites a different program).
+- `superwitness skill` prints an embedded agent skill (`superwitness-ops`); `skill install [--dir DIR]` writes it
+  atomically to `~/.claude/skills`; the installer does so when `SKILL_DIR` is set.
+- Release tarballs for macOS (`darwin_arm64`, `darwin_amd64`).
+
 ## 0.0.6 — 2026-10-07
 
 ### Changed

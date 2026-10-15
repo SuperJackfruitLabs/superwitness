@@ -43,11 +43,13 @@ func run(args []string, getenv func(string) string) int {
 		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 		defer stop()
 		return canary.Main(ctx, args, getenv, os.Stdout, os.Stderr)
+	case "skill":
+		return skillCmd(args, getenv, os.Stdout, os.Stderr)
 	case "version", "--version", "-version":
 		fmt.Println(version)
 		return 0
 	default:
-		fmt.Fprintln(os.Stderr, "usage: superwitness [serve | migrate | rubric-add | canary | version | --version]")
+		fmt.Fprintln(os.Stderr, "usage: superwitness [serve | migrate | rubric-add | canary | skill | version | --version]")
 		return 2
 	}
 }

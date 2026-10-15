@@ -63,6 +63,32 @@ The docs site (`docs-site/`) and landing page (`landing/`) are checked against t
 code by `internal/docsclaims`: a page that names an `SW_*` variable, `/v1` route or
 MCP tool the code does not define fails `make test`.
 
+## Install
+
+```bash
+curl -fsSL https://github.com/SuperJackfruitLabs/superwitness/releases/latest/download/install.sh | bash
+```
+
+This downloads the release tarball for your platform (Linux or macOS, amd64 or arm64), checks it
+against the release's `SHA256SUMS`, and installs `superwitness` and a short alias, `suwi`
+(a symlink to it), into `~/.local/bin`. It never uses sudo, refuses to overwrite a different
+program at either name, and refuses a download it cannot verify. `VERSION=v0.0.7` pins a release;
+`BIN_DIR=/some/dir` changes where it installs.
+
+`superwitness skill` prints an operations skill for agents (what each command does and which ones change data); `suwi skill install` writes it to `~/.claude/skills`, and `SKILL_DIR=<dir>` on the installer does the same. Needs a release after v0.0.6.
+
+superwitness is a server. The installer sets up no service, writes no configuration and starts
+nothing; for running it as a server see [Deploying](#deploying) and `deploy/`.
+
+The one-liner works from the first release that publishes `install.sh` (the one after v0.0.6).
+Until then, run the script from a checkout or raw `main` against v0.0.6 (Linux only; macOS builds
+start with the next release):
+
+```bash
+VERSION=v0.0.6 bash scripts/install.sh
+# or: curl -fsSL https://raw.githubusercontent.com/SuperJackfruitLabs/superwitness/main/scripts/install.sh | VERSION=v0.0.6 bash
+```
+
 ## Running superwitness
 
 ```bash
