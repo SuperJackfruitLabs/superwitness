@@ -6,6 +6,8 @@
 # Optional env:
 #   VERSION   pin a release tag (e.g. v0.0.6); default: the latest release
 #   BIN_DIR   where to install; default: ~/.local/bin
+#   SKILL_DIR also install the agent skill there (e.g. ~/.claude/skills), by running the freshly
+#             installed `superwitness skill install --dir "$SKILL_DIR"`; omitted by default
 #
 # Installs one binary under two names: `superwitness`, and `suwi`, a symlink to it, as a short
 # name for a person typing.
@@ -149,6 +151,14 @@ main() {
   mv -f "${bin_dir}/.suwi.incoming.$$" "${bin_dir}/suwi"
 
   printf 'Installed %s\n' "$("${bin_dir}/superwitness" --version)"
+
+  if [ -n "${SKILL_DIR:-}" ]; then
+    if "${bin_dir}/superwitness" skill install --dir "$SKILL_DIR"; then
+      :
+    else
+      printf 'This superwitness predates the skill verb, so no skill was installed (the binary is fine).\n' >&2
+    fi
+  fi
 
   # shellcheck disable=SC2016  # $PATH is literal text for the reader to type
   case ":${PATH}:" in

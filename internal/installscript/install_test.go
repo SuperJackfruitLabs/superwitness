@@ -30,6 +30,13 @@ func stub(version string) string {
 	return "#!/bin/sh\n# github.com/SuperJackfruitLabs/superwitness\necho " + version + "\n"
 }
 
+// stubWithSkill also understands `skill install --dir DIR`, like a binary that has the verb.
+func stubWithSkill(version string) string {
+	return "#!/bin/sh\n# github.com/SuperJackfruitLabs/superwitness\n" +
+		`if [ "$1" = skill ] && [ "$2" = install ] && [ "$3" = --dir ]; then mkdir -p "$4/superwitness-ops" && echo skill > "$4/superwitness-ops/SKILL.md" && echo "$4/superwitness-ops/SKILL.md"; exit 0; fi` +
+		"\n[ \"$1\" = skill ] && exit 2\necho " + version + "\n"
+}
+
 func tarball(t *testing.T, name, body string) []byte {
 	t.Helper()
 	var sb strings.Builder
@@ -54,9 +61,13 @@ type release struct {
 }
 
 func newRelease(t *testing.T, tg string) *release {
+	return newReleaseWith(t, tg, stub(tg))
+}
+
+func newReleaseWith(t *testing.T, tg, body string) *release {
 	os, arch := hostPlatform()
 	name := fmt.Sprintf("superwitness_%s_%s_%s.tar.gz", strings.TrimPrefix(tg, "v"), os, arch)
-	return &release{tag: tg, files: map[string][]byte{name: tarball(t, name, stub(tg))}}
+	return &release{tag: tg, files: map[string][]byte{name: tarball(t, name, body)}}
 }
 
 func (r *release) serve(t *testing.T) string {
@@ -230,5 +241,40 @@ func TestRerunUpgrades(t *testing.T) {
 		if got := runOut(t, filepath.Join(dir, "suwi"), "--version"); got != v {
 			t.Fatalf("after installing %s, suwi reports %s", v, got)
 		}
+	}
+}
+
+func TestSkillDirInstallsSkill(t *testing.T) {
+	base := newReleaseWith(t, tag, stubWithSkill(tag)).serve(t)
+	dir, skills := t.TempDir(), t.TempDir()
+	out, err := run(t, base, dir, "SKILL_DIR="+skills)
+	if err != nil {
+		t.Fatalf("%v\n%s", err, out)
+	}
+	if _, e := os.Stat(filepath.Join(skills, "superwitness-ops", "SKILL.md")); e != nil {
+		t.Fatalf("skill not installed: %v\n%s", e, out)
+	}
+}
+
+func TestSkillDirWithOldBinaryIsNotFatal(t *testing.T) {
+	base := newReleaseWith(t, tag, stubWithSkill(tag)[:0]+"#!/bin/sh\n# github.com/SuperJackfruitLabs/superwitness\n[ \"$1\" = skill ] && exit 2\necho "+tag+"\n").serve(t)
+	dir, skills := t.TempDir(), t.TempDir()
+	out, err := run(t, base, dir, "SKILL_DIR="+skills)
+	if err != nil || !strings.Contains(out, "predates the skill verb") {
+		t.Fatalf("want note and success, got err=%v\n%s", err, out)
+	}
+	if got := runOut(t, filepath.Join(dir, "suwi"), "--version"); got != tag {
+		t.Fatal(got)
+	}
+}
+
+func TestNoSkillDirInstallsNoSkill(t *testing.T) {
+	base := newReleaseWith(t, tag, stubWithSkill(tag)).serve(t)
+	skills := t.TempDir()
+	if out, err := run(t, base, t.TempDir()); err != nil {
+		t.Fatalf("%v\n%s", err, out)
+	}
+	if ents, _ := os.ReadDir(skills); len(ents) != 0 {
+		t.Fatal("skill installed without SKILL_DIR")
 	}
 }

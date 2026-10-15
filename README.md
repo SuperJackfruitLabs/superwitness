@@ -75,6 +75,8 @@ against the release's `SHA256SUMS`, and installs `superwitness` and a short alia
 program at either name, and refuses a download it cannot verify. `VERSION=v0.0.7` pins a release;
 `BIN_DIR=/some/dir` changes where it installs.
 
+`superwitness skill` prints an operations skill for agents (what each command does and which ones change data); `suwi skill install` writes it to `~/.claude/skills`, and `SKILL_DIR=<dir>` on the installer does the same. Needs a release after v0.0.6.
+
 superwitness is a server. The installer sets up no service, writes no configuration and starts
 nothing; for running it as a server see [Deploying](#deploying) and `deploy/`.
 
