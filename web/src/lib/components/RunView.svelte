@@ -48,7 +48,7 @@
       {#if status !== "ok"}
         <SourceUnavailable {source} {status} />
       {:else if tab === "trace"}
-        <TracePanel doc={doc.data} {api} page={base} attempts={list(doc.data.attempts)} selected={params.get("span")} {evidence} />
+        <TracePanel {api} page={base} attempts={list(doc.data.attempts)} selected={params.get("span")} {evidence} />
       {:else if tab === "transcript"}
         <TranscriptPanel doc={doc.data} />
       {:else if tab === "logs"}
@@ -72,7 +72,13 @@
   :global(:where([data-vibe="quiet"])) .sw-run__panel { margin-top: 22px; padding: 0; border-radius: 0; background: none; box-shadow: none; }
   :global(:where([data-vibe="studio"])) .sw-run__panel { margin-top: 28px; padding: 0; border-radius: 0; background: none; box-shadow: none; }
   :global(:where([data-vibe="quiet"])) .sw-run__panel { margin-top: var(--vk-space-4, 16px); }
+  /* An open span pane: Daylight and Quiet make room for it, so the whole shell (sections, account,
+     page) narrows beside it; Paper and Studio float it over the page. */
+  @media (min-width: 1100px) {
+    :global([data-vibe="daylight"] .sw-shell:has(.sw-inspector)) { margin-right: 496px; }
+    :global([data-vibe="quiet"] .sw-shell:has(.sw-inspector)) { margin-right: 480px; }
+  }
   @media (max-width: 759px) {
-    .sw-run__panel { padding: 14px 12px 16px; }
+    :global(:where([data-vibe="daylight"])) .sw-run__panel { padding: 14px 12px 16px; }
   }
 </style>

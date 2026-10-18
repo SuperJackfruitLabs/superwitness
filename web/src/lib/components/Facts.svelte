@@ -20,11 +20,11 @@
 </dl>
 
 <style>
-  /* Daylight (base): five white cards in the sky band. */
-  .sw-facts { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin: 20px 0 0; }
+  /* Daylight (base): five white cards in the sky band; three and two beside an open span pane. */
+  .sw-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 20px 0 0; }
   .sw-facts > div { min-width: 0; padding: 12px 16px; border-radius: var(--vk-radius-md); background: var(--vk-color-surface); color: var(--vk-color-text); }
   dt { font-size: var(--vk-text-sm); font-weight: 600; color: var(--vk-color-muted); }
-  dd { margin: 2px 0 0; font: 700 1.125rem/1.3 var(--vk-font-display); overflow-wrap: anywhere; }
+  dd { margin: 2px 0 0; font: 700 1.125rem/1.3 var(--vk-font-display); overflow-wrap: break-word; }
   dd.sw-mono { font: 500 0.9375rem/1.4 var(--vk-font-mono); }
   dd.sw-word { color: var(--vk-color-muted); font-style: italic; font-weight: 600; }
 

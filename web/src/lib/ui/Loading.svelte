@@ -2,14 +2,15 @@
   // The words "Loading…" are always there (screen readers, tests). Below them each vibe draws its
   // placeholder (SW-RunsStates): Daylight soft bars, Paper ruled blank lines, Studio grey blocks
   // under "— LOADING…", Quiet nothing. bare is the app-level loading before the shell exists.
-  let { bare = false }: { bare?: boolean } = $props();
+  // label names what is loading ("Loading spans…"); the default is the page's "Loading…".
+  let { bare = false, label = "Loading…" }: { bare?: boolean; label?: string } = $props();
 </script>
 
 {#if bare}
-  <p class="sw-loading sw-loading--bare" role="status">Loading…</p>
+  <p class="sw-loading sw-loading--bare" role="status">{label}</p>
 {:else}
   <div class="sw-loading" role="status">
-    <p class="sw-loading__t"><span class="sw-loading__dash" aria-hidden="true">— </span>Loading…</p>
+    <p class="sw-loading__t"><span class="sw-loading__dash" aria-hidden="true">— </span>{label}</p>
     <div class="sw-loading__bars" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
   </div>
 {/if}
