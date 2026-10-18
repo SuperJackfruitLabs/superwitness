@@ -15,12 +15,12 @@
 :where([data-vibe="paper"][data-theme="light"]) {
   --sw-danger: #a3313f; --sw-danger-text: #962c39; --sw-danger-wash: #f8e6e7;
   --sw-warn: #8a5a06; --sw-warn-text: #7d5205; --sw-warn-wash: #f6ecd6;
-  --sw-info: var(--vk-color-text); --sw-info-text: var(--vk-color-text); --sw-info-wash: var(--vk-color-surface);
+  --sw-info: #19799d; --sw-info-text: #1c7496; --sw-info-wash: #e3f2f8;
 }
 :where([data-vibe="paper"][data-theme="dark"]) {
   --sw-danger: #d9737f; --sw-danger-text: #e08a94; --sw-danger-wash: #3a2023;
   --sw-warn: #c9963d; --sw-warn-text: #d4a552; --sw-warn-wash: #33291a;
-  --sw-info: var(--vk-color-text); --sw-info-text: var(--vk-color-text); --sw-info-wash: var(--vk-color-surface);
+  --sw-info: #4e9bbe; --sw-info-text: #579fc0; --sw-info-wash: #1a303a;
 }
 :where([data-vibe="studio"][data-theme="light"]) {
   --sw-danger: var(--vk-color-text); --sw-danger-text: var(--vk-color-text); --sw-danger-wash: var(--vk-color-surface);
