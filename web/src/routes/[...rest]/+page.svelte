@@ -1,1 +1,5 @@
-<h1>Page not found</h1>
+<script lang="ts">
+  import NotFound from "$lib/components/NotFound.svelte";
+</script>
+
+<NotFound />
