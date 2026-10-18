@@ -50,7 +50,7 @@
       {:else if tab === "trace"}
         <TracePanel {api} page={base} attempts={list(doc.data.attempts)} selected={params.get("span")} {evidence} />
       {:else if tab === "transcript"}
-        <TranscriptPanel doc={doc.data} />
+        <TranscriptPanel {api} page={base} doc={doc.data} attempt={params.get("attempt")} seq={params.get("seq")} {evidence} />
       {:else if tab === "logs"}
         <LogsPanel doc={doc.data} />
       {:else if tab === "errors"}
@@ -68,6 +68,8 @@
   .sw-run { min-width: 0; }
   /* Daylight: the tab's body sits on a raised card. */
   .sw-run__panel { min-width: 0; margin-top: 16px; padding: 20px 24px 24px; border-radius: var(--vk-radius-lg); background: var(--vk-color-surface); box-shadow: 0 var(--vk-lift, 3px) 0 var(--vk-color-ground); }
+  /* The transcript's steps are cards of their own. */
+  .sw-run__panel:has(:global(.sw-tx)) { padding: 0; background: none; box-shadow: none; }
   :global(:where([data-vibe="paper"])) .sw-run__panel,
   :global(:where([data-vibe="quiet"])) .sw-run__panel { margin-top: 22px; padding: 0; border-radius: 0; background: none; box-shadow: none; }
   :global(:where([data-vibe="studio"])) .sw-run__panel { margin-top: 28px; padding: 0; border-radius: 0; background: none; box-shadow: none; }

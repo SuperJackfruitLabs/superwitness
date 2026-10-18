@@ -11,7 +11,10 @@
 // "Write the release note" with its 7 spans, logs and the failed tool_call's transcript (open it with
 // ?span=00f067aa0ba902bc); --running: the run is still running; --unknown: every figure unknown and
 // the agentpod source timed out; --long-agent: a 60-character agent principal; --spans-empty,
-// --spans-loading, --spans-error, --spans-more: the trace's own states. Pictures go to
+// --spans-loading, --spans-error, --spans-more: the trace's own states; --tx-forbidden,
+// --tx-unavailable: transcript 403/503; --verdicts-fail: the run's verdict history fails;
+// --logs-empty, --logs-error: the Logs tab's states. Two attempts, FACTS.md's six transcript items,
+// four log lines, three gates and a superseded + a revisable verdict by prn_human01 are always there. Pictures go to
 // test-results/shots/ (git-ignored). Not part of `make e2e`.
 import { createServer } from "node:http";
 import { readFile, mkdir } from "node:fs/promises";
@@ -33,6 +36,9 @@ const loading = args.includes("--loading");
 const running = args.includes("--running");
 const unknown = args.includes("--unknown");
 const longAgent = args.includes("--long-agent");
+const txState = ["forbidden", "unavailable"].find((k) => args.includes(`--tx-${k}`));
+const verdictsFail = args.includes("--verdicts-fail");
+const logsState = ["empty", "error"].find((k) => args.includes(`--logs-${k}`));
 const spansState = ["empty", "loading", "error", "more"].find((k) => args.includes(`--spans-${k}`));
 
 // The mockups' runs: Today, Yesterday and Tue, 13 Oct 2026, the six statuses, one source with no
@@ -81,10 +87,19 @@ const sources = { superpipeline: "ok", agentpod: "ok", traces: "ok", logs: "ok",
 const runDoc = {
   run: { ref: "superpipeline:brd_01/run_01", agent: longAgent ? "prn_agent_0123456789abcdef0123456789abcdef0123456789abcdef" : "prn_agent01", state: running ? "running" : "completed",
     started_at: at(0), ended_at: running ? null : at(300), card: { title: "Write the release note", stage: "draft" } },
-  attempts: [{ id: "attempt_01", station: "stn_01", session_id: "acps_01", seq_from: 1, seq_to: running ? null : 9, state: running ? "running" : "completed" }],
+  attempts: [
+    { id: "attempt_01", station: "stn_01", session_id: "acps_01", seq_from: 1, seq_to: running ? null : 9, state: running ? "running" : "completed",
+      fingerprint: { digest: "sha256:c1a88701c4409ae0eafb5f51ec7dabbe5f18037c1256baa045ab8cabf7ed3426", harness: "hermes", harness_version: "unknown", model: "unknown" } },
+    { id: "attempt_02", station: "stn_01", session_id: "acps_02", seq_from: 10, seq_to: 14, state: "failed",
+      fingerprint: { digest: "sha256:9f2b6c0e1a7d4c3b8e5f60718293a4b5c6d7e8f9012345678abcdef012345678", harness: "hermes", harness_version: "0.4.2", model: "claude-sonnet-5-5" } },
+  ],
   errors: running ? [] : [{ at: at(182.4), service: "agentpod-hub", message: "bridge heartbeat failed: 502 from superpipeline" }],
   cost: { status: "unreported" },
-  verdicts: [],
+  verdicts: [
+    { id: "gate_01", kind: "gate", standard: "stage:draft", status: "resolved", value: { decision: "rejected" }, judge: "prn_human02", judge_kind: "human", at: at(320) },
+    { id: "gate_02", kind: "gate", standard: "stage:review", status: "pending", value: { decision: null }, judge: "unknown", judge_kind: "unknown", at: at(330) },
+    { id: "gate_03", kind: "gate", standard: "stage:publish", status: "cancelled", value: { decision: null }, judge: "unknown", judge_kind: "unknown", at: at(340) },
+  ],
   sources,
 };
 const unknownDoc = { run: { ref: "superpipeline:brd_01/run_01", card: { title: "unknown" } }, attempts: [], errors: [], cost: {}, verdicts: [], sources: { ...sources, agentpod: "timeout", errors: "timeout" } };
@@ -102,7 +117,26 @@ const spans = [
 ];
 const logs = [
   { at: at(2.2), service: "agentpod-hub", level: "info", message: "attempt opened", trace_id: TR },
-  { at: at(182.4), service: "agentpod-hub", level: "error", message: "bridge heartbeat failed: 502 from superpipeline", trace_id: TR },
+  { at: at(182.4), service: "superpipeline-api", level: "error", message: "bridge heartbeat failed: 502 from superpipeline", trace_id: TR },
+  { at: at(183.1), service: "agentpod-hub", level: "warn", message: "retrying heartbeat in 5 s", trace_id: TR },
+  { at: at(421), service: "agentpod-hub", level: "info", message: "attempt closed", trace_id: TR },
+];
+// FACTS.md's six transcript items.
+const txItems = [
+  { kind: "prompt", seq: 1, text: "Draft the notes for version 0.4 from CHANGELOG.md. Registry key: [redacted:anthropic-key]. Header: Authorization: Bearer [redacted:authorization].", images: [], redactions: 2 },
+  { kind: "reasoning", seq_from: 2, seq_to: 2, text: "The entries are in the changelog; read it before writing.", redactions: 0 },
+  { kind: "tool_call", id: "tc_1", seq_from: 3, seq_to: 4, title: "Read CHANGELOG.md", tool_kind: "read", status: "completed", redactions: 0,
+    input: { path: "CHANGELOG.md" }, output: { content: [{ type: "text", text: { truncated: true, bytes: 48213, head: "# Changelog\n\n## 0.4.0\n- Rubrics can be revised" } }], raw: null } },
+  { kind: "permission", seq_from: 5, seq_to: 6, title: "Write release-note.md", options: [{ name: "Allow once", optionId: "allow_once" }, { name: "Reject", optionId: "reject" }], outcome: "selected:allow_once", redactions: 0 },
+  { kind: "tool_call", id: "tc_2", seq_from: 7, seq_to: 8, title: "Write release-note.md", tool_kind: "edit", status: "failed", redactions: 0,
+    input: { path: "release-note.md" }, output: { content: [{ type: "text", text: "permission denied: release-note.md is read-only" }], raw: null } },
+  { kind: "message", seq_from: 9, seq_to: 9, text: "I could not write the notes: release-note.md is read-only.", redactions: 0 },
+];
+const hv = (id, over) => ({ id, kind: "review", subject_kind: "run", subject_ref: "superpipeline:brd_01/run_01", judge: "prn_human01", judge_kind: "human",
+  standard: "rubric:release@1", value: { decision: "pass" }, comment: "", evidence_refs: [], supersedes: null, superseded_by: null, created_at: at(600), ...over });
+const history = [
+  hv("vrd_01", { value: { decision: "fail" }, superseded_by: "vrd_02", created_at: at(500), comment: "Misses the upgrade steps." }),
+  hv("vrd_02", { supersedes: "vrd_01", comment: "Clear and complete.", evidence_refs: ["00f067aa0ba902bc", { session_id: "acps_01", seq_from: 7, seq_to: 8 }] }),
 ];
 const failedCall = { kind: "tool_call", id: "tc_2", seq_from: 7, seq_to: 8, title: "Write release-note.md", tool_kind: "edit", status: "failed", redactions: 0,
   input: { path: "release-note.md" }, output: { content: [{ type: "text", text: "permission denied: release-note.md is read-only" }], raw: null } };
@@ -116,9 +150,23 @@ function runStub(path, q) {
     if (spansState === "more") return q.has("cursor") ? null : [200, { spans, next_cursor: "c2" }];
     return [200, { spans }];
   }
-  if (path === `${runAPI}/logs`) return [200, { logs, next_cursor: null }];
-  if (path.startsWith(`${runAPI}/transcript`)) return [200, { attempt_id: "attempt_01", session_id: "acps_01", seq_from: 7, seq_to: 8, items: [failedCall], next_cursor: null, redactions: 0, truncated_fields: 0 }];
-  if (path === "/v1/verdicts") return [200, { verdicts: [] }];
+  if (path === `${runAPI}/logs`) {
+    if (logsState === "error") return [503, { error: { code: "source_unavailable", message: "superwitness could not be reached" } }];
+    if (logsState === "empty" || q.has("cursor")) return [200, { logs: [], next_cursor: null }];
+    const level = q.get("level");
+    return [200, { logs: level ? logs.filter((l) => l.level === level) : logs, next_cursor: "c2" }];
+  }
+  if (path.startsWith(`${runAPI}/transcript`)) {
+    if (txState === "forbidden") return [403, { error: { code: "transcripts_forbidden", message: "Transcripts aren't available to this account" } }];
+    if (txState === "unavailable") return [503, { error: { code: "source_unavailable", message: "no", retryable: true } }];
+    if (q.has("seq_from") && !path.includes("/items/")) return [200, { attempt_id: "attempt_01", session_id: "acps_01", seq_from: 7, seq_to: 8, items: [failedCall], next_cursor: null, redactions: 0, truncated_fields: 0 }];
+    if (path.includes("/items/")) return [500, { error: { code: "internal", message: "superwitness could not answer." } }];
+    return [200, { attempt_id: q.get("attempt"), session_id: "acps_01", seq_from: 1, seq_to: 9, items: txItems, next_cursor: null, redactions: 2, truncated_fields: 1 }];
+  }
+  if (path === "/v1/verdicts") {
+    if (q.get("subject_kind") === "run") return verdictsFail ? [503, { error: { code: "store_unavailable", message: "superwitness could not be reached" } }] : [200, { verdicts: history }];
+    return [200, { verdicts: q.get("subject_ref") === "attempt_02" ? [hv("vrd_03", { subject_kind: "attempt", subject_ref: "attempt_02", judge: "prn_human02", value: { score: 0.4 }, created_at: at(700) })] : [] }];
+  }
   if (path === "/v1/rubrics") return [200, { rubrics: [] }];
   return undefined;
 }
@@ -170,7 +218,8 @@ const base = `http://127.0.0.1:${server.address().port}`;
 await mkdir(out, { recursive: true });
 const browser = await chromium.launch();
 const variant = (moreError ? "-moreerror" : more ? "-more" : empty ? "-empty" : loading ? "-loading" : "") + (running ? "-running" : "") + (unknown ? "-unknown" : "") +
-  (longAgent ? "-longagent" : "") + (spansState ? `-spans${spansState}` : "");
+  (longAgent ? "-longagent" : "") + (spansState ? `-spans${spansState}` : "") +
+  (txState ? `-tx${txState}` : "") + (verdictsFail ? "-verdictsfail" : "") + (logsState ? `-logs${logsState}` : "");
 const only = args.find((a) => a.startsWith("--only="))?.slice(7).split(",");
 const name = (target === "/" ? "runs" : target.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "")) + variant;
 for (const vibe of ["daylight", "paper", "studio", "quiet"].filter((v) => !only || only.includes(v))) {
