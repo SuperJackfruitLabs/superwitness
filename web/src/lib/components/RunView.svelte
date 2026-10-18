@@ -4,7 +4,8 @@
   import { list } from "../format";
   import { navigate } from "../nav";
   import { TAB_LABEL, TAB_SOURCE, TABS, tabOf } from "../run/facts";
-  import type { Doc } from "../types";
+  import { history as readHistory } from "../run/history.svelte";
+  import type { Doc, HistoryVerdict, Me } from "../types";
   import Loading from "../ui/Loading.svelte";
   import Tabs from "../ui/Tabs.svelte";
   import AttemptsPanel from "./AttemptsPanel.svelte";
@@ -20,7 +21,7 @@
   // RunView is one run's page. The route keys it by board/run, so nothing ticked or typed on one
   // run (evidence, an open drawer) can reach another. The tab, the open span, the attempt and the
   // transcript range live in the URL (query).
-  let { board, run, query }: { board: string; run: string; query: string } = $props();
+  let { board, run, query, me = null }: { board: string; run: string; query: string; me?: Me | null } = $props();
 
   const base = $derived(`/runs/superpipeline/${board}/${run}`);
   const api = $derived(`/v1${base}`);
@@ -28,8 +29,10 @@
   const params = $derived(new URLSearchParams(query));
   const tab = $derived(tabOf(params.get("tab")));
   const evidence = createEvidence();
-  // The verdict drawer arrives in Part 11; Record verdict opens it.
-  let drawer = $state(false);
+  // Every verdict on the run and its attempts, for the Verdicts tab (and, from Part 11, the drawer).
+  const history = readHistory(() => doc.data ?? null);
+  // The verdict drawer arrives in Part 11: Record verdict opens it empty, Revise with the verdict.
+  let drawer = $state<{ revising?: HistoryVerdict } | null>(null);
 
   const tabs = $derived(TABS.map((t) => ({ value: t, label: TAB_LABEL[t], href: t === "trace" ? base : `${base}?tab=${t}` })));
   const source = $derived(TAB_SOURCE[tab]);
@@ -41,8 +44,8 @@
 {:else if !doc.data}
   <Loading />
 {:else}
-  <article class="sw-run" data-drawer={drawer ? "" : undefined}>
-    <RunHeader {board} {run} doc={doc.data} onrecord={() => (drawer = true)} />
+  <article class="sw-run" data-drawer={drawer ? (drawer.revising?.id ?? "") : undefined}>
+    <RunHeader {board} {run} doc={doc.data} onrecord={() => (drawer = {})} />
     <Tabs label="Run" items={tabs} value={tab} onactivate={navigate} />
     <div class="sw-run__panel" role="tabpanel" aria-label={TAB_LABEL[tab]}>
       {#if status !== "ok"}
@@ -52,11 +55,11 @@
       {:else if tab === "transcript"}
         <TranscriptPanel {api} page={base} doc={doc.data} attempt={params.get("attempt")} seq={params.get("seq")} {evidence} />
       {:else if tab === "logs"}
-        <LogsPanel doc={doc.data} />
+        <LogsPanel {api} />
       {:else if tab === "errors"}
         <ErrorsPanel doc={doc.data} />
       {:else if tab === "verdicts"}
-        <VerdictList doc={doc.data} />
+        <VerdictList gates={list<Doc>(doc.data.verdicts).filter((v) => v.kind === "gate")} {history} {me} onrevise={(v) => (drawer = { revising: v })} attempts={list(doc.data.attempts)} page={base} />
       {:else}
         <AttemptsPanel doc={doc.data} />
       {/if}

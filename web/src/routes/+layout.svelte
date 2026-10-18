@@ -11,6 +11,7 @@
   import Shell from "$lib/components/Shell.svelte";
   import Loading from "$lib/ui/Loading.svelte";
   import type { Me } from "$lib/types";
+  import { setMe } from "$lib/me";
 
   let { children } = $props();
 
@@ -20,6 +21,7 @@
 
   // /v1/me first: who is signed in decides everything else.
   const me = fetched<Me>(() => "/v1/me");
+  setMe(() => me.data ?? null);
   const path = $derived(page.url.pathname);
   const query = $derived(page.url.search.replace(/^\?/, ""));
   // A 401 from any later call ends the session; Sign in comes back to this exact path and query.
