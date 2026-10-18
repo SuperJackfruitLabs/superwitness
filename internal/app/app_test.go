@@ -72,17 +72,17 @@ func TestBuildFakeMode(t *testing.T) {
 	if n := strings.Count(logs.String(), `"msg":"transcript.read"`); n != 2 {
 		t.Errorf("%d transcript.read lines on the binary's logger, want 2", n)
 	}
-	if code, body := get("/runs/superpipeline/brd_01/run_01", ""); code != 200 || !strings.Contains(body, `<div id="root">`) {
+	if code, body := get("/runs/superpipeline/brd_01/run_01", ""); code != 200 || !strings.Contains(body, `__sveltekit`) {
 		t.Errorf("page: %d", code)
 	}
 	// /v1/* and /mcp never fall through to the index.html fallback.
 	for _, p := range []string{"/v1/foo", "/v1/runs/nope", "/mcp/x"} {
 		code, body := get(p, "dev:prn_human01:human")
-		if code != 404 || strings.Contains(body, `<div id="root">`) || !strings.Contains(body, `"not_found"`) {
+		if code != 404 || strings.Contains(body, `__sveltekit`) || !strings.Contains(body, `"not_found"`) {
 			t.Errorf("%s: %d %s; want the API's JSON 404", p, code, body)
 		}
 	}
-	if code, body := get("/v1/foo", ""); code != 404 || strings.Contains(body, `<div id="root">`) {
+	if code, body := get("/v1/foo", ""); code != 404 || strings.Contains(body, `__sveltekit`) {
 		t.Errorf("unauthenticated /v1/foo: %d %s", code, body)
 	}
 	req, _ := http.NewRequest("POST", srv.URL+"/v1/verdicts", strings.NewReader(

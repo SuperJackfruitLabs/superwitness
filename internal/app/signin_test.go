@@ -90,7 +90,7 @@ func TestSignInEndToEnd(t *testing.T) {
 	}
 
 	hub.SignInAs("hubuser_01", "human", "human01@example.com")
-	if code, body := do(browser, "GET", "/auth/login?next=/rubrics", "", "", ""); code != 200 || !strings.Contains(body, `<div id="root">`) {
+	if code, body := do(browser, "GET", "/auth/login?next=/rubrics", "", "", ""); code != 200 || !strings.Contains(body, `__sveltekit`) {
 		t.Fatalf("sign-in did not land on the app: %d %.200s", code, body)
 	}
 	if code, body := do(browser, "GET", "/v1/me", "", "", ""); code != 200 || !strings.Contains(body, `"principal":"prn_human01"`) || !strings.Contains(body, `"via":"session"`) {
