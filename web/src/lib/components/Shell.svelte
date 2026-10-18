@@ -59,7 +59,7 @@
 {:else}
   <div class="sw-shell" class:open>
     <div class="sw-side">
-      <header class="sw-top">
+      <header class="sw-top topbar">
         <a class="sw-wm" href="/"><Mark size={22} /><span>superwitness</span></a>
         <button class="sw-menu" type="button" aria-expanded={open} aria-controls="nav" onclick={() => (open = !open)}>
           <span class="sw-menu__x" aria-hidden="true">{open ? "×" : ""}</span>Menu
