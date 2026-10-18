@@ -38,7 +38,8 @@ test-integration:
 	$(GO) test -tags integration -count=1 ./internal/verdicts/... ./internal/runs/... ./internal/session/... ./internal/app/... ./test/integration/...
 
 web:
-	cd web && npm ci && npm test && npm run build
+	rm -rf internal/web/dist
+	cd web && npm ci && npm run check && npm test && npm run build
 
 web-check: web
 	test -z "$$(git status --porcelain -- internal/web/dist)"
@@ -59,10 +60,10 @@ E2E_PG = superwitness-e2e-postgres
 E2E_DSN = postgres://sw:sw@127.0.0.1:55432/superwitness?sslmode=disable
 
 e2e: build
-	docker rm -f $(E2E_PG) >/dev/null 2>&1 || true
+	docker rm -fv $(E2E_PG) >/dev/null 2>&1 || true
 	docker run -d --rm --name $(E2E_PG) -e POSTGRES_USER=sw -e POSTGRES_PASSWORD=sw -e POSTGRES_DB=superwitness \
 	  -p 127.0.0.1:55432:5432 postgres:17-alpine >/dev/null
 	i=0; until docker exec $(E2E_PG) pg_isready -U sw -d superwitness -h 127.0.0.1 >/dev/null 2>&1; do \
-	  i=$$((i+1)); if [ $$i -ge 60 ]; then echo 'e2e: Postgres not ready after 60 s' >&2; docker rm -f $(E2E_PG) >/dev/null; exit 1; fi; sleep 1; \
+	  i=$$((i+1)); if [ $$i -ge 60 ]; then echo 'e2e: Postgres not ready after 60 s' >&2; docker rm -fv $(E2E_PG) >/dev/null; exit 1; fi; sleep 1; \
 	done
-	cd web && E2E_DATABASE_URL='$(E2E_DSN)' npx playwright test; status=$$?; docker rm -f $(E2E_PG) >/dev/null; exit $$status
+	cd web && E2E_DATABASE_URL='$(E2E_DSN)' npx playwright test; status=$$?; docker rm -fv $(E2E_PG) >/dev/null; exit $$status

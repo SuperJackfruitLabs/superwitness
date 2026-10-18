@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en" data-product="superwitness">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <!-- First frame: the person's vibe and theme, before any stylesheet. Files, not inline scripts,
+         so the CSP's script-src stays strict. legacy-theme.js carries the old toggle's choice into
+         vibekit's cookie once; appearance-head.js is vibekit's, copied in by scripts/. -->
+    <script src="/legacy-theme.js"></script>
+    <script src="/appearance-head.js"></script>
+    <!-- The vibe's own background (vibekit tokens.css --vk-color-bg), so a load never flashes white.
+         :where() keeps these below vibekit's own rules once its stylesheet is in. -->
+    <style>:where(html){background:#fff8ee;color-scheme:light}:where(html[data-vibe=daylight][data-theme=dark]){background:#17162a;color-scheme:dark}:where(html[data-vibe=paper][data-theme=light]){background:#fbf8f2}:where(html[data-vibe=paper][data-theme=dark]){background:#1a1916;color-scheme:dark}:where(html[data-vibe=studio][data-theme=light]){background:#f6f3ec}:where(html[data-vibe=studio][data-theme=dark]){background:#14130f;color-scheme:dark}:where(html[data-vibe=quiet][data-theme=light]){background:#fff}:where(html[data-vibe=quiet][data-theme=dark]){background:#0e0e10;color-scheme:dark}</style>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>superwitness</title>
+    %sveltekit.head%
+  </head>
+  <body>
+    <div style="display: contents">%sveltekit.body%</div>
+  </body>
+</html>

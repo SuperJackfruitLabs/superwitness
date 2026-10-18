@@ -1,0 +1,85 @@
+import type { RegistryRun } from "./types";
+
+export type Tone = "good" | "warn" | "bad" | "info" | "quiet";
+
+export function display(v: unknown): string {
+  if (v === null || v === undefined) return "unknown";
+  if (typeof v === "object") return JSON.stringify(v);
+  return String(v);
+}
+
+// A list the API may send as null or omit: never throws, never invents entries.
+export function list<T>(v: T[] | null | undefined): T[] {
+  return Array.isArray(v) ? v : [];
+}
+
+// A source status: ok, unavailable, timeout, not_found or unauthorized.
+export function statusTone(s: string): Tone {
+  if (s === "ok") return "good";
+  if (s === "not_found" || s === "timeout") return "warn";
+  return "bad";
+}
+
+// A run status from the registry.
+export function runTone(s: string): Tone {
+  switch (s) {
+    case "succeeded":
+      return "good";
+    case "failed":
+      return "bad";
+    case "waiting":
+      return "warn";
+    case "running":
+      return "info";
+  }
+  return "quiet";
+}
+
+export function duration(ms: number): string {
+  const s = Math.max(0, Math.round(ms / 1000));
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m ${s % 60}s`;
+  return `${Math.floor(m / 60)}h ${m % 60}m`;
+}
+
+export function ago(iso: string, now: Date): string {
+  const s = Math.round((now.getTime() - Date.parse(iso)) / 1000);
+  if (s < 45) return "just now";
+  const m = Math.round(s / 60);
+  if (m < 60) return `${m} min ago`;
+  const h = Math.round(m / 60);
+  if (h < 48) return `${h} h ago`;
+  return `${Math.round(h / 24)} d ago`;
+}
+
+// timing is a card's time: the duration of a finished run, else how long ago it started.
+export function timing(run: RegistryRun, now: Date): string {
+  if (run.started_at && run.ended_at) return duration(Date.parse(run.ended_at) - Date.parse(run.started_at));
+  if (run.started_at) return `started ${ago(run.started_at, now)}`;
+  return `first seen ${ago(run.first_seen_at, now)}`;
+}
+
+// verdictSummary says a verdict's value in a few words.
+export function verdictSummary(value: Record<string, unknown> | null | undefined): string {
+  if (!value) return "—";
+  if (typeof value.decision === "string") return value.decision;
+  if (typeof value.label === "string") return value.label;
+  if (typeof value.score === "number") return value.score.toFixed(2);
+  if (typeof value.text === "string") return value.text.length > 40 ? value.text.slice(0, 39) + "…" : value.text;
+  return JSON.stringify(value);
+}
+
+// readableTime is a time for people: "Today, 10:41", "Yesterday, 09:02", "13 Oct 2026, 10:02", in the
+// viewer's zone. The ISO rides along for a title attribute; input that does not parse comes back as it was.
+export function readableTime(iso: string, now: Date = new Date()): { text: string; iso: string } {
+  const t = new Date(iso);
+  if (Number.isNaN(t.getTime())) return { text: iso, iso };
+  const clock = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false }).format(t);
+  const day = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const diff = Math.round((day(now) - day(t)) / 86_400_000);
+  if (diff === 0) return { text: `Today, ${clock}`, iso };
+  if (diff === 1) return { text: `Yesterday, ${clock}`, iso };
+  const date = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric" }).format(t);
+  return { text: `${date}, ${clock}`, iso };
+}

@@ -1,15 +1,57 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-product="superwitness">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="color-scheme" content="dark light" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <!-- First frame: the person's vibe and theme, before any stylesheet. Files, not inline scripts,
+         so the CSP's script-src stays strict. legacy-theme.js carries the old toggle's choice into
+         vibekit's cookie once; appearance-head.js is vibekit's, copied in by scripts/. -->
+    <script src="/legacy-theme.js"></script>
+    <script src="/appearance-head.js"></script>
+    <!-- The vibe's own background (vibekit tokens.css --vk-color-bg), so a load never flashes white.
+         :where() keeps these below vibekit's own rules once its stylesheet is in. -->
+    <style>:where(html){background:#fff8ee;color-scheme:light}:where(html[data-vibe=daylight][data-theme=dark]){background:#17162a;color-scheme:dark}:where(html[data-vibe=paper][data-theme=light]){background:#fbf8f2}:where(html[data-vibe=paper][data-theme=dark]){background:#1a1916;color-scheme:dark}:where(html[data-vibe=studio][data-theme=light]){background:#f6f3ec}:where(html[data-vibe=studio][data-theme=dark]){background:#14130f;color-scheme:dark}:where(html[data-vibe=quiet][data-theme=light]){background:#fff}:where(html[data-vibe=quiet][data-theme=dark]){background:#0e0e10;color-scheme:dark}</style>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>superwitness</title>
-    <script type="module" crossorigin src="/assets/index-Cf5jSvNH.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-KhxePUTg.css">
+    <link href="/_app/immutable/entry/start.BVN0rLMT.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/D3j4IfMd.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/DJarRha2.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/05KPVRtl.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/DN3c43P_.js" rel="modulepreload">
+		<link href="/_app/immutable/entry/app.E9R5H4iK.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/BKUFcsaB.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/CDbPqV-r.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/IpEZYgeD.js" rel="modulepreload">
+		<link href="/_app/immutable/nodes/0.omwrX2ST.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/zIXryroJ.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/BPaFGCZd.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/CjZ3j6ek.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/DQO66ZQd.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/B14g6XrT.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/KT-pl3ZP.js" rel="modulepreload">
+		
+		<link href="/_app/immutable/assets/InShell.DZIaLC9S.css" rel="stylesheet">
+		<link href="/_app/immutable/assets/Loading.CMhpye5c.css" rel="stylesheet">
+		<link href="/_app/immutable/assets/0.CETw3LXh.css" rel="stylesheet">
   </head>
   <body>
-    <div id="root"></div>
+    <div style="display: contents">
+			<script>
+				{
+					__sveltekit_15n9cdh = {
+						base: ""
+					};
+
+					const element = document.currentScript.parentElement;
+
+					Promise.all([
+						import("/_app/immutable/entry/start.BVN0rLMT.js"),
+						import("/_app/immutable/entry/app.E9R5H4iK.js")
+					]).then(([kit, app]) => {
+						kit.start(app, element);
+					});
+				}
+			</script>
+		</div>
   </body>
 </html>

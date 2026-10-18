@@ -13,7 +13,7 @@ review. Each check is a job in `.github/workflows/ci.yml`:
 |---|---|
 | `go` | `go vet`, unit tests, the licence check, and the docs-claims and internal-reference guards |
 | `integration` | tests against real Postgres, VictoriaTraces and VictoriaLogs containers |
-| `web` | the embedded app's tests and build, and a check that the committed bundle is current |
+| `web` | the embedded SvelteKit app's type check, tests and build, and a check that the committed bundle is current |
 | `landing` | the superwitness.dev build |
 | `docs` | the docs.superwitness.dev build |
 | `e2e` | the app in Chromium against fake mode, a stand-in hub and Postgres |
@@ -31,10 +31,16 @@ tests.
 make build              # bin/superwitness
 make lint test          # vet and unit tests, including the guards
 make test-integration   # needs Docker
-make web-check          # rebuilds the app and checks the committed bundle
+make web                # rebuilds the SvelteKit app into internal/web/dist
+make web-check          # the same, then fails if the committed bundle changed
 make licenses           # dependency licence allowlist
 make e2e                # needs Docker, and npx playwright install chromium once
 ```
+
+The app in `web/` is SvelteKit with Svelte 5 and the vendored vibekit design kit
+(see [web/vendor/README.md](web/vendor/README.md)). Its build output is committed in
+`internal/web/dist` and embedded in the binary, so change `web/src`, run `make web`, and commit
+both. The browser tests are described in the README's web section.
 
 To run either site locally:
 

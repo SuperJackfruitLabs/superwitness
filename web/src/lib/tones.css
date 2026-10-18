@@ -1,0 +1,39 @@
+/* Tones vibekit does not carry: danger text on a wash, warning and info, in four vibes x light/dark.
+   The hexes are the mockup artboards' (SW-*-Daylight, SW-Edge-Paper, SW-*-Studio). Quiet's tones are
+   its ink (vibekit: "Quiet's danger is its ink"); Studio's danger and info are its ink too. */
+:where(:root),
+:where([data-vibe="daylight"][data-theme="light"]) {
+  --sw-danger: #c43d3d; --sw-danger-text: #9e2b2b; --sw-danger-wash: #ffe1dd;
+  --sw-warn: #e0a21b; --sw-warn-text: #7a5200; --sw-warn-wash: #fff0c7;
+  --sw-info: #3f97bb; --sw-info-text: #1f5f7a; --sw-info-wash: #dcf1fa;
+}
+:where([data-vibe="daylight"][data-theme="dark"]) {
+  --sw-danger: #e0675c; --sw-danger-text: #ff9d92; --sw-danger-wash: #3a1f22;
+  --sw-warn: #e0a21b; --sw-warn-text: #f2c46a; --sw-warn-wash: #3a2f14;
+  --sw-info: #5fb3d4; --sw-info-text: #8fd0ea; --sw-info-wash: #15303b;
+}
+:where([data-vibe="paper"][data-theme="light"]) {
+  --sw-danger: #a3313f; --sw-danger-text: #962c39; --sw-danger-wash: #f8e6e7;
+  --sw-warn: #8a5a06; --sw-warn-text: #7d5205; --sw-warn-wash: #f6ecd6;
+  --sw-info: #19799d; --sw-info-text: #1c7496; --sw-info-wash: #e3f2f8;
+}
+:where([data-vibe="paper"][data-theme="dark"]) {
+  --sw-danger: #d9737f; --sw-danger-text: #e08a94; --sw-danger-wash: #3a2023;
+  --sw-warn: #c9963d; --sw-warn-text: #d4a552; --sw-warn-wash: #33291a;
+  --sw-info: #4e9bbe; --sw-info-text: #579fc0; --sw-info-wash: #1a303a;
+}
+:where([data-vibe="studio"][data-theme="light"]) {
+  --sw-danger: var(--vk-color-text); --sw-danger-text: var(--vk-color-text); --sw-danger-wash: var(--vk-color-surface);
+  --sw-warn: #8a5a06; --sw-warn-text: #8a5a06; --sw-warn-on-ink: #f4a526; --sw-warn-wash: #fbecd2;
+  --sw-info: var(--vk-color-text); --sw-info-text: var(--vk-color-text); --sw-info-wash: var(--vk-color-surface);
+}
+:where([data-vibe="studio"][data-theme="dark"]) {
+  --sw-danger: var(--vk-color-text); --sw-danger-text: var(--vk-color-text); --sw-danger-wash: var(--vk-color-surface);
+  --sw-warn: #f4a526; --sw-warn-text: #f4a526; --sw-warn-on-ink: #8a5a06; --sw-warn-wash: #3a2a0c;
+  --sw-info: var(--vk-color-text); --sw-info-text: var(--vk-color-text); --sw-info-wash: var(--vk-color-surface);
+}
+:where([data-vibe="quiet"]) {
+  --sw-danger: var(--vk-color-text); --sw-danger-text: var(--vk-color-text); --sw-danger-wash: transparent;
+  --sw-warn: var(--vk-color-text); --sw-warn-text: var(--vk-color-text); --sw-warn-wash: transparent;
+  --sw-info: var(--vk-color-text); --sw-info-text: var(--vk-color-text); --sw-info-wash: transparent;
+}

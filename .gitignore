@@ -11,3 +11,8 @@ bin/
 # Playwright output
 web/test-results/
 web/playwright-report/
+# SvelteKit generated files
+web/.svelte-kit/
+web/node_modules/
+web/static/appearance-head.js
+.superpowers/

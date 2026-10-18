@@ -2,10 +2,13 @@
 package web
 
 import (
+	"crypto/sha256"
 	"embed"
+	"encoding/base64"
 	"io/fs"
 	"net/http"
 	"path"
+	"regexp"
 	"strings"
 )
 
@@ -16,14 +19,38 @@ var dist embed.FS
 // pages reuse it.
 const CSP = "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-ancestors 'none'"
 
+var inlineScript = regexp.MustCompile(`(?s)<script(\s[^>]*)?>(.*?)</script>`)
+
+// hasSrc matches a script tag's own src attribute, not data-src or similar.
+var hasSrc = regexp.MustCompile(`(?i)\ssrc\s*=`)
+
+// policyFor is CSP plus a script-src that allows same-origin files and, by SHA-256 hash, exactly
+// the inline scripts in index (SvelteKit's bootstrap). Scripts stay strict: no 'unsafe-inline'.
+func policyFor(index []byte) string {
+	p := CSP + "; script-src 'self'"
+	for _, m := range inlineScript.FindAllSubmatch(index, -1) {
+		if hasSrc.Match(m[1]) {
+			continue
+		}
+		sum := sha256.Sum256(m[2])
+		p += " 'sha256-" + base64.StdEncoding.EncodeToString(sum[:]) + "'"
+	}
+	return p
+}
+
 func Handler() http.Handler {
 	sub, err := fs.Sub(dist, "dist")
 	if err != nil {
 		panic(err) // the embed directive guarantees dist exists
 	}
+	index, err := fs.ReadFile(sub, "index.html")
+	if err != nil {
+		panic(err) // make web always writes index.html
+	}
+	policy := policyFor(index)
 	files := http.FileServerFS(sub)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Security-Policy", CSP)
+		w.Header().Set("Content-Security-Policy", policy)
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		p := strings.TrimPrefix(path.Clean(r.URL.Path), "/")
 		if p == "favicon.ico" {
