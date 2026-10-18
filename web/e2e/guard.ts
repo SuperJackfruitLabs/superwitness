@@ -38,3 +38,6 @@ export async function noHorizontalScroll(page: Page) {
   const [sw, cw] = await page.evaluate(() => [document.documentElement.scrollWidth, document.documentElement.clientWidth]);
   expect(sw, "the page scrolls sideways").toBeLessThanOrEqual(cw);
 }
+
+// The signed-in browser state the sweep reuses, written by sweep.setup.ts (git-ignored output).
+export const AUTH = "test-results/.auth/sweep.json";

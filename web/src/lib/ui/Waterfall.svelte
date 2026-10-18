@@ -167,4 +167,9 @@
     .dur { grid-area: dur; align-self: center; }
     .sw-wf__svc { display: none; }
   }
+
+  /* Touch: a span name is a 44px target in every vibe, however short the name. */
+  @media (max-width: 1023px), (pointer: coarse) {
+    .span-name, :global(:where([data-vibe])) .span-name { min-width: 44px; min-height: 44px; }
+  }
 </style>

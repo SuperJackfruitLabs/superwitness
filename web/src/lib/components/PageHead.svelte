@@ -20,5 +20,8 @@
   :global(:where([data-vibe="paper"])) .sw-pagehead :global(h1) { font-weight: 500; font-size: 3.25rem; }
   :global(:where([data-vibe="studio"])) .sw-pagehead { padding-bottom: 20px; border-bottom: 1px solid var(--vk-color-text); margin-bottom: 24px; }
   :global(:where([data-vibe="quiet"])) .sw-pagehead :global(h1) { font: 700 2rem/1.2 var(--vk-font-body); }
-  @media (max-width: 759px) { .sw-pagehead :global(h1) { font-size: 2rem; } }
+  @media (max-width: 759px) {
+    .sw-pagehead :global(h1) { font-size: 2rem; }
+    .sw-pagehead--sky :global(h1) { padding-right: 56px; } /* clear of the Daylight sun */
+  }
 </style>

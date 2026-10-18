@@ -65,6 +65,10 @@
     .sw-card { flex-direction: row; align-items: center; gap: 16px; min-height: 64px; padding: 14px 20px 14px 18px; }
     .sw-card__l { flex: 1; flex-direction: row; align-items: center; gap: 14px; }
     .sw-card__meta { flex: none; max-width: 50%; flex-wrap: nowrap; white-space: nowrap; }
+    /* A value too long for its half of the line is cut with an ellipsis instead of widening the page
+       (the stacked card below 1100px shows it whole). */
+    .sw-card__meta { min-width: 0; }
+    .sw-card__meta > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   }
 
   /* Paper: ruled ledger rows; the pill in its own column; meta in small caps, scope first. */
@@ -119,9 +123,10 @@
   :global(:where([data-vibe="studio"])) .sw-card__v.none { font-weight: 500; color: var(--vk-color-muted); }
   @media (min-width: 1100px) {
     :global(:where([data-vibe="studio"])) .sw-card {
-      display: grid; grid-template-columns: 112px minmax(0, 1fr) auto; column-gap: 20px; align-items: center; min-height: 56px; padding: 10px 12px 10px 0;
+      display: grid; grid-template-columns: 112px minmax(0, 1fr) fit-content(50%); column-gap: 20px; align-items: center; min-height: 56px; padding: 10px 12px 10px 0;
     }
     :global(:where([data-vibe="studio"])) .sw-card__l { display: contents; }
+    :global(:where([data-vibe="studio"])) .sw-card__meta { max-width: none; } /* the grid column holds it to half */
     :global(:where([data-vibe="studio"])) .sw-card__t { font-size: 15px; }
   }
 
@@ -142,8 +147,9 @@
   :global(:where([data-vibe="quiet"])) .sw-card--static .sw-card__t { font-weight: 700; }
   @media (min-width: 1100px) {
     :global(:where([data-vibe="quiet"])) .sw-card {
-      display: grid; grid-template-columns: auto 1fr auto; gap: 4px 16px; align-items: baseline; min-height: 56px;
+      display: grid; grid-template-columns: auto minmax(0, 1fr) fit-content(50%); gap: 4px 16px; align-items: baseline; min-height: 56px;
     }
     :global(:where([data-vibe="quiet"])) .sw-card__l { display: contents; }
+    :global(:where([data-vibe="quiet"])) .sw-card__meta { max-width: none; } /* the grid column holds it to half */
   }
 </style>

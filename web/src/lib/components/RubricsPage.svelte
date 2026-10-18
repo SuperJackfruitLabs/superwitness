@@ -49,6 +49,10 @@
   :global(:where([data-vibe="paper"], [data-vibe="studio"], [data-vibe="quiet"])) .sw-rubrics__panel { padding: 0; border-radius: 0; background: none; box-shadow: none; }
   :global(:where([data-vibe="paper"], [data-vibe="studio"], [data-vibe="quiet"])) .sw-rubrics__empty { border-radius: 0; background: none; text-align: left; padding: 16px 0; border-block: 1px solid var(--vk-color-line); }
   :global(:where([data-vibe="paper"])) .sw-rubrics a { font: 400 1.125rem/1.3 var(--vk-font-display); }
+  /* Touch: the name link is a 44px target. */
+  @media (max-width: 1023px), (pointer: coarse) {
+    .sw-rubrics a { display: inline-flex; align-items: center; min-height: 44px; }
+  }
   @media (max-width: 759px) {
     .sw-rubrics__panel { padding: 0; background: none; box-shadow: none; }
   }

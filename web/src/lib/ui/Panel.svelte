@@ -58,5 +58,5 @@
   :global(:where([data-vibe="quiet"])) .sw-focus__brand { padding-bottom: 12px; border-bottom: 1px solid var(--vk-color-line); }
   :global(:where([data-vibe="quiet"])) .sw-focus__col { gap: 16px; }
   :global(:where([data-vibe="quiet"])) .sw-focus__col :global(h1) { margin-top: 48px; font: 700 2.25rem/1.2 var(--vk-font-display); }
-  :global(:where([data-vibe="quiet"])) .sw-focus__col :global(.sw-act), :global(:where([data-vibe="quiet"])) .sw-focus__col :global(.sw-act .vk-button) { width: 100%; }
+  :global(:where([data-vibe="quiet"])) .sw-focus__col :global(.sw-act), :global(:where([data-vibe="quiet"])) .sw-focus__col :global(.sw-act .vk-button) { box-sizing: border-box; width: 100%; }
 </style>

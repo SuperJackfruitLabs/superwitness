@@ -87,7 +87,7 @@
   .sw-tabs[data-more="right"] { mask-image: linear-gradient(to left, transparent, #000 32px); }
   .sw-tabs[data-more="left right"] { mask-image: linear-gradient(to right, transparent, #000 32px, #000 calc(100% - 32px), transparent); }
   .sw-tab {
-    display: inline-flex; align-items: center; flex: none; min-height: 44px; padding: 0 20px; border-radius: var(--vk-radius-pill);
+    display: inline-flex; align-items: center; justify-content: center; flex: none; min-width: 44px; min-height: 44px; padding: 0 20px; border-radius: var(--vk-radius-pill);
     color: var(--vk-color-muted); font-weight: 600; text-decoration: none; white-space: nowrap;
   }
   .sw-tab:hover { color: var(--vk-color-text); background: var(--vk-color-raised); }

@@ -42,7 +42,7 @@
 
   /* Daylight: the sky band. */
   .sw-runhead--sky :global(.vk-sky) { border-radius: var(--vk-radius-lg); overflow: hidden; }
-  .sw-runhead--sky :global(.vk-sky__content) { padding: 24px 32px 28px; }
+  .sw-runhead--sky :global(.vk-sky__content) { padding: 24px 104px 28px 32px; } /* right: clear of the sun */
   .sw-runhead--sky :global(.sw-pill) { font-size: var(--vk-text-md); padding: 5px 14px; }
 
   /* Paper: a top rule, the title in a large serif, state and action at the right. */
@@ -65,6 +65,8 @@
 
   @media (max-width: 759px) {
     .sw-runhead--sky :global(.vk-sky__content) { padding: 16px 16px 20px; }
+    /* The Daylight sun sits top right: the title wraps before it rather than running under it. */
+    .sw-runhead--sky h1 { padding-right: 56px; }
     h1 { font-size: 1.75rem; }
     .sw-runhead__row { gap: 10px 12px; }
     :global(:where([data-vibe="paper"])) h1 { font-size: 34px; }

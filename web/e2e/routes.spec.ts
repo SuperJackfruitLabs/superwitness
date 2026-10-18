@@ -1,9 +1,11 @@
 import { expect, test } from "@playwright/test";
-import { signIn, watch } from "./guard";
+import { AUTH, watch } from "./guard";
 
 // The URL table, through the real binary: each URL lands on its page (anything else is the in-shell
 // "Page not found"), and a reload keeps the state the query string holds. No URL logs an error or
 // trips the Content Security Policy.
+test.use({ storageState: AUTH }); // the sweep's session (sweep.setup.ts)
+
 const RUN = "/runs/superpipeline/brd_01/run_01";
 const SPAN = "00f067aa0ba902bc";
 
@@ -19,9 +21,9 @@ const table: { url: string; heading: string; notFound?: boolean }[] = [
   { url: "/nope", heading: "Page not found", notFound: true },
 ];
 
-test("every URL in the table lands on its page, and on a reload", async ({ page, request }) => {
+test("every URL in the table lands on its page, and on a reload", async ({ page }) => {
   const { problems } = watch(page);
-  await signIn(page, request);
+  await page.goto("/");
   for (const row of table) {
     await test.step(row.url, async () => {
       await page.goto(row.url);
@@ -37,9 +39,9 @@ test("every URL in the table lands on its page, and on a reload", async ({ page,
   expect(problems).toEqual([]);
 });
 
-test("a reload keeps the state the query string holds", async ({ page, request }) => {
+test("a reload keeps the state the query string holds", async ({ page }) => {
   const { problems } = watch(page);
-  await signIn(page, request);
+  await page.goto("/");
   const keep = async (url: string, check: () => Promise<void>) => {
     await test.step(url, async () => {
       await page.goto(url);
