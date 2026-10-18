@@ -10,6 +10,8 @@
   import Panel from "../ui/Panel.svelte";
   import InShell from "../ui/InShell.svelte";
   import ErrorPanel from "../ui/ErrorPanel.svelte";
+  import { signInHref } from "../session.svelte";
+  import SignedOutLingering from "./SignedOutLingering.svelte";
 
   // EdgePage turns an API refusal into the page it calls for (the old ErrorView). next is where a
   // sign-in returns to; retry, when given, reloads what failed; assign is for tests.
@@ -49,20 +51,13 @@
     <Button variant="secondary" href="/rubrics">Rubrics</Button>
   </InShell>
 {:else if out.state.kind === "lingering"}
-  <Panel>
-    <h1>Signed out</h1>
-    <p class="sw-lead">
-      You are signed out in this browser. The database did not answer, so the server-side session may outlive this
-      sign-out. On a shared computer, sign in again later and sign out once more.
-    </p>
-    <p class="sw-act"><Button href="/" data-sveltekit-reload>Continue</Button></p>
-  </Panel>
+  <SignedOutLingering />
 {:else}
   <Panel>
     {#if kind === "signed_out"}
       <h1>superwitness</h1>
       <p class="sw-lead">Sign in to browse runs and record verdicts.</p>
-      <p class="sw-act"><Button href={`/auth/login?next=${encodeURIComponent(next)}`} data-sveltekit-reload>Sign in</Button></p>
+      <p class="sw-act"><Button href={signInHref(next, "")} data-sveltekit-reload>Sign in</Button></p>
     {:else if kind === "not_authorised"}
       <h1>Not authorised</h1>
       <p class="sw-lead">This account is not allowed to use this superwitness. Ask its operator to add you.</p>

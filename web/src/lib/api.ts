@@ -29,6 +29,15 @@ export function subscribeStore(f: () => void) {
 }
 export const isStoreDown = () => storeDown;
 
+// Every 401, from any call, is told to these listeners (session.svelte.ts): the session is over.
+const authListeners = new Set<() => void>();
+export function onUnauthenticated(f: () => void) {
+  authListeners.add(f);
+  return () => {
+    authListeners.delete(f);
+  };
+}
+
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   let r: Response;
   try {
@@ -48,6 +57,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   const data = await r.json().catch(() => null);
   if (!r.ok) {
     const e = data?.error ?? {};
+    if (r.status === 401) authListeners.forEach((f) => f());
     if (r.status === 503 && e.code === "store_unavailable") setStoreDown(true);
     const ra = Number(r.headers.get("Retry-After"));
     throw new ApiError(
