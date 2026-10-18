@@ -55,14 +55,14 @@
       You are signed out in this browser. The database did not answer, so the server-side session may outlive this
       sign-out. On a shared computer, sign in again later and sign out once more.
     </p>
-    <p class="sw-act"><Button href="/">Continue</Button></p>
+    <p class="sw-act"><Button href="/" data-sveltekit-reload>Continue</Button></p>
   </Panel>
 {:else}
   <Panel>
     {#if kind === "signed_out"}
       <h1>superwitness</h1>
       <p class="sw-lead">Sign in to browse runs and record verdicts.</p>
-      <p class="sw-act"><Button href={`/auth/login?next=${encodeURIComponent(next)}`}>Sign in</Button></p>
+      <p class="sw-act"><Button href={`/auth/login?next=${encodeURIComponent(next)}`} data-sveltekit-reload>Sign in</Button></p>
     {:else if kind === "not_authorised"}
       <h1>Not authorised</h1>
       <p class="sw-lead">This account is not allowed to use this superwitness. Ask its operator to add you.</p>

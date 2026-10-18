@@ -19,6 +19,8 @@ describe("EdgePage", () => {
     expect(h1()).toBe("superwitness");
     screen.getByText("Sign in to browse runs and record verdicts.");
     expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute("href", "/auth/login?next=%2Fruns%3Fx%3D1");
+    // A full page load: /auth is the Go server's, never a client-side route.
+    expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute("data-sveltekit-reload");
   });
   it("says not authorised and offers sign out", () => {
     view(new ApiError(403, "not_authorised", "x"));
@@ -33,6 +35,7 @@ describe("EdgePage", () => {
     await screen.findByRole("heading", { name: "Signed out" });
     screen.getByText(/You are signed out in this browser\. The database did not answer/);
     expect(screen.getByRole("link", { name: "Continue" })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: "Continue" })).toHaveAttribute("data-sveltekit-reload");
   });
   it("says why a sign-out failed, with a retry", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ error: { code: "rate_limited", message: "x" } }), { status: 429, headers: { "Retry-After": "5" } })));
