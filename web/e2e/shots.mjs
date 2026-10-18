@@ -14,7 +14,12 @@
 // --spans-loading, --spans-error, --spans-more: the trace's own states; --tx-forbidden,
 // --tx-unavailable: transcript 403/503; --verdicts-fail: the run's verdict history fails;
 // --logs-empty, --logs-error: the Logs tab's states. Two attempts, FACTS.md's six transcript items,
-// four log lines, three gates and a superseded + a revisable verdict by prn_human01 are always there. Pictures go to
+// four log lines, three gates and a superseded + a revisable verdict by prn_human01 are always there.
+// /rubrics answers the mockups' six rubrics (--rubrics-empty, --rubrics-loading), /rubrics/{id}/{version}
+// each one's page (any other is rubric_not_found). On the run page --drawer=decision|label|score|
+// legacy|text|revise opens the verdict drawer (Record verdict, or Revise on vrd_02) on that rubric,
+// with the score touched for --touched; --saving clicks Save and the POST stays in flight;
+// --refusal: it answers already_superseded; --no-rubric: no rubric has a supported scale. Pictures go to
 // test-results/shots/ (git-ignored). Not part of `make e2e`.
 import { createServer } from "node:http";
 import { readFile, mkdir } from "node:fs/promises";
@@ -39,6 +44,12 @@ const longAgent = args.includes("--long-agent");
 const txState = ["forbidden", "unavailable"].find((k) => args.includes(`--tx-${k}`));
 const verdictsFail = args.includes("--verdicts-fail");
 const logsState = ["empty", "error"].find((k) => args.includes(`--logs-${k}`));
+const rubricsState = ["empty", "loading"].find((k) => args.includes(`--rubrics-${k}`));
+const drawerKind = args.find((a) => a.startsWith("--drawer="))?.slice(9);
+const touched = args.includes("--touched");
+const saving = args.includes("--saving");
+const refusal = args.includes("--refusal");
+const noRubric = args.includes("--no-rubric");
 const spansState = ["empty", "loading", "error", "more"].find((k) => args.includes(`--spans-${k}`));
 
 // The mockups' runs: Today, Yesterday and Tue, 13 Oct 2026, the six statuses, one source with no
@@ -141,7 +152,23 @@ const history = [
 const failedCall = { kind: "tool_call", id: "tc_2", seq_from: 7, seq_to: 8, title: "Write release-note.md", tool_kind: "edit", status: "failed", redactions: 0,
   input: { path: "release-note.md" }, output: { content: [{ type: "text", text: "permission denied: release-note.md is read-only" }], raw: null } };
 const runAPI = "/v1/runs/superpipeline/brd_01/run_01";
-function runStub(path, q) {
+// The mockups' six rubrics (SW-Rubrics-*), one of each scale, a legacy 1 to 5 score and one the app cannot offer.
+const rubric = (id, version, name, scale, recognised, created, body) =>
+  ({ id, version, standard: `rubric:${id}@${version}`, name, scale, recognised_scale: recognised === undefined ? scale : recognised, created_by: "prn_human01", created_at: `${created}T09:00:00Z`, body });
+const rubrics = [
+  rubric("release", 1, "Release note", { kind: "decision", options: ["pass", "fail"] }, undefined, "2026-10-04", "Does the release note say what changed, for whom, and how to upgrade?"),
+  rubric("tone", 1, "Tone", { kind: "label", labels: ["formal", "casual", "terse"] }, undefined, "2026-10-09", "Which register does the text keep throughout?"),
+  rubric("quality", 2, "Quality score", { kind: "score", min: 0, max: 1 }, undefined, "2026-10-11", "How good is the result, from 0 (unusable) to 1 (ship it as is)?\n\nScore the whole result, not its best part."),
+  rubric("rating", 1, "Legacy rating", { kind: "score", min: 1, max: 5 }, undefined, "2026-09-30", "Rate the draft from 1 to 5."),
+  rubric("summary", 1, "Summary", { kind: "text" }, undefined, "2026-10-12", "Say in a sentence or two what the run got right and what it missed."),
+  rubric("custom", 1, "Custom rubric", { kind: "matrix", rows: ["accuracy", "tone"] }, null, "2026-10-13", "A scale only the CLI understands."),
+];
+function runStub(path, q, method = "GET") {
+  if (path === "/v1/verdicts" && method === "POST") {
+    if (saving) return null;
+    if (refusal) return [409, { error: { code: "already_superseded", message: "raw" } }];
+    return [201, {}];
+  }
   if (path === runAPI) return [200, unknown ? unknownDoc : runDoc];
   if (path === `${runAPI}/spans`) {
     if (spansState === "loading") return null;
@@ -167,7 +194,15 @@ function runStub(path, q) {
     if (q.get("subject_kind") === "run") return verdictsFail ? [503, { error: { code: "store_unavailable", message: "superwitness could not be reached" } }] : [200, { verdicts: history }];
     return [200, { verdicts: q.get("subject_ref") === "attempt_02" ? [hv("vrd_03", { subject_kind: "attempt", subject_ref: "attempt_02", judge: "prn_human02", value: { score: 0.4 }, created_at: at(700) })] : [] }];
   }
-  if (path === "/v1/rubrics") return [200, { rubrics: [] }];
+  if (path === "/v1/rubrics") {
+    if (rubricsState === "loading") return null;
+    return [200, { rubrics: rubricsState === "empty" ? [] : noRubric ? rubrics.filter((r) => !r.recognised_scale) : rubrics }];
+  }
+  const rm = path.match(/^\/v1\/rubrics\/([^/]+)\/(\d+)$/);
+  if (rm) {
+    const r = rubrics.find((x) => x.id === decodeURIComponent(rm[1]) && String(x.version) === rm[2]);
+    return r ? [200, r] : [404, { error: { code: "rubric_not_found", message: `no rubric ${rm[1]} version ${rm[2]}` } }];
+  }
   return undefined;
 }
 
@@ -187,7 +222,7 @@ const server = createServer(async (req, res) => {
     if (moreError) return json(500, { error: { code: "internal", message: "superwitness could not answer." } });
     return; // --more: stays in flight for the picture
   }
-  const answer = runStub(path, new URL(req.url, "http://x").searchParams);
+  const answer = runStub(path, new URL(req.url, "http://x").searchParams, req.method);
   if (answer === null) return; // stays in flight for the picture
   if (answer) {
     res.writeHead(answer[0], { "Content-Type": "application/json" });
@@ -219,7 +254,10 @@ await mkdir(out, { recursive: true });
 const browser = await chromium.launch();
 const variant = (moreError ? "-moreerror" : more ? "-more" : empty ? "-empty" : loading ? "-loading" : "") + (running ? "-running" : "") + (unknown ? "-unknown" : "") +
   (longAgent ? "-longagent" : "") + (spansState ? `-spans${spansState}` : "") +
-  (txState ? `-tx${txState}` : "") + (verdictsFail ? "-verdictsfail" : "") + (logsState ? `-logs${logsState}` : "");
+  (txState ? `-tx${txState}` : "") + (verdictsFail ? "-verdictsfail" : "") + (logsState ? `-logs${logsState}` : "") +
+  (rubricsState ? `-rubrics${rubricsState}` : "") + (drawerKind ? `-drawer${drawerKind}` : "") + (touched ? "-touched" : "") +
+  (saving ? "-saving" : "") + (refusal ? "-refusal" : "") + (noRubric ? "-norubric" : "");
+const drawerStandard = { decision: "rubric:release@1", label: "rubric:tone@1", score: "rubric:quality@2", legacy: "rubric:rating@1", text: "rubric:summary@1" };
 const only = args.find((a) => a.startsWith("--only="))?.slice(7).split(",");
 const name = (target === "/" ? "runs" : target.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "")) + variant;
 for (const vibe of ["daylight", "paper", "studio", "quiet"].filter((v) => !only || only.includes(v))) {
@@ -236,6 +274,18 @@ for (const vibe of ["daylight", "paper", "studio", "quiet"].filter((v) => !only 
         else await page.locator(".sw-chip").click();
         if (panel) await page.locator(".sw-mi", { hasText: "Appearance" }).click();
         await page.waitForTimeout(150);
+      }
+      if (drawerKind) {
+        if (drawerKind === "revise") await page.getByRole("button", { name: "Revise" }).click();
+        else await page.getByRole("button", { name: "Record verdict" }).click();
+        const d = page.getByRole("dialog");
+        if (drawerStandard[drawerKind] && !noRubric) await d.getByLabel("Rubric").selectOption(drawerStandard[drawerKind]);
+        if ((drawerKind === "decision" && !noRubric) || drawerKind === "revise") await d.getByRole("button", { name: "pass" }).click();
+        if (drawerKind === "label") await d.getByLabel("Label").selectOption("formal");
+        if (drawerKind === "text") await d.getByLabel("Verdict", { exact: true }).fill("Covers every entry; misses the upgrade step.");
+        if (touched) await d.getByRole("slider").fill(drawerKind === "legacy" ? "3.4" : "0.6");
+        if (saving || refusal) await d.getByRole("button", { name: "Save verdict" }).click();
+        await page.waitForTimeout(200);
       }
       const file = join(out, `${name}-${vibe}-${theme}-${size}${panel ? "-appearance" : opened ? "-open" : ""}.png`);
       await page.screenshot({ path: file, fullPage: true });

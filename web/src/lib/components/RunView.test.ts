@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, render, screen } from "@testing-library/svelte";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/svelte";
 import { ApiError } from "../api";
 
 const getJSON = vi.fn();
@@ -160,5 +160,47 @@ describe("the run's own states", () => {
     render(RunView, { board: "brd_01", run: "run_01", query: "" });
     await flush();
     expect(document.body.textContent).toContain("Loading…");
+  });
+});
+
+describe("the verdict drawer", () => {
+  const button = (name: string) => [...document.querySelectorAll("button")].find((b) => b.textContent?.trim() === name) as HTMLButtonElement;
+  const click = async (el: Element) => { await fireEvent.click(el); await flush(); };
+  const rubrics = { rubrics: [{ id: "release", version: 1, standard: "rubric:release@1", name: "Release note", scale: {}, recognised_scale: { kind: "decision", options: ["pass", "fail"] }, created_by: "", created_at: "" }] };
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("Record verdict opens it empty; Cancel closes it and focus returns to Record verdict", async () => {
+    await mount();
+    getJSON.mockImplementation(async (path: string) => (path === API ? doc : path === "/v1/rubrics" ? rubrics : { spans: [], verdicts: [] }));
+    const opener = button("Record verdict");
+    opener.focus();
+    await click(opener);
+    await flush();
+    expect(document.querySelector('[role="dialog"] h2')?.textContent).toBe("Record verdict");
+    expect(document.querySelector("article")?.getAttribute("data-drawer")).toBe("");
+    await click(button("Cancel"));
+    expect(document.querySelector('[role="dialog"]')).toBeNull();
+    expect(document.activeElement).toBe(opener);
+  });
+
+  it("a recorded verdict closes it and reads the run and its history again", async () => {
+    await mount();
+    getJSON.mockImplementation(async (path: string) => (path === API ? doc : path === "/v1/rubrics" ? rubrics : { spans: [], verdicts: [] }));
+    const post = vi.fn(async () => new Response("{}", { status: 201 }));
+    vi.stubGlobal("fetch", post);
+    await click(button("Record verdict"));
+    await flush();
+    await fireEvent.change(document.querySelectorAll(".drawer select")[1], { target: { value: "rubric:release@1" } });
+    await flush();
+    await click(button("pass"));
+    getJSON.mockClear();
+    await click(button("Save verdict"));
+    await flush();
+    await flush();
+    expect(post).toHaveBeenCalledTimes(1);
+    expect(document.querySelector('[role="dialog"]')).toBeNull();
+    const paths = getJSON.mock.calls.map(([p]) => String(p));
+    expect(paths).toContain(API);
+    expect(paths.some((p) => p.startsWith("/v1/verdicts?subject_kind=run"))).toBe(true);
   });
 });

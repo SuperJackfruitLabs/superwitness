@@ -71,6 +71,15 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("the Transcript tab", () => {
+  it("cites a card as a session range in the verdict drawer", async () => {
+    await mount("tab=transcript");
+    await click(button("Cite", card("tool_call")));
+    expect(button("Cited", card("tool_call")).getAttribute("aria-pressed")).toBe("true");
+    await click(button("Record verdict"));
+    await flush();
+    expect(document.querySelector(".drawer")!.textContent).toContain("1 cited: 1 step from the transcript");
+  });
+
   it("sits between Trace and Logs", async () => {
     await mount("tab=transcript");
     expect([...document.querySelectorAll('[role="tab"]')].map((t) => t.textContent?.trim()).slice(0, 3)).toEqual(["Trace", "Transcript", "Logs"]);

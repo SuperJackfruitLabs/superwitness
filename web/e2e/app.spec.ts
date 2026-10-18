@@ -86,7 +86,9 @@ test("sign in, browse, record a verdict and revise it", async ({ page, request }
   });
 
   await test.step("sign out", async () => {
-    await page.getByRole("button", { name: "Sign out" }).click();
+    // The shell's standalone Sign out button is gone: it is an item of the account menu (Part 3).
+    await page.locator(".sw-chip").click();
+    await page.getByRole("menuitem", { name: "Sign out" }).click();
     await expect(page.getByRole("link", { name: "Sign in", exact: true })).toBeVisible();
     await expect(page.getByRole("alert")).toHaveCount(0);
   });

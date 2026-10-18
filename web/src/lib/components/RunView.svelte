@@ -16,6 +16,7 @@
   import SourceUnavailable from "./SourceUnavailable.svelte";
   import TracePanel from "./TracePanel.svelte";
   import TranscriptPanel from "./TranscriptPanel.svelte";
+  import VerdictDrawer from "./VerdictDrawer.svelte";
   import VerdictList from "./VerdictList.svelte";
 
   // RunView is one run's page. The route keys it by board/run, so nothing ticked or typed on one
@@ -29,9 +30,10 @@
   const params = $derived(new URLSearchParams(query));
   const tab = $derived(tabOf(params.get("tab")));
   const evidence = createEvidence();
-  // Every verdict on the run and its attempts, for the Verdicts tab (and, from Part 11, the drawer).
+  // Every verdict on the run and its attempts, for the Verdicts tab.
   const history = readHistory(() => doc.data ?? null);
-  // The verdict drawer arrives in Part 11: Record verdict opens it empty, Revise with the verdict.
+  // The verdict drawer: Record verdict opens it empty, Revise with the verdict. A recorded verdict
+  // closes it and reads the run and its history again.
   let drawer = $state<{ revising?: HistoryVerdict } | null>(null);
 
   const tabs = $derived(TABS.map((t) => ({ value: t, label: TAB_LABEL[t], href: t === "trace" ? base : `${base}?tab=${t}` })));
@@ -64,6 +66,19 @@
         <AttemptsPanel doc={doc.data} />
       {/if}
     </div>
+    {#if drawer}
+      <VerdictDrawer
+        doc={doc.data}
+        evidence={evidence.refs}
+        revising={drawer.revising}
+        onclose={() => (drawer = null)}
+        onrecorded={() => {
+          drawer = null;
+          doc.reload();
+          history.retry();
+        }}
+      />
+    {/if}
   </article>
 {/if}
 
