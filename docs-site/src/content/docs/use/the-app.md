@@ -113,8 +113,9 @@ reports (`POST /v1/runs`) and `/mcp` never accept a session.
   `superwitness rubric-add`.
 
 The sidebar's dot is green when every source answers `/health`, amber otherwise; hover for which.
-The app follows the system's light or dark setting; the toggle in the sidebar overrides it for
-this browser. Below 760 px wide the sidebar folds into a menu.
+The app has four vibes (Daylight, Paper, Studio and Quiet), each in light and dark. Open the account
+chip, then Appearance, to choose the vibe, to follow the sun, stay light or stay dark, and to pick an
+accent; the choice is kept for this browser. On a phone the sidebar folds into a menu.
 
 ## What an agent did
 

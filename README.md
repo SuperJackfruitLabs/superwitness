@@ -107,6 +107,34 @@ A fourth segment of a development token lists its scopes, comma-separated.
 
 To sign in to the app in fake mode, use the pieces `make e2e` uses: `web/e2e/stub-hub.mjs` stands in for AgentPod and `web/e2e/serve.sh` shows the settings.
 
+### The web app
+
+The app in `web/` is SvelteKit (Svelte 5, a static single-page build) on the vibekit design kit,
+which is vendored as a tarball in `web/vendor/` ([how to update it](web/vendor/README.md)). It has
+four vibes (Daylight, Paper, Studio, Quiet), each in light and dark, and phone layouts. The person
+chooses under the account chip, Appearance.
+
+```bash
+make web         # npm ci, svelte-check, unit tests and the build, into internal/web/dist
+make web-check   # the same, then fails if the committed internal/web/dist is not current
+```
+
+`internal/web/dist` is committed and embedded in the binary, so a change under `web/src` is
+committed together with the rebuilt bundle; CI runs `make web-check` and fails on a stale one. The
+server's Content-Security-Policy allows no inline script except the one SvelteKit emits in
+`index.html`: the server computes that script's hash at start-up and adds it to `script-src`.
+
+`make e2e` builds the binary and runs Playwright against it in fake mode with a stand-in hub and a
+throwaway Postgres, so it needs Docker (run `npx playwright install chromium` once). On macOS with
+colima, point Docker at it first, for example `export DOCKER_HOST=unix://$HOME/.colima/default/docker.sock`.
+The `sweep` project visits every state of the app in every vibe, in light and dark, at desktop and
+phone widths, with axe checks and a watch for console errors and CSP violations. To run it alone
+(after the first full run has signed in): `cd web && E2E_DATABASE_URL=… npx playwright test --project=sweep`.
+
+To look at the built app against stub data, with no Go server or database, run
+`cd web && npm run build && node e2e/shots.mjs [path] [--open]`; it screenshots a page in each vibe,
+light and dark, at 1440 and 390 px wide (the file's header lists its options).
+
 | Surface | Path |
 |---|---|
 | Run document | `GET /v1/runs/superpipeline/{board}/{run}` |

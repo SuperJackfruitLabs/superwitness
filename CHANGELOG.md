@@ -3,6 +3,28 @@
 All notable changes to superwitness are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Unreleased
+
+### Changed
+
+- The console is rebuilt on SvelteKit and vibekit: four vibes (Daylight, Paper, Studio, Quiet) in
+  light and dark, phone layouts, the same behaviour and URLs. The server's Content-Security-Policy
+  now carries the hash of the one inline script SvelteKit emits, computed at start-up.
+- The old light or dark choice is read once to seed the new Appearance setting, so a person's choice
+  may reset once.
+
+### Fixed
+
+- A completed run is shown in the success colour, not grey.
+- A gate with no decision shows "pending", "no decision yet" or "cancelled" instead of the raw
+  `{"decision":null}`.
+- A very long agent id no longer overflows the screen at phone widths.
+- The span pane has a scrim behind it and no longer clips the Attributes table.
+- Signing in again after a session ends mid-visit returns to the page you were on, including its query.
+- Tabs now work with the arrow keys, Home and End, as their role promises.
+- Times show as readable local time, with the exact ISO time on hover.
+- A missing rubric says "Rubric not found" with a link back, not "Something went wrong".
+
 ## 0.0.7 — 2026-10-15
 
 ### Added
