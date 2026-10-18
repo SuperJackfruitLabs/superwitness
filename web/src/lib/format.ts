@@ -69,3 +69,17 @@ export function verdictSummary(value: Record<string, unknown> | null | undefined
   if (typeof value.text === "string") return value.text.length > 40 ? value.text.slice(0, 39) + "…" : value.text;
   return JSON.stringify(value);
 }
+
+// readableTime is a time for people: "Today, 10:41", "Yesterday, 09:02", "13 Oct 2026, 10:02", in the
+// viewer's zone. The ISO rides along for a title attribute; input that does not parse comes back as it was.
+export function readableTime(iso: string, now: Date = new Date()): { text: string; iso: string } {
+  const t = new Date(iso);
+  if (Number.isNaN(t.getTime())) return { text: iso, iso };
+  const clock = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false }).format(t);
+  const day = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const diff = Math.round((day(now) - day(t)) / 86_400_000);
+  if (diff === 0) return { text: `Today, ${clock}`, iso };
+  if (diff === 1) return { text: `Yesterday, ${clock}`, iso };
+  const date = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric" }).format(t);
+  return { text: `${date}, ${clock}`, iso };
+}

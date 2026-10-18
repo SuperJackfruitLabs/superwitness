@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ago, display, duration, runTone, statusTone, timing, verdictSummary } from "./format";
+import { ago, display, duration, readableTime, runTone, statusTone, timing, verdictSummary } from "./format";
 import type { RegistryRun } from "./types";
 
 describe("display", () => {
@@ -48,5 +48,27 @@ describe("verdictSummary", () => {
     expect(verdictSummary({ label: "clear" })).toBe("clear");
     expect(verdictSummary({ text: "x".repeat(50) })).toHaveLength(40);
     expect(verdictSummary(null)).toBe("—");
+  });
+});
+
+describe("readableTime", () => {
+  // Built from local-time parts so the cases hold in any zone the tests run in.
+  const local = (y: number, mo: number, d: number, h: number, mi: number) => new Date(y, mo - 1, d, h, mi);
+  const now = local(2026, 10, 18, 12, 0);
+  it("says today with the time", () => {
+    const iso = local(2026, 10, 18, 10, 41).toISOString();
+    expect(readableTime(iso, now)).toEqual({ text: "Today, 10:41", iso });
+  });
+  it("says yesterday with the time", () => {
+    const iso = local(2026, 10, 17, 9, 2).toISOString();
+    expect(readableTime(iso, now)).toEqual({ text: "Yesterday, 09:02", iso });
+  });
+  it("says an older day with its date", () => {
+    const iso = local(2026, 10, 13, 10, 2).toISOString();
+    expect(readableTime(iso, now)).toEqual({ text: "13 Oct 2026, 10:02", iso });
+  });
+  it("returns unparsable input as it came", () => {
+    expect(readableTime("not a time", now)).toEqual({ text: "not a time", iso: "not a time" });
+    expect(readableTime("", now)).toEqual({ text: "", iso: "" });
   });
 });
