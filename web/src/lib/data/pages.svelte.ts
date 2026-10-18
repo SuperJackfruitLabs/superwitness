@@ -13,6 +13,8 @@ export interface Pages<T, P extends Page<T> = Page<T>> {
   readonly error: ApiError | null;
   readonly moreError: ApiError | null;
   readonly loading: boolean;
+  // A load-more is in flight.
+  readonly busy: boolean;
   more(): void;
   retry(): void;
 }
@@ -31,7 +33,7 @@ export function pages<T, P extends Page<T> = Page<T>>(key: () => string, fetchPa
   let loading = $state(true);
   let tries = $state(0);
   let gen = 0;
-  let busy = false;
+  let busy = $state(false);
   $effect(() => {
     void key();
     void tries;
@@ -79,6 +81,9 @@ export function pages<T, P extends Page<T> = Page<T>>(key: () => string, fetchPa
     },
     get loading() {
       return loading;
+    },
+    get busy() {
+      return busy;
     },
     more() {
       if (!next || busy) return;

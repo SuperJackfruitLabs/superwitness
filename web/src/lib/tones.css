@@ -1,7 +1,7 @@
 /* Tones vibekit does not carry: danger text on a wash, warning and info, in four vibes x light/dark.
    The hexes are the mockup artboards' (SW-*-Daylight, SW-Edge-Paper, SW-*-Studio). Quiet's tones are
    its ink (vibekit: "Quiet's danger is its ink"); Studio's danger and info are its ink too. */
-:root,
+:where(:root),
 :where([data-vibe="daylight"][data-theme="light"]) {
   --sw-danger: #c43d3d; --sw-danger-text: #9e2b2b; --sw-danger-wash: #ffe1dd;
   --sw-warn: #e0a21b; --sw-warn-text: #7a5200; --sw-warn-wash: #fff0c7;

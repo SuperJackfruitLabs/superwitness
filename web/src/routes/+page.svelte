@@ -1,1 +1,6 @@
-<h1>Runs</h1>
+<script lang="ts">
+  import { page } from "$app/state";
+  import RunsPage from "$lib/components/RunsPage.svelte";
+</script>
+
+<RunsPage query={page.url.search.replace(/^\?/, "")} />
