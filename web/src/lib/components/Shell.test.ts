@@ -141,7 +141,9 @@ describe("Shell", () => {
 
   it("shows who is signed in and their principal", async () => {
     await mount();
-    expect(screen.getAllByText("a@example.com").length).toBeGreaterThan(0);
+    // Once on the page (the chip); the open menu adds the principal under it.
+    expect(screen.getAllByText("a@example.com")).toHaveLength(1);
+    await fireEvent.click(screen.getByRole("button", { name: /a@example.com/ }));
     screen.getByText("prn_human01");
   });
 

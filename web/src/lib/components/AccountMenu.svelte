@@ -43,7 +43,8 @@
   </button>
   <div class="sw-pop" class:open>
     {#if view === "menu"}
-      <p class="sw-who"><b>{who}</b><span>{me.principal}</span></p>
+      <!-- Only while open: the chip already shows who, and the old app said it once on the page. -->
+      {#if open}<p class="sw-who"><b>{who}</b><span>{me.principal}</span></p>{/if}
       <div role="menu" aria-label={who}>
         <button class="sw-mi" role="menuitem" type="button" onclick={() => (view = "appearance")}>Appearance<span class="sw-chev" aria-hidden="true">›</span></button>
         {#if me.via === "session"}
