@@ -10,6 +10,16 @@
   let open = $state(false);
   let view = $state<"menu" | "appearance">("menu");
   let root: HTMLElement;
+  // On a phone the menu is drawn open and the chip does nothing: keep it out of the tab order.
+  let phone = $state(false);
+  $effect(() => {
+    const mq = window.matchMedia?.("(max-width: 759px)");
+    if (!mq) return;
+    const set = () => (phone = mq.matches);
+    set();
+    mq.addEventListener("change", set);
+    return () => mq.removeEventListener("change", set);
+  });
 
   const who = $derived(me.email ?? me.principal);
   // Initials as the mockups draw them: the first letter, then the last digit of the name if there is one (human01: H1).
@@ -38,7 +48,7 @@
 </script>
 
 <div class="sw-acct" bind:this={root}>
-  <button class="sw-chip" type="button" aria-haspopup="menu" aria-expanded={open} onclick={() => (open ? close() : (open = true))}>
+  <button class="sw-chip" type="button" aria-haspopup="menu" aria-expanded={open} tabindex={phone ? -1 : undefined} aria-hidden={phone ? "true" : undefined} onclick={() => (open ? close() : (open = true))}>
     <span class="sw-ini" aria-hidden="true">{initials}</span><span class="sw-chip__who" title={me.principal}>{who}</span>
   </button>
   <div class="sw-pop" class:open>

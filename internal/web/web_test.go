@@ -148,3 +148,16 @@ func TestEmbeddedIndexHasExactlyOneInlineScript(t *testing.T) {
 		t.Fatalf("dist/index.html has %d inline scripts, want 1", n)
 	}
 }
+
+func TestPolicyForHashesAScriptWithDataSrc(t *testing.T) {
+	html := []byte(`<script data-src="/x.js">run()</script><script src="/a.js"></script>`)
+	sum := sha256.Sum256([]byte("run()"))
+	want := "'sha256-" + base64.StdEncoding.EncodeToString(sum[:]) + "'"
+	got := policyFor(html)
+	if !strings.Contains(got, want) {
+		t.Fatalf("a data-src attribute is not a src: policy %q lacks %s", got, want)
+	}
+	if strings.Count(got, "sha256-") != 1 {
+		t.Fatalf("the external script must not be hashed: %q", got)
+	}
+}

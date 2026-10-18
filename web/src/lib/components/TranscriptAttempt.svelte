@@ -36,8 +36,14 @@
   const target = $derived(parseSeq(seq));
   const found = $derived(target ? tx.items.find((it) => holds(itemRange(it), target.from)) : undefined);
 
+  // The chase budget is per target: following another ?seq= link starts a fresh 20 pages.
   let chased = 0;
+  let chasedFor: string | null = null;
   $effect(() => {
+    if (seq !== chasedFor) {
+      chasedFor = seq;
+      chased = 0;
+    }
     if (target && !found && tx.next && !tx.loading && !tx.busy && !tx.moreError && chased < MAX_CHASE) {
       chased++;
       tx.more();

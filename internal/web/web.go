@@ -21,12 +21,15 @@ const CSP = "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self
 
 var inlineScript = regexp.MustCompile(`(?s)<script(\s[^>]*)?>(.*?)</script>`)
 
+// hasSrc matches a script tag's own src attribute, not data-src or similar.
+var hasSrc = regexp.MustCompile(`(?i)\ssrc\s*=`)
+
 // policyFor is CSP plus a script-src that allows same-origin files and, by SHA-256 hash, exactly
 // the inline scripts in index (SvelteKit's bootstrap). Scripts stay strict: no 'unsafe-inline'.
 func policyFor(index []byte) string {
 	p := CSP + "; script-src 'self'"
 	for _, m := range inlineScript.FindAllSubmatch(index, -1) {
-		if strings.Contains(string(m[1]), "src=") {
+		if hasSrc.Match(m[1]) {
 			continue
 		}
 		sum := sha256.Sum256(m[2])
