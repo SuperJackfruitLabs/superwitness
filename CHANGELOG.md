@@ -3,7 +3,7 @@
 All notable changes to superwitness are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## Unreleased
+## 0.0.8 — 2026-10-19
 
 ### Changed
 
@@ -19,7 +19,7 @@ All notable changes to superwitness are recorded here. The format follows
 - A gate with no decision shows "pending", "no decision yet" or "cancelled" instead of the raw
   `{"decision":null}`.
 - A very long agent id no longer overflows the screen at phone widths.
-- The span pane has a scrim behind it and no longer clips the Attributes table.
+- The span pane is a clearly bounded panel (beside the page, or floating with an edge and shadow, by vibe) and no longer clips the Attributes table.
 - Signing in again after a session ends mid-visit returns to the page you were on, including its query.
 - Tabs now work with the arrow keys, Home and End, as their role promises.
 - Times show as readable local time, with the exact ISO time on hover.

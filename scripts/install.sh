@@ -4,7 +4,7 @@
 #   curl -fsSL https://github.com/SuperJackfruitLabs/superwitness/releases/latest/download/install.sh | bash
 #
 # Optional env:
-#   VERSION   pin a release tag (e.g. v0.0.7); default: the latest release
+#   VERSION   pin a release tag (e.g. v0.0.8); default: the latest release
 #   BIN_DIR   where to install; default: ~/.local/bin
 #   SKILL_DIR also install the agent skill there (e.g. ~/.claude/skills), by running the freshly
 #             installed `superwitness skill install --dir "$SKILL_DIR"`; omitted by default
