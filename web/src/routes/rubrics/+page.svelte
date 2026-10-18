@@ -1,1 +1,5 @@
-<h1>Rubrics</h1>
+<script lang="ts">
+  import RubricsPage from "$lib/components/RubricsPage.svelte";
+</script>
+
+<RubricsPage />
