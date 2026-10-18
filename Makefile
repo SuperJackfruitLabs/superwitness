@@ -38,7 +38,8 @@ test-integration:
 	$(GO) test -tags integration -count=1 ./internal/verdicts/... ./internal/runs/... ./internal/session/... ./internal/app/... ./test/integration/...
 
 web:
-	cd web && npm ci && npm test && npm run build
+	rm -rf internal/web/dist
+	cd web && npm ci && npm run check && npm test && npm run build
 
 web-check: web
 	test -z "$$(git status --porcelain -- internal/web/dist)"

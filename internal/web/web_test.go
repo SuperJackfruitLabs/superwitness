@@ -14,7 +14,7 @@ func TestHandler(t *testing.T) {
 	for _, path := range []string{"/", "/runs/superpipeline/brd_01/run_01"} {
 		rec := httptest.NewRecorder()
 		h.ServeHTTP(rec, httptest.NewRequest("GET", path, nil))
-		if rec.Code != 200 || !strings.Contains(rec.Body.String(), `<div id="root">`) {
+		if rec.Code != 200 || !strings.Contains(rec.Body.String(), `__sveltekit`) {
 			t.Errorf("%s: %d", path, rec.Code)
 		}
 		for _, want := range []string{"default-src 'self'", "frame-ancestors 'none'"} {
@@ -57,7 +57,7 @@ func TestFavicon(t *testing.T) {
 }
 
 // One mark: the app embeds a copy of landing/public/favicon.svg, as does the docs site. A change
-// to the mark is made there and copied to web/public/ and docs-site/; this fails until it is.
+// to the mark is made there and copied to web/static/ and docs-site/; this fails until it is.
 func TestFaviconMatchesTheMark(t *testing.T) {
 	mark, err := os.ReadFile("../../landing/public/favicon.svg")
 	if err != nil {
@@ -68,7 +68,7 @@ func TestFaviconMatchesTheMark(t *testing.T) {
 		t.Fatal(err)
 	}
 	copies := map[string][]byte{"embedded dist/favicon.svg": embedded}
-	for _, p := range []string{"../../web/public/favicon.svg", "../../docs-site/public/favicon.svg", "../../docs-site/src/assets/mark.svg"} {
+	for _, p := range []string{"../../web/static/favicon.svg", "../../docs-site/public/favicon.svg", "../../docs-site/src/assets/mark.svg"} {
 		b, err := os.ReadFile(p)
 		if err != nil {
 			t.Fatal(err)
