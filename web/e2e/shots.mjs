@@ -7,7 +7,12 @@
 // light and dark, chosen with the vk_appearance cookie. --open also opens the phone Menu and the
 // account menu; --appearance opens the Appearance control too. /v1/runs answers the mockups' nine runs
 // (--more: with a next cursor whose page stays in flight; --more-error: that page fails; --empty: none;
-// --loading: never answers). Pictures go to test-results/shots/ (git-ignored). Not part of `make e2e`.
+// --loading: never answers). The run page /runs/superpipeline/brd_01/run_01 answers FACTS.md's run
+// "Write the release note" with its 7 spans, logs and the failed tool_call's transcript (open it with
+// ?span=00f067aa0ba902bc); --running: the run is still running; --unknown: every figure unknown and
+// the agentpod source timed out; --long-agent: a 60-character agent principal; --spans-empty,
+// --spans-loading, --spans-error, --spans-more: the trace's own states. Pictures go to
+// test-results/shots/ (git-ignored). Not part of `make e2e`.
 import { createServer } from "node:http";
 import { readFile, mkdir } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
@@ -25,6 +30,10 @@ const moreError = args.includes("--more-error");
 const more = moreError || args.includes("--more");
 const empty = args.includes("--empty");
 const loading = args.includes("--loading");
+const running = args.includes("--running");
+const unknown = args.includes("--unknown");
+const longAgent = args.includes("--long-agent");
+const spansState = ["empty", "loading", "error", "more"].find((k) => args.includes(`--spans-${k}`));
 
 // The mockups' runs: Today, Yesterday and Tue, 13 Oct 2026, the six statuses, one source with no
 // run page, one very long title.
@@ -65,6 +74,55 @@ const stubs = {
   },
   "/health": { status: "ok", version: "dev", sources: { superpipeline: "ok", agentpod: "ok", traces: "ok", logs: "ok", transcripts: "ok" } },
 };
+// The run page: FACTS.md's run_01, seven spans over five minutes this morning.
+const T0 = (() => { const d = new Date(); d.setHours(10, 0, 0, 0); return d.getTime(); })();
+const at = (s) => new Date(T0 + s * 1000).toISOString();
+const sources = { superpipeline: "ok", agentpod: "ok", traces: "ok", logs: "ok", errors: "ok", verdicts: "ok" };
+const runDoc = {
+  run: { ref: "superpipeline:brd_01/run_01", agent: longAgent ? "prn_agent_0123456789abcdef0123456789abcdef0123456789abcdef" : "prn_agent01", state: running ? "running" : "completed",
+    started_at: at(0), ended_at: running ? null : at(300), card: { title: "Write the release note", stage: "draft" } },
+  attempts: [{ id: "attempt_01", station: "stn_01", session_id: "acps_01", seq_from: 1, seq_to: running ? null : 9, state: running ? "running" : "completed" }],
+  errors: running ? [] : [{ at: at(182.4), service: "agentpod-hub", message: "bridge heartbeat failed: 502 from superpipeline" }],
+  cost: { status: "unreported" },
+  verdicts: [],
+  sources,
+};
+const unknownDoc = { run: { ref: "superpipeline:brd_01/run_01", card: { title: "unknown" } }, attempts: [], errors: [], cost: {}, verdicts: [], sources: { ...sources, agentpod: "timeout", errors: "timeout" } };
+const TR = "4bf92f3577b34da6a3ce929d0e0e4736";
+const hub = (id, parent, name, start, ms, attrs = {}) => ({ trace_id: TR, span_id: id, parent_span_id: parent, name, service: "agentpod-hub", start: at(start), duration_ms: ms,
+  attributes: { "attempt.id": "attempt_01", "station.id": "stn_01", "run.id": "run_01", ...attrs } });
+const spans = [
+  hub("7a1c9e04b2d35f60", undefined, "dispatch", 0, 300000, { "board.id": "brd_01", "card.id": "crd_01" }),
+  hub("1f2e3d4c5b6a7980", "7a1c9e04b2d35f60", "attempt", 2, 296000, { "harness.name": "hermes" }),
+  hub("2a3b4c5d6e7f8091", "1f2e3d4c5b6a7980", "turn", 4.5, 290000, { "acp.seq_from": "1", "acp.seq_to": "9" }),
+  hub("3b4c5d6e7f809102", "2a3b4c5d6e7f8091", "tool_call", 6, 1200, { "acp.seq_from": "3", "acp.seq_to": "4", "tool.kind": "read", "tool.status": "completed" }),
+  hub("4c5d6e7f80910213", "2a3b4c5d6e7f8091", "permission", 114, 4000, { "acp.seq_from": "5", "acp.seq_to": "6", "permission.auto": "false" }),
+  hub("00f067aa0ba902bc", "2a3b4c5d6e7f8091", "tool_call", 182, 800, { "acp.seq_from": "7", "acp.seq_to": "8", "tool.kind": "edit", "tool.status": "failed", "otel.status_code": "ERROR" }),
+  { trace_id: "9c8b7a6f5e4d3c2b1a0f9e8d7c6b5a49", span_id: "5d6e7f8091021324", name: "POST /v1/boards/:id/runs/:runId/heartbeat", service: "superpipeline-api", start: at(288), duration_ms: 12, attributes: { "http.status_code": "200" } },
+];
+const logs = [
+  { at: at(2.2), service: "agentpod-hub", level: "info", message: "attempt opened", trace_id: TR },
+  { at: at(182.4), service: "agentpod-hub", level: "error", message: "bridge heartbeat failed: 502 from superpipeline", trace_id: TR },
+];
+const failedCall = { kind: "tool_call", id: "tc_2", seq_from: 7, seq_to: 8, title: "Write release-note.md", tool_kind: "edit", status: "failed", redactions: 0,
+  input: { path: "release-note.md" }, output: { content: [{ type: "text", text: "permission denied: release-note.md is read-only" }], raw: null } };
+const runAPI = "/v1/runs/superpipeline/brd_01/run_01";
+function runStub(path, q) {
+  if (path === runAPI) return [200, unknown ? unknownDoc : runDoc];
+  if (path === `${runAPI}/spans`) {
+    if (spansState === "loading") return null;
+    if (spansState === "error") return [503, { error: { code: "source_unavailable", message: "superwitness could not be reached" } }];
+    if (spansState === "empty") return [200, { spans: [] }];
+    if (spansState === "more") return q.has("cursor") ? null : [200, { spans, next_cursor: "c2" }];
+    return [200, { spans }];
+  }
+  if (path === `${runAPI}/logs`) return [200, { logs, next_cursor: null }];
+  if (path.startsWith(`${runAPI}/transcript`)) return [200, { attempt_id: "attempt_01", session_id: "acps_01", seq_from: 7, seq_to: 8, items: [failedCall], next_cursor: null, redactions: 0, truncated_fields: 0 }];
+  if (path === "/v1/verdicts") return [200, { verdicts: [] }];
+  if (path === "/v1/rubrics") return [200, { rubrics: [] }];
+  return undefined;
+}
+
 const types = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".woff2": "font/woff2", ".json": "application/json" };
 
 const server = createServer(async (req, res) => {
@@ -80,6 +138,12 @@ const server = createServer(async (req, res) => {
     // The next page, asked for as soon as the end scrolls near.
     if (moreError) return json(500, { error: { code: "internal", message: "superwitness could not answer." } });
     return; // --more: stays in flight for the picture
+  }
+  const answer = runStub(path, new URL(req.url, "http://x").searchParams);
+  if (answer === null) return; // stays in flight for the picture
+  if (answer) {
+    res.writeHead(answer[0], { "Content-Type": "application/json" });
+    return res.end(JSON.stringify(answer[1]));
   }
   if (stubs[path]) {
     res.writeHead(200, { "Content-Type": "application/json" });
@@ -105,9 +169,11 @@ const base = `http://127.0.0.1:${server.address().port}`;
 
 await mkdir(out, { recursive: true });
 const browser = await chromium.launch();
-const variant = moreError ? "-moreerror" : more ? "-more" : empty ? "-empty" : loading ? "-loading" : "";
+const variant = (moreError ? "-moreerror" : more ? "-more" : empty ? "-empty" : loading ? "-loading" : "") + (running ? "-running" : "") + (unknown ? "-unknown" : "") +
+  (longAgent ? "-longagent" : "") + (spansState ? `-spans${spansState}` : "");
+const only = args.find((a) => a.startsWith("--only="))?.slice(7).split(",");
 const name = (target === "/" ? "runs" : target.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "")) + variant;
-for (const vibe of ["daylight", "paper", "studio", "quiet"]) {
+for (const vibe of ["daylight", "paper", "studio", "quiet"].filter((v) => !only || only.includes(v))) {
   for (const theme of ["light", "dark"]) {
     for (const [w, h, size] of [[1440, 900, "desk"], [390, 844, "phone"]]) {
       const ctx = await browser.newContext({ viewport: { width: w, height: h } });
