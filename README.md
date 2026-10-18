@@ -17,7 +17,7 @@ cards, runs and approval gates; [supermessage](https://github.com/SuperJackfruit
 is the Matrix client that puts agents in the conversation. superwitness records what happened and
 whether it was any good.
 
-> **Status: v0.0.7** ([changelog](CHANGELOG.md)). Run documents cover superpipeline runs, with attempts read from the
+> **Status: v0.0.8** ([changelog](CHANGELOG.md)). Run documents cover superpipeline runs, with attempts read from the
 > AgentPod hub, and a run registry lists the runs sources report; a web app reads and judges them. To try it without either product, `SW_FAKE_SOURCES=1` serves one development run
 > on loopback.
 
@@ -72,7 +72,7 @@ curl -fsSL https://github.com/SuperJackfruitLabs/superwitness/releases/latest/do
 This downloads the release tarball for your platform (Linux or macOS, amd64 or arm64), checks it
 against the release's `SHA256SUMS`, and installs `superwitness` and a short alias, `suwi`
 (a symlink to it), into `~/.local/bin`. It never uses sudo, refuses to overwrite a different
-program at either name, and refuses a download it cannot verify. `VERSION=v0.0.7` pins a release;
+program at either name, and refuses a download it cannot verify. `VERSION=v0.0.8` pins a release;
 `BIN_DIR=/some/dir` changes where it installs.
 
 `superwitness skill` prints an operations skill for agents (what each command does and which ones change data); `suwi skill install` writes it to `~/.claude/skills`, and `SKILL_DIR=<dir>` on the installer does the same. Needs v0.0.7 or later.
