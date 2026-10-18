@@ -2,9 +2,12 @@ package web
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/base64"
 	"io/fs"
 	"net/http/httptest"
 	"os"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -79,5 +82,69 @@ func TestFaviconMatchesTheMark(t *testing.T) {
 		if !bytes.Equal(b, mark) {
 			t.Errorf("%s differs from landing/public/favicon.svg; copy it again", name)
 		}
+	}
+}
+
+func TestPolicyForHashesInlineScripts(t *testing.T) {
+	html := []byte(`<html><head><script src="/a.js"></script></head><body><script>console.log(1)</script></body></html>`)
+	sum := sha256.Sum256([]byte("console.log(1)"))
+	want := "'sha256-" + base64.StdEncoding.EncodeToString(sum[:]) + "'"
+	got := policyFor(html)
+	if !strings.Contains(got, "script-src 'self' "+want) {
+		t.Fatalf("policy %q lacks %s", got, want)
+	}
+	directive := got[strings.Index(got, "script-src"):] // script-src is the last directive policyFor appends
+	if strings.Contains(directive, "'unsafe-inline'") || strings.Contains(directive, "'unsafe-eval'") {
+		t.Fatalf("script-src must stay strict: %q", directive)
+	}
+}
+
+func TestPolicyForNoInlineScripts(t *testing.T) {
+	got := policyFor([]byte(`<script src="/a.js"></script>`))
+	if !strings.Contains(got, "script-src 'self'") || strings.Contains(got, "sha256") {
+		t.Fatalf("got %q", got)
+	}
+}
+
+// inlineBodies is the test's own reading of index.html, independent of web.go's.
+func inlineBodies(t *testing.T) []string {
+	t.Helper()
+	index, err := fs.ReadFile(dist, "dist/index.html")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out []string
+	for _, m := range regexp.MustCompile(`(?s)<script([^>]*)>(.*?)</script>`).FindAllStringSubmatch(string(index), -1) {
+		if !strings.Contains(m[1], "src=") {
+			out = append(out, m[2])
+		}
+	}
+	return out
+}
+
+func TestHandlerServesHashedPolicyOnIndexAndFallback(t *testing.T) {
+	h := Handler()
+	bodies := inlineBodies(t)
+	for _, p := range []string{"/", "/rubrics"} {
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, httptest.NewRequest("GET", p, nil))
+		csp := rec.Header().Get("Content-Security-Policy")
+		if !strings.Contains(csp, "script-src 'self'") {
+			t.Errorf("%s: CSP %q has no script-src 'self'", p, csp)
+		}
+		for _, b := range bodies {
+			sum := sha256.Sum256([]byte(b))
+			if h := "'sha256-" + base64.StdEncoding.EncodeToString(sum[:]) + "'"; !strings.Contains(csp, h) {
+				t.Errorf("%s: CSP %q lacks %s", p, csp, h)
+			}
+		}
+	}
+}
+
+// A stray inline script would otherwise be hashed and allowed silently: the build has exactly one,
+// SvelteKit's bootstrap.
+func TestEmbeddedIndexHasExactlyOneInlineScript(t *testing.T) {
+	if n := len(inlineBodies(t)); n != 1 {
+		t.Fatalf("dist/index.html has %d inline scripts, want 1", n)
 	}
 }
