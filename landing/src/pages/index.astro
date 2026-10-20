@@ -358,6 +358,11 @@ const FIRST = [
         nav { gap: 12px; font-size: 14px; }
         nav .ver { display: none; }
       }
+      /* Hero moment: .doc.playing is set by the inline script below for one ~2.6s pass. */
+      .doc.playing dd { opacity: 0; animation: sw-fill 320ms ease-out forwards; animation-delay: calc(var(--i, 0) * 220ms); }
+      .doc.playing .verdict dd { animation: sw-stamp 380ms cubic-bezier(.2,.8,.3,1) forwards; animation-delay: 1700ms; }
+      @keyframes sw-fill { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+      @keyframes sw-stamp { from { opacity: 0; transform: scale(1.15); } to { opacity: 1; transform: none; } }
       @media (prefers-reduced-motion: reduce) {
         * { transition: none !important; animation: none !important; }
       }
@@ -406,10 +411,10 @@ const FIRST = [
               <dl>
                 <div class="row"><dt>agent</dt><dd class="mono">hermes 0.9 · <span class="muted">sha256:4dd8…</span></dd></div>
                 <div class="row"><dt>attempts</dt><dd><span class="pill">2 · completed</span></dd></div>
-                <div class="row"><dt>trace</dt><dd><span class="pill jade">joined · 41 spans</span></dd></div>
+                <div class="row"><dt>trace</dt><dd><span class="pill jade">joined · <span data-count="41">41</span> spans</span></dd></div>
                 <div class="row"><dt>errors</dt><dd><span class="pill">0</span></dd></div>
                 <div class="row"><dt>cost</dt><dd><span class="pill warn">unreported</span></dd></div>
-                <div class="row"><dt>verdicts</dt><dd><span class="pill jade">gate: approved · human</span> <span class="pill">grader 0.8</span></dd></div>
+                <div class="row verdict"><dt>verdicts</dt><dd><span class="pill jade">gate: approved · human</span> <span class="pill">grader 0.8</span></dd></div>
               </dl>
               <p class="sources mono">sources: superpipeline <b>ok</b> · agentpod <b>ok</b> · traces <b>ok</b> · logs <b>ok</b> · errors <b>ok</b> · verdicts <b>ok</b></p>
             </div>
@@ -542,6 +547,33 @@ const FIRST = [
           root.dataset.theme = next;
           try { localStorage.setItem('theme', next); } catch {}
         });
+      })();
+    </script>
+    <script is:inline>
+      (() => {
+        const doc = document.querySelector('.doc');
+        if (!doc || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        const dds = doc.querySelectorAll('dd');
+        dds.forEach((d, i) => d.style.setProperty('--i', i));
+        const n = doc.querySelector('[data-count]');
+        const play = () => {
+          doc.classList.add('playing');
+          if (n) {
+            const end = +n.dataset.count, t0 = performance.now() + 2 * 220, dur = 700;
+            n.textContent = '0';
+            const tick = (t) => {
+              const k = Math.min(1, Math.max(0, (t - t0) / dur));
+              n.textContent = String(Math.round(end * (1 - Math.pow(1 - k, 3))));
+              if (k < 1) requestAnimationFrame(tick);
+            };
+            requestAnimationFrame(tick);
+          }
+          setTimeout(() => { doc.classList.remove('playing'); if (n) n.textContent = n.dataset.count; }, 2600);
+        };
+        const io = new IntersectionObserver((es) => {
+          if (es.some((e) => e.isIntersecting)) { io.disconnect(); setTimeout(play, 600); }
+        });
+        io.observe(doc);
       })();
     </script>
   </body>
