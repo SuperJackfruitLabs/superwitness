@@ -174,14 +174,15 @@ const FIRST = [
       #theme:focus-visible { outline: 2px solid var(--jade); outline-offset: 3px; }
       .example { font-family: var(--mono); font-size: 12px; color: var(--muted); margin: 10px 0 0; text-align: right; position: relative; z-index: 1; }
       .steps { counter-reset: step; }
-      .cell .step { font-family: var(--mono); font-size: 12px; color: var(--muted); }
-      .prose p { margin: 0 0 14px; max-width: 62ch; }
+      .cell .step { font-family: var(--mono); font-size: 13px; color: var(--jade-text); }
+      .prose p { margin: 0 0 14px; max-width: 680px; }
       .prose p:last-child { margin-bottom: 0; }
-      .tools { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; padding: 0; list-style: none; }
+      .tools { max-width: 680px; display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; padding: 0; list-style: none; }
       .tools li { font-family: var(--mono); font-size: 12.5px; padding: 3px 9px; border-radius: 6px; background: var(--inset); }
       h3.small { font-family: var(--display); font-weight: 600; font-size: 1.15rem; margin: 30px 0 10px; }
-      pre + p, .install p { margin: 12px 0 0; color: var(--muted); font-size: 15.5px; max-width: 70ch; }
-      ul.facts.limits { grid-auto-flow: row !important; max-width: 70ch; }
+      pre + p, .install p { margin: 12px 0 0; color: var(--muted); font-size: 15.5px; max-width: 680px; }
+      .install pre { max-width: 760px; }
+      ul.facts.limits { grid-auto-flow: row !important; max-width: 680px; }
 
       /* ── hero ─────────────────────────────────────────────────── */
       .hero .wrap {
@@ -258,28 +259,23 @@ const FIRST = [
 
       /* ── bands ────────────────────────────────────────────────── */
       section.band { border-top: 1px solid var(--line); }
-      section.band .wrap { padding-top: 68px; padding-bottom: 68px; }
+      section.band .wrap { padding-top: 88px; padding-bottom: 88px; }
       .n {
         display: block; font-family: var(--mono); font-size: 12px; letter-spacing: .12em;
         color: var(--muted); margin-bottom: 10px;
       }
       h2 {
         font-family: var(--display); font-weight: 600;
-        font-size: clamp(1.65rem, 3.2vw, 2.25rem); line-height: 1.12; letter-spacing: -0.02em;
-        margin: 0 0 14px; text-wrap: balance; font-variation-settings: 'opsz' 72;
+        font-size: clamp(28px, 3vw, 36px); line-height: 1.15; letter-spacing: -0.02em;
+        margin: 0 0 12px; text-wrap: balance; font-variation-settings: 'opsz' 72;
       }
-      .sub { color: var(--muted); margin: 0; max-width: 60ch; font-size: 1.05rem; }
-      .split { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; }
-      .split > * { min-width: 0; }
+      .sub, .install p.sub { color: var(--muted); margin: 0 0 32px; max-width: 640px; font-size: 17px; line-height: 1.6; }
 
-      .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 34px; }
-      .cell {
-        background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
-        padding: 20px 20px 18px; display: flex; flex-direction: column; gap: 6px;
-      }
+      .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; margin-top: 32px; }
+      .cell { min-width: 0; }
       .cell h3 {
-        font-family: var(--display); font-weight: 600; font-size: 1.2rem;
-        letter-spacing: -0.01em; margin: 0;
+        font-family: var(--display); font-weight: 600; font-size: 18px;
+        letter-spacing: -0.01em; margin: 10px 0 6px;
       }
       .cell p { margin: 0; color: var(--muted); font-size: 15.5px; }
       .cell .field {
@@ -289,7 +285,7 @@ const FIRST = [
 
       /* waterfall */
       .fall {
-        margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+        margin: 32px 0 0; background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
         padding: 18px 18px 14px;
       }
       .lane { display: grid; grid-template-columns: 130px 1fr; gap: 12px; align-items: center; height: 26px; }
@@ -347,13 +343,12 @@ const FIRST = [
       }
       @media (max-width: 899px) {
         .hero .wrap { grid-template-columns: 1fr; gap: 44px; min-height: auto; padding-top: 40px; padding-bottom: 56px; }
-        .split { grid-template-columns: 1fr; gap: 32px; }
+        section.band .wrap { padding-top: 64px; padding-bottom: 64px; }
         .grid { grid-template-columns: 1fr; }
       }
       @media (max-width: 480px) {
         .wrap { padding: 0 16px; }
         nav { gap: 14px; }
-        section.band .wrap { padding-top: 52px; padding-bottom: 52px; }
         .lane { grid-template-columns: 104px 1fr; gap: 8px; }
         .lane .lname { font-size: 11px; }
         .doc dl, .doc-head, .sources { padding-left: 14px; padding-right: 14px; }
@@ -458,7 +453,7 @@ const FIRST = [
       </section>
 
       <section class="band" aria-labelledby="use">
-        <div class="wrap split">
+        <div class="wrap">
           <div class="prose">
             <h2 id="use">What it's like to use</h2>
             <p>
