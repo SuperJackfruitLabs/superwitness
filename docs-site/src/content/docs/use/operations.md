@@ -1,10 +1,10 @@
 ---
 title: Operations
-description: Health, backups, upgrades, the database roles, the listen address and the commands, for running superwitness day to day.
+description: Health, backups, upgrades, the database roles, the listen address and the commands, for running SuperWitness day to day.
 ---
 
-superwitness is one binary and one Postgres database. It keeps no state on disk; telemetry
-lives in the engines, and everything it reads from AgentPod and superpipeline stays there.
+SuperWitness is one binary and one Postgres database. It keeps no state on disk; telemetry
+lives in the engines, and everything it reads from AgentPod and SuperPipeline stays there.
 
 ## The commands
 
@@ -24,7 +24,7 @@ output.
 ## Health
 
 `GET /health` needs no token. It answers 200 whenever the process can answer at all, so a
-monitor can tell "superwitness is down" from "a source is down". Each source's state is in the
+monitor can tell "SuperWitness is down" from "a source is down". Each source's state is in the
 body:
 
 ```json
@@ -36,7 +36,7 @@ body:
   product or engine: any 2xx is `ok`, 401 or 403 `unauthorized`, anything else `unavailable`. Each
   check gets 1 second, after which it reads `timeout`. The engine checks carry the
   `SW_TRACES_TOKEN_FILE` or `SW_LOGS_TOKEN_FILE` token when one is set.
-- `verdicts` is a ping of superwitness's own Postgres. It reads `unavailable` until migrations
+- `verdicts` is a ping of SuperWitness's own Postgres. It reads `unavailable` until migrations
   have succeeded.
 
 To alert on a source that keeps failing during real reads, use the
@@ -57,7 +57,7 @@ A Postgres that is down never takes run documents with it.
 
 ## The two database roles
 
-superwitness uses two Postgres roles, set up in [Install](/install/#postgres-roles):
+SuperWitness uses two Postgres roles, set up in [Install](/install/#postgres-roles):
 
 - **`superwitness_owner`** owns the database and the tables, and is used only for migrations,
   through `SW_MIGRATE_DATABASE_URL`.
@@ -102,7 +102,7 @@ through `ALTER DEFAULT PRIVILEGES`.
 
 ## Backups
 
-superwitness's only state is plain Postgres: the `superwitness` database, with its `verdicts`
+SuperWitness's only state is plain Postgres: the `superwitness` database, with its `verdicts`
 and `rubrics` tables. Back it up with the usual tools, for example as the owner role or the
 Postgres superuser:
 
@@ -113,10 +113,10 @@ pg_dump -Fc -f superwitness.dump 'postgres://superwitness_owner@127.0.0.1:5432/s
 Use the owner or the superuser: the runtime role cannot read the migration bookkeeping table
 unless you granted it above.
 
-The telemetry engines are not superwitness's to back up. Telemetry is lossy by design, sampled
-and kept for a short time, and superwitness never treats a missing span as missing evidence.
-Evidence that belongs to AgentPod or superpipeline stays in those products, not in
-superwitness's database.
+The telemetry engines are not SuperWitness's to back up. Telemetry is lossy by design, sampled
+and kept for a short time, and SuperWitness never treats a missing span as missing evidence.
+Evidence that belongs to AgentPod or SuperPipeline stays in those products, not in
+SuperWitness's database.
 
 ## The listen address
 
@@ -124,7 +124,7 @@ superwitness's database.
 [Install](/install/#configure) guide sets `127.0.0.1:8790`; to reach it from other machines, bind
 a private address of the host instead, or keep loopback and put a reverse proxy in front.
 
-In fake mode (`SW_FAKE_SOURCES=1`) superwitness accepts development tokens, so it refuses to
+In fake mode (`SW_FAKE_SOURCES=1`) SuperWitness accepts development tokens, so it refuses to
 start unless `SW_LISTEN` is a loopback address: `localhost`, a `127.x.x.x` address or `[::1]`,
 with a port. Left unset in fake mode, it is `127.0.0.1:8790`.
 

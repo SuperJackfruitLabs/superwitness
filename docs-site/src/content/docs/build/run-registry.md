@@ -1,11 +1,11 @@
 ---
 title: Run registry API
-description: How a source reports its runs to superwitness, and how runs are listed back.
+description: How a source reports its runs to SuperWitness, and how runs are listed back.
 ---
 
-superwitness keeps its own list of runs. Each product that runs work, a **source**, reports its
-runs to superwitness as they start, change and finish, the same way it sends telemetry to an
-OTLP endpoint. superwitness never asks a product to list its runs. A source that has not
+SuperWitness keeps its own list of runs. Each product that runs work, a **source**, reports its
+runs to SuperWitness as they start, change and finish, the same way it sends telemetry to an
+OTLP endpoint. SuperWitness never asks a product to list its runs. A source that has not
 reported a run leaves it out of the list, but the run's own page still works by its link.
 
 ## Reporting runs
@@ -43,7 +43,7 @@ Unknown fields are refused, and field names are matched exactly. Timestamps are 
 ### Who may report
 
 A reporter is an AgentPod **service** principal whose token carries the `runs:write` scope and
-superwitness's audience (`SW_PUBLIC_URL`). superwitness also binds each reporter to one source
+SuperWitness's audience (`SW_PUBLIC_URL`). SuperWitness also binds each reporter to one source
 with `SW_RUN_SOURCES`, for example `SW_RUN_SOURCES=prn_reporter01=superpipeline`; a report for
 any other source is refused. Session cookies are never accepted here.
 
@@ -52,7 +52,7 @@ any other source is refused. Session cookies are never accepted here.
 A report updates its run only when its `reported_at` is **strictly newer** than the one stored.
 An equal or older report changes nothing and answers `"applied": false`, so retries and
 out-of-order deliveries cannot move a run backwards. A `reported_at` more than 5 minutes ahead
-of superwitness's clock is refused, so that one report from a fast clock cannot freeze a run.
+of SuperWitness's clock is refused, so that one report from a fast clock cannot freeze a run.
 
 ### The answer
 
@@ -76,7 +76,7 @@ invalid, nothing is written, and the error names its position with `index`. A si
 | 403 | `source_not_allowed` | the reporter is not bound to this report's source | no |
 | 413 | `body_too_large` | the body is over 256 KiB | no |
 | 422 | `invalid_report` | a report breaks a rule above | no |
-| 503 | `store_unavailable` | superwitness's database is unavailable; `Retry-After` is set | yes |
+| 503 | `store_unavailable` | SuperWitness's database is unavailable; `Retry-After` is set | yes |
 
 A reporter should retry 5xx answers and network errors with backoff, and set any other 4xx
 aside: sending it again will get the same answer.
@@ -85,16 +85,16 @@ aside: sending it again will get the same answer.
 
 The body is described by a JSON Schema (draft 2020-12), published at
 [`/schemas/run-report.schema.json`](/schemas/run-report.schema.json) and kept in the
-repository at `internal/contracts/run-report.schema.json`. superwitness's own tests run the same
+repository at `internal/contracts/run-report.schema.json`. SuperWitness's own tests run the same
 bodies through the schema and through its handler and require the same answer from both.
 
-superwitness keeps four rules beyond the schema: `reported_at` may be at most 5 minutes ahead
+SuperWitness keeps four rules beyond the schema: `reported_at` may be at most 5 minutes ahead
 of its clock, no string may contain NUL (`\u0000`), a timestamp may not be a leap second, and a
 timestamp's year in UTC must be 0 to 9999.
 
 ## Listing runs
 
-`GET /v1/runs` lists runs newest first: by `started_at`, or by when superwitness first heard of
+`GET /v1/runs` lists runs newest first: by `started_at`, or by when SuperWitness first heard of
 the run when it has not started, then by `source` and `external_ref`.
 
 | Query | Meaning |
@@ -134,7 +134,7 @@ the run when it has not started, then by `source` and `external_ref`.
 
 Errors: 400 `invalid_source`, `invalid_status`, `invalid_time`, `invalid_cursor`, `invalid_limit`
 or `invalid_needs_verdict`, and 503 `store_unavailable`. Any principal whose token carries
-superwitness's audience may list runs, as with every other read.
+SuperWitness's audience may list runs, as with every other read.
 
 The MCP tool `list_runs` takes the same filters as arguments (`status` as a list) and answers the
 same body ([MCP tools](/build/mcp/)).

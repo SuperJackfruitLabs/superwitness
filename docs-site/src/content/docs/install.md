@@ -1,11 +1,11 @@
 ---
 title: Install
-description: Install superwitness on one Linux host with systemd, next to Postgres, VictoriaTraces, VictoriaLogs and the OpenTelemetry Collector.
+description: Install SuperWitness on one Linux host with systemd, next to Postgres, VictoriaTraces, VictoriaLogs and the OpenTelemetry Collector.
 ---
 
-This guide puts everything on one Linux host: the superwitness binary as a systemd service, its
+This guide puts everything on one Linux host: the SuperWitness binary as a systemd service, its
 Postgres database, the two telemetry engines it queries, and the collector that feeds them.
-Everything in it, superwitness included, listens on loopback, so nothing here is reachable from
+Everything in it, SuperWitness included, listens on loopback, so nothing here is reachable from
 outside the host until you [choose to expose it](#configure).
 
 To look around first without the other products, skip to
@@ -14,14 +14,14 @@ To look around first without the other products, skip to
 ## Requirements
 
 - **Linux on amd64 or arm64, with systemd.** Releases ship a tarball for each.
-- **Postgres.** superwitness's own tests run against Postgres 17. Postgres 15 and later need no
+- **Postgres.** SuperWitness's own tests run against Postgres 17. Postgres 15 and later need no
   schema statements beyond the two blocks below; 14 or older needs
   [two more](#postgres-14-or-older).
-- **VictoriaTraces** and **VictoriaLogs**, which hold the telemetry superwitness reads.
+- **VictoriaTraces** and **VictoriaLogs**, which hold the telemetry SuperWitness reads.
 - **The OpenTelemetry Collector**, which receives OTLP from your products and writes it to both
   engines.
 
-superwitness itself needs no disk: it reads over HTTP and writes only to its Postgres.
+SuperWitness itself needs no disk: it reads over HTTP and writes only to its Postgres.
 
 ## Quick install of the binary
 
@@ -59,9 +59,9 @@ superwitness version
 
 Verdicts are append-only: triggers refuse `UPDATE`, `DELETE` and `TRUNCATE` on the `verdicts` and
 `rubrics` tables. A table's owner can disable or drop those triggers, so the running service must
-not own the tables. superwitness therefore uses two roles:
+not own the tables. SuperWitness therefore uses two roles:
 
-- **`superwitness_owner`** owns the database and the tables. superwitness connects as it, through
+- **`superwitness_owner`** owns the database and the tables. SuperWitness connects as it, through
   `SW_MIGRATE_DATABASE_URL`, only to run migrations.
 - **`superwitness_app`** is the runtime role, through `SW_DATABASE_URL`. It can insert and read
   verdicts and rubrics and nothing else.
@@ -96,7 +96,7 @@ Postgres 15 and later need neither statement: `public` is owned by the database 
 
 ## The telemetry engines
 
-Install VictoriaTraces and VictoriaLogs from their upstream releases; superwitness uses them as
+Install VictoriaTraces and VictoriaLogs from their upstream releases; SuperWitness uses them as
 released and only through their published query APIs. Their own documentation covers installing
 them as services: [VictoriaTraces](https://docs.victoriametrics.com/victoriatraces/) and
 [VictoriaLogs](https://docs.victoriametrics.com/victorialogs/). For this guide, each needs a data
@@ -126,7 +126,7 @@ service:
     logs: { receivers: [otlp], exporters: [otlphttp/logs] }
 ```
 
-Your products send OTLP over HTTP to `127.0.0.1:4318`. Which spans and log lines superwitness
+Your products send OTLP over HTTP to `127.0.0.1:4318`. Which spans and log lines SuperWitness
 finds for a run is covered in [Sending telemetry](/use/telemetry/).
 
 ## Configure
@@ -162,23 +162,23 @@ SW_SOURCE_TIMEOUT=2s
 # SW_OTLP_ENDPOINT=http://127.0.0.1:4318
 ```
 
-- `SW_LISTEN` is the address superwitness binds. This guide keeps it on loopback; left unset it
+- `SW_LISTEN` is the address SuperWitness binds. This guide keeps it on loopback; left unset it
   is `:8790`, every interface. To let other machines reach it, either bind it to a private or
   tailnet address of this host (`SW_LISTEN=<that address>:8790`) or keep it on loopback and put
   a reverse proxy in front.
-- `SW_PUBLIC_URL` is the address callers reach superwitness at. Tokens sent to it must name it as
+- `SW_PUBLIC_URL` is the address callers reach SuperWitness at. Tokens sent to it must name it as
   their audience.
 - `SW_SUPERPIPELINE_URL`, `SW_HUB_URL`, `SW_HUB_CLIENT_ID` and `SW_HUB_CLIENT_SECRET_FILE` are
-  where superwitness reads runs and attempts, and the AgentPod service credential it signs in
+  where SuperWitness reads runs and attempts, and the AgentPod service credential it signs in
   with.
 - Outside fake mode, `serve` refuses to start unless every one of these is set:
   `SW_DATABASE_URL`, `SW_PUBLIC_URL`, `SW_SUPERPIPELINE_URL`, `SW_HUB_URL`, `SW_HUB_CLIENT_ID`,
   `SW_HUB_CLIENT_SECRET_FILE`, `SW_TRACES_URL` and `SW_LOGS_URL`. Its error names each one
   missing.
-- `SW_OTLP_ENDPOINT` is optional: where superwitness sends its own traces and metrics. The
+- `SW_OTLP_ENDPOINT` is optional: where SuperWitness sends its own traces and metrics. The
   collector configuration above has no metrics pipeline, so add one before setting it.
 
-The hub client secret goes in a file of its own, holding the secret alone. superwitness refuses
+The hub client secret goes in a file of its own, holding the secret alone. SuperWitness refuses
 to read it if group or others can:
 
 ```sh
@@ -251,7 +251,7 @@ Postgres is unreachable; until they succeed, `verdicts` reads `unavailable`.
 
 ## Try it without the other products
 
-With `SW_FAKE_SOURCES=1`, superwitness serves one development run, `brd_01/run_01`, from built-in
+With `SW_FAKE_SOURCES=1`, SuperWitness serves one development run, `brd_01/run_01`, from built-in
 fixtures, and accepts development tokens of the form `dev:<principal>:<human|agent|service>`.
 Because it accepts those, it refuses to listen on anything but loopback, and it needs only a
 database:

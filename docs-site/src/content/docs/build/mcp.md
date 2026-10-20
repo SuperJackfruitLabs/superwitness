@@ -3,7 +3,7 @@ title: MCP tools
 description: The MCP server for agents, with tools for runs, spans, logs, transcripts, the run registry and verdicts; the by-attempt lookup stays HTTP-only.
 ---
 
-superwitness serves an MCP server at `/mcp` on its own address, over MCP's streamable HTTP
+SuperWitness serves an MCP server at `/mcp` on its own address, over MCP's streamable HTTP
 transport. It is stateless: every request stands alone, with no session to open or keep. It
 takes the same bearer token as the [HTTP API](/build/api/#authentication), and every tool acts
 as the principal that token names.
@@ -33,8 +33,8 @@ recorded verdicts, cost, and per-source status. The same as
 | Argument | Required | Description |
 |---|---|---|
 | `source` | no | the run's source system; only `superpipeline`, which is the default |
-| `board_id` | yes | superpipeline board id, `brd_…` |
-| `run_id` | yes | superpipeline run id, `run_…` |
+| `board_id` | yes | SuperPipeline board id, `brd_…` |
+| `run_id` | yes | SuperPipeline run id, `run_…` |
 
 Result: the [run document](/build/contracts/#the-run-document).
 
@@ -46,8 +46,8 @@ One page of a run's spans, oldest first. The same as
 | Argument | Required | Description |
 |---|---|---|
 | `source` | no | `superpipeline`, the default |
-| `board_id` | yes | superpipeline board id, `brd_…` |
-| `run_id` | yes | superpipeline run id, `run_…` |
+| `board_id` | yes | SuperPipeline board id, `brd_…` |
+| `run_id` | yes | SuperPipeline run id, `run_…` |
 | `cursor` | no | `next_cursor` from the previous page |
 | `limit` | no | page size from 1 to 500; default 100 |
 
@@ -61,8 +61,8 @@ same as `GET /v1/runs/superpipeline/{board}/{run}/logs`.
 | Argument | Required | Description |
 |---|---|---|
 | `source` | no | `superpipeline`, the default |
-| `board_id` | yes | superpipeline board id, `brd_…` |
-| `run_id` | yes | superpipeline run id, `run_…` |
+| `board_id` | yes | SuperPipeline board id, `brd_…` |
+| `run_id` | yes | SuperPipeline run id, `run_…` |
 | `cursor` | no | `next_cursor` from the previous page |
 | `level` | no | `debug`, `info`, `warn` or `error`; empty for all |
 | `limit` | no | page size from 1 to 500; default 100 |
@@ -114,8 +114,8 @@ One page (up to 200 steps) of an attempt's transcript, redacted by AgentPod. The
 
 | Argument | Required | Description |
 |---|---|---|
-| `board_id` | yes | superpipeline board id, `brd_…` |
-| `run_id` | yes | superpipeline run id, `run_…` |
+| `board_id` | yes | SuperPipeline board id, `brd_…` |
+| `run_id` | yes | SuperPipeline run id, `run_…` |
 | `attempt_id` | when the run has several attempts | the attempt to read, `attempt_…` |
 | `seq_from` | no | first session seq; default the attempt's first |
 | `seq_to` | no | last session seq; default the attempt's last |

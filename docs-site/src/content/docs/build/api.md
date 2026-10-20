@@ -1,22 +1,22 @@
 ---
 title: HTTP API
-description: The HTTP routes superwitness serves, their parameters and their errors.
+description: The HTTP routes SuperWitness serves, their parameters and their errors.
 ---
 
-superwitness serves a small JSON API under `/v1`. The [MCP tools](/build/mcp/) are a thin layer
+SuperWitness serves a small JSON API under `/v1`. The [MCP tools](/build/mcp/) are a thin layer
 over the same operations. Four routes have no tool: `GET /v1/runs/by-attempt/{attempt}`, `POST /v1/runs` and the two rubric
 reads. (`GET /v1/runs` is the `list_runs` tool.)
 
 ## Authentication
 
-Every `/v1` route takes a bearer token issued by the AgentPod hub, with superwitness's
+Every `/v1` route takes a bearer token issued by the AgentPod hub, with SuperWitness's
 `SW_PUBLIC_URL` as its audience:
 
 ```
 Authorization: Bearer <token>
 ```
 
-[With AgentPod and superpipeline](/use/with-agentpod-and-superpipeline/#tokens-callers-present)
+[With AgentPod and SuperPipeline](/use/with-agentpod-and-superpipeline/#tokens-callers-present)
 lists what a token must carry. A missing or refused token is 401 `unauthenticated`. In fake
 mode, tokens are `dev:<principal>:<human|agent|service>`.
 
@@ -43,7 +43,7 @@ A browser signed in to [the app](/use/the-app/) is authenticated by its session 
 
 Path parameters:
 
-- `{board}` and `{run}` are superpipeline board and run ids: letters, digits, `_` and `-`,
+- `{board}` and `{run}` are SuperPipeline board and run ids: letters, digits, `_` and `-`,
   starting with a letter or digit, up to 128 characters. Otherwise 400 `invalid_run_ref`.
 - `{attempt}` is `attempt_` followed by 1 to 128 letters, digits, `_` or `-`. Otherwise 400
   `invalid_attempt_id`.
@@ -53,7 +53,7 @@ JSON answers carry `Content-Type: application/json` and `Cache-Control: no-store
 ### GET /v1/runs/superpipeline/{board}/{run}
 
 The run document, assembled from every source at read time. It is 404 `run_not_found` only when
-superpipeline and the AgentPod hub both say they do not know the run; any other source failure
+SuperPipeline and the AgentPod hub both say they do not know the run; any other source failure
 is a 200 with that source's status in `sources`. [Read a run](/use/read-a-run/#the-run-document).
 
 ### GET /v1/runs/superpipeline/{board}/{run}/spans
@@ -148,7 +148,7 @@ Every error from `/v1` is one JSON object:
 | 400 | `invalid_run_ref` | a board or run id is malformed |
 | 400 | `invalid_attempt_id` | the attempt id is not `attempt_<id>` |
 | 400 | `invalid_limit` | `limit` is not a whole number of 1 or more |
-| 400 | `invalid_cursor` | `cursor` is not one superwitness issued |
+| 400 | `invalid_cursor` | `cursor` is not one SuperWitness issued |
 | 400 | `invalid_seq` | `seq_from` or `seq_to` is not a whole number of 0 or more |
 | 400 | `attempt_required` | a transcript of a run with several attempts names none |
 | 400 | `range_outside_attempt` | the transcript range is not inside the attempt |
@@ -180,10 +180,10 @@ Every error from `/v1` is one JSON object:
 | 403 | `source_not_allowed` | a run report for a source the reporter is not bound to |
 | 403 | `self_judgement` | a non-human judge's verdict on a run or attempt it executed |
 | 403 | `not_original_judge` | superseding someone else's verdict |
-| 404 | `run_not_found` | neither superpipeline nor the hub knows the run |
+| 404 | `run_not_found` | neither SuperPipeline nor the hub knows the run |
 | 404 | `attempt_not_found` | the hub does not know the attempt, or the run has no such attempt |
 | 404 | `session_not_found` | AgentPod holds no such session or step, or the attempt has no session |
-| 404 | `attempt_has_no_run` | the attempt was not dispatched from a superpipeline run |
+| 404 | `attempt_has_no_run` | the attempt was not dispatched from a SuperPipeline run |
 | 404 | `subject_not_found` | the verdict's run or attempt does not exist |
 | 404 | `rubric_not_found` | no such rubric version |
 | 404 | `not_found` | no such route |
@@ -200,13 +200,13 @@ Every error from `/v1` is one JSON object:
 | 422 | `supersedes_mismatch` | the correction names a different subject or standard |
 | 429 | `rate_limited` | over a [rate limit](/use/the-app/#rate-limits); `Retry-After` says when to retry |
 | 500 | `internal` | an unexpected failure |
-| 502 | `hub_refused` | AgentPod refused superwitness's credential for transcripts (its grant lacks `transcripts:read`) |
-| 502 | `<source>_unauthorized` | a source refused superwitness's credential |
+| 502 | `hub_refused` | AgentPod refused SuperWitness's credential for transcripts (its grant lacks `transcripts:read`) |
+| 502 | `<source>_unauthorized` | a source refused SuperWitness's credential |
 | 503 | `<source>_unavailable` | a source could not be reached or failed (retryable) |
 | 503 | `source_unavailable` | AgentPod could not be read for a transcript (retryable) |
 | 503 | `store_unavailable` | the database is unavailable (retryable) |
 | 503 | `principal_unresolved` | AgentPod could not say which principal a person's token names (retryable) |
-| 503 | `subject_unresolved` | superwitness could not confirm the subject or who executed it (retryable) |
+| 503 | `subject_unresolved` | SuperWitness could not confirm the subject or who executed it (retryable) |
 | 504 | `<source>_timeout` | a source did not answer in time (retryable) |
 
 `<source>` is the source a route depends on: `traces` for spans, `logs` for logs, and

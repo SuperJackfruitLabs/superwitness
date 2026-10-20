@@ -1,14 +1,14 @@
 ---
 title: Transcripts
-description: What an agent was asked, what it sent to each tool and what came back, read live from AgentPod, redacted, and never kept by superwitness.
+description: What an agent was asked, what it sent to each tool and what came back, read live from AgentPod, redacted, and never kept by SuperWitness.
 ---
 
 A run's spans say where and when something happened. A transcript says what: the prompt an
 attempt was given, what the agent sent to each tool, what came back, which permissions it asked
-for and how they were answered. superwitness reads it live from AgentPod's session events, the
+for and how they were answered. SuperWitness reads it live from AgentPod's session events, the
 source of truth, for one attempt at a time.
 
-**Content is evidence, never telemetry.** Traces and logs stay content-free. superwitness never
+**Content is evidence, never telemetry.** Traces and logs stay content-free. SuperWitness never
 stores a transcript, never logs one and never lets one be cached: every answer carries
 `Cache-Control: no-store`.
 
@@ -39,13 +39,13 @@ stores a transcript, never logs one and never lets one be cached: every answer c
 - A bearer token whose AgentPod-signed `scope` includes `transcripts:read`. Anyone else gets 403
   `transcripts_forbidden`, over HTTP and over MCP alike. `evidence:read` alone is not enough.
 
-superwitness itself reads AgentPod with its own service credential, whose grant must hold
+SuperWitness itself reads AgentPod with its own service credential, whose grant must hold
 `transcripts:read` beside `evidence:read`. Without it, transcript reads answer 502 `hub_refused`
 and everything else works as before.
 
 ## Redaction
 
-AgentPod redacts every string in a transcript before it leaves the hub; superwitness shows what
+AgentPod redacts every string in a transcript before it leaves the hub; SuperWitness shows what
 it receives. A redacted value reads `[redacted:<rule>]`, and each step and page says how many
 values were redacted. The rules are AgentPod's: the hub's own secrets, common credential formats
 (API keys, tokens, private keys, `Authorization` values, credentials in URLs), JSON keys whose
@@ -59,12 +59,12 @@ A field longer than 16 KiB arrives cut, as `{"truncated": true, "bytes": N, "hea
 
 Every read that reaches AgentPod leaves two records, neither holding content:
 
-- at AgentPod, an audit row naming superwitness, with the person or agent superwitness read for
-  in `on_behalf_of` (superwitness sends their `prn_` id as `X-On-Behalf-Of`);
-- in superwitness's log, one `transcript.read` line with `principal`, `via` (`session` or
+- at AgentPod, an audit row naming SuperWitness, with the person or agent SuperWitness read for
+  in `on_behalf_of` (SuperWitness sends their `prn_` id as `X-On-Behalf-Of`);
+- in SuperWitness's log, one `transcript.read` line with `principal`, `via` (`session` or
   `bearer`), `run`, `attempt`, `seq_from`, `seq_to`, `item`, `full`, and on success `items` and
   `redactions`; a refused read logs at WARN with its `code`.
-  A read superwitness itself refuses never reaches AgentPod, so it leaves only that WARN line.
+  A read SuperWitness itself refuses never reaches AgentPod, so it leaves only that WARN line.
 
 ## The API
 

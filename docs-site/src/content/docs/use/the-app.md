@@ -3,7 +3,7 @@ title: The app
 description: Signing in with AgentPod, browsing runs, reading a run and recording verdicts in the browser.
 ---
 
-superwitness serves a web app from the same binary and address as its API. People on an
+SuperWitness serves a web app from the same binary and address as its API. People on an
 allowlist sign in with their AgentPod account and can browse the runs sources have reported,
 read any run, record verdicts against rubrics and revise them. Agents and scripts keep using
 the [HTTP API](/build/api/) and the [MCP tools](/build/mcp/) with bearer tokens.
@@ -17,7 +17,7 @@ The app is off until someone is allowed to sign in. Four settings turn it on
 |---|---|
 | `SW_ALLOWED_PRINCIPALS` | comma-separated AgentPod principal ids (`prn_…`) who may sign in. Empty, nobody may, and the app is off. |
 | `SW_APP_CLIENT_ID` | the AgentPod OAuth client browsers sign in through. |
-| `SW_SESSION_SECRET_FILE` | a file holding at least 32 random bytes, readable by superwitness alone. It keys the short-lived cookie that carries a sign-in to AgentPod and back. |
+| `SW_SESSION_SECRET_FILE` | a file holding at least 32 random bytes, readable by SuperWitness alone. It keys the short-lived cookie that carries a sign-in to AgentPod and back. |
 | `SW_TRUSTED_PROXIES` | addresses or CIDR prefixes allowed to say who a client is with `CF-Connecting-IP`. Unset, it is this host's own addresses. |
 
 `SW_PUBLIC_URL` must be `https` when sign-in is on: the app's cookies are `Secure`, and a browser
@@ -30,14 +30,14 @@ sudo chmod 0600 /etc/superwitness/session-secret && sudo chown superwitness /etc
 ```
 
 At AgentPod, the OAuth client named by `SW_APP_CLIENT_ID` must list `{SW_PUBLIC_URL}/auth/callback`
-as a redirect URI and `SW_PUBLIC_URL` as an audience. superwitness also needs its own service
+as a redirect URI and `SW_PUBLIC_URL` as an audience. SuperWitness also needs its own service
 credential to hold `evidence:read`, as it already does to read attempts: it uses it to look up
 who signed in.
 
 ## Signing in
 
 **Sign in** sends the browser to AgentPod, which signs the person in if they are
-not already and sends them back to `/auth/callback` with a one-time code. superwitness trades
+not already and sends them back to `/auth/callback` with a one-time code. SuperWitness trades
 the code for a token server to server, with PKCE, checks the token, and looks up the AgentPod
 principal behind it. It then checks that the principal is a person, is not suspended, and is on
 `SW_ALLOWED_PRINCIPALS`. Anyone else, including other valid AgentPod accounts, agents and
@@ -51,20 +51,20 @@ OAuth client named by `SW_APP_CLIENT_ID` (the plane registers it with the redire
 `resource=SW_PUBLIC_URL`, and the authorize asks for `scope=openid offline_access`. The token's
 `sub` is the person's `prn_` id, checked against `SW_ALLOWED_PRINCIPALS` with no lookup. Three
 more refusal reasons apply: `product_not_enabled` (the person's workspace has not enabled
-superwitness), `issuer_unavailable` (the plane did not answer) and `no_refresh_token` (the plane
+SuperWitness), `issuer_unavailable` (the plane did not answer) and `no_refresh_token` (the plane
 issued no refresh token). The pages then name the plane's host instead of AgentPod.
 
 Under the plane the session holds the plane's refresh token, server side: it is encrypted in the
 database with a key derived from the session cookie, which the database never holds, and it never
-reaches the browser. That makes superwitness one of the person's connected apps at the plane, and
+reaches the browser. That makes SuperWitness one of the person's connected apps at the plane, and
 the session lives only as long as that grant:
 
 - when the plane's access token is past its five-minute life, the next request refreshes it with
   the stored refresh token and keeps the rotated one. Requests on one session share a single
   refresh. If the new refresh token cannot be saved, the request answers 503 and a retry within
   the plane's 30-second replay window gets the same answer back;
-- if the plane refuses the refresh (the person signed superwitness out at the plane, left the
-  workspace, or the workspace turned superwitness off), the session ends at that request and the
+- if the plane refuses the refresh (the person signed SuperWitness out at the plane, left the
+  workspace, or the workspace turned SuperWitness off), the session ends at that request and the
   app shows the sign-in screen (`auth.session_ended`, reason `grant_refused`);
 - if the plane cannot be reached, the session carries on, retrying every 30 seconds and logging
   `auth.refresh_unavailable`. It ends if the plane is still unreachable 10 minutes after the first
@@ -73,13 +73,13 @@ the session lives only as long as that grant:
   signing in again is silent while the plane's own session lasts.
 
 The sign-in itself rides on a signed `__Host-sw_login` cookie that lives ten minutes and is used
-once. A signed-in browser then holds a `__Host-sw_session` cookie and a superwitness session,
+once. A signed-in browser then holds a `__Host-sw_session` cookie and a SuperWitness session,
 never an AgentPod token. Over plain http (fake mode only) the cookies are `sw_login` and
 `sw_session`, without the `__Host-` prefix.
 
 - the session lasts at most 12 hours, and ends after 2 hours unused;
 - every request checks the allowlist again, so taking someone off it (and restarting
-  superwitness) ends their access at their next click;
+  SuperWitness) ends their access at their next click;
 - **Sign out** (`POST /auth/logout`) ends the session at once and clears the cookie. Under the
   plane it first revokes the session's refresh token at the plane's revocation endpoint (found
   through the plane's discovery document, and used only on the plane's own origin); a revocation
@@ -138,7 +138,7 @@ words, for example "You've already revised this verdict" when someone revised it
 
 ## Rate limits
 
-superwitness limits requests in its own process, by client address or by principal:
+SuperWitness limits requests in its own process, by client address or by principal:
 
 | What | Limit |
 |---|---|
@@ -152,13 +152,13 @@ connection's, unless the connection comes from `SW_TRUSTED_PROXIES`, in which ca
 
 ## Putting it on the internet
 
-superwitness serves the app, the API and `/mcp` on one address. To publish the app through a
-tunnel or a reverse proxy, point the proxy at superwitness from an address in
+SuperWitness serves the app, the API and `/mcp` on one address. To publish the app through a
+tunnel or a reverse proxy, point the proxy at SuperWitness from an address in
 `SW_TRUSTED_PROXIES` and have it set `CF-Connecting-IP`. A request that arrives that way, through
 the public edge, is answered 404 on `/mcp` before any authentication, so the MCP tools stay on
 your private network. Callers on the private network, which carry no `CF-Connecting-IP`, are
 unaffected. Set `SW_PUBLIC_URL` to the public https address, and
-add that address as an audience to every AgentPod client whose tokens call superwitness, before
+add that address as an audience to every AgentPod client whose tokens call SuperWitness, before
 you change it, so that tokens carry both the old and the new audience during the switch.
 
 ## When something is down
@@ -167,5 +167,5 @@ you change it, so that tokens carry both the old and the new audience during the
 |---|---|
 | AgentPod, during sign-in | "AgentPod sign-in is unavailable"; open sessions keep working |
 | a source | that run's tab says it is unavailable; the sidebar dot turns amber |
-| superwitness's database | "Can't reach the database" |
+| SuperWitness's database | "Can't reach the database" |
 | a link to a run no source knows | "Run not found" |

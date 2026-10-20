@@ -4,7 +4,7 @@ description: Recording a verdict, the standards it names, and why verdicts are a
 ---
 
 A verdict is a judgement about a run, an attempt or an eval case run, against a named standard.
-superwitness stores verdicts in its own Postgres and never changes one once it is written.
+SuperWitness stores verdicts in its own Postgres and never changes one once it is written.
 [Concepts](/concepts/#verdict) introduces them; this page is how to record them.
 
 ## Record a verdict
@@ -88,7 +88,7 @@ these forms is 422 `invalid_standard`:
 
 | Standard | Form |
 |---|---|
-| `rubric:<id>@<version>` | a rubric recorded in superwitness: id of letters, digits, `_`, `.` and `-`, up to 64; version a whole number from 1 |
+| `rubric:<id>@<version>` | a rubric recorded in SuperWitness: id of letters, digits, `_`, `.` and `-`, up to 64; version a whole number from 1 |
 | `stage:<key>` | a pipeline stage: key of letters, digits, `_`, `.` and `-`, up to 64 |
 | `case:<id>` | an eval case: id of letters, digits, `_`, `.` and `-`, up to 128 |
 
@@ -117,7 +117,7 @@ record the next version and judge against `rubric:press@2`.
 
 ### Rubric scales
 
-A rubric's scale is JSON. These shapes are recognised, and the superwitness app will offer an
+A rubric's scale is JSON. These shapes are recognised, and the SuperWitness app will offer an
 input for each:
 
 | Scale | Input | Value recorded |
@@ -135,13 +135,13 @@ warning, and `GET /v1/rubrics` shows its `recognised_scale` as `null`. `GET /v1/
 
 ## Subjects and who may judge them
 
-- A `run` or `attempt` subject must exist. superwitness checks with superpipeline and the
+- A `run` or `attempt` subject must exist. SuperWitness checks with SuperPipeline and the
   AgentPod hub; a subject neither knows is 404 `subject_not_found`, and one it cannot check is
   503 `subject_unresolved`.
 - An `eval_case_run` subject is not checked against any product.
 - **A non-human judge may not judge a run or attempt it executed**: 403 `self_judgement`. The
-  executors are the run's agent principal from superpipeline and each attempt's agent
-  principal from AgentPod. If superwitness cannot establish every one of them as a hub
+  executors are the run's agent principal from SuperPipeline and each attempt's agent
+  principal from AgentPod. If SuperWitness cannot establish every one of them as a hub
   principal, because a source did not answer or an executor is not mapped to a principal yet,
   a non-human verdict on that subject is 503 `subject_unresolved` rather than accepted on
   incomplete information.
@@ -184,7 +184,7 @@ The run document shows only the latest verdict in each chain.
 ## Retries and idempotency
 
 Every verdict carries an `idempotency_key`, and a key is used once across the whole store. Send
-the same request again with the same key, and superwitness returns the verdict it already
+the same request again with the same key, and SuperWitness returns the verdict it already
 stored, with 200 instead of 201, and writes nothing. Send a different verdict with a key that
 is already used, by you or anyone else, and it is 409 `idempotency_conflict`.
 

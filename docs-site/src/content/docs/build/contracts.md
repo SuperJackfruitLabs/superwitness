@@ -1,9 +1,9 @@
 ---
 title: Contracts
-description: The run document and verdict shapes superwitness returns, and the recorded payloads that pin what it reads from other products.
+description: The run document and verdict shapes SuperWitness returns, and the recorded payloads that pin what it reads from other products.
 ---
 
-This page lists every field superwitness returns in a run document and a verdict, and the
+This page lists every field SuperWitness returns in a run document and a verdict, and the
 payloads it reads from other products. [Concepts](/concepts/) explains what the fields mean;
 this page is the exact shape.
 
@@ -40,12 +40,12 @@ is always present:
 | `card` | `{"id", "title"}`, each a string or `"unknown"` |
 | `stage` | the run's stage key, or `"unknown"` |
 | `agent` | the executing agent's principal id (`prn_…`), or `"unknown"` |
-| `agent_ref` | superpipeline's own id for the agent, or `"unknown"` |
-| `state` | the run's outcome when superpipeline reports one, else its status; `"unknown"` when neither is known |
+| `agent_ref` | SuperPipeline's own id for the agent, or `"unknown"` |
+| `state` | the run's outcome when SuperPipeline reports one, else its status; `"unknown"` when neither is known |
 | `started_at` | RFC 3339 time in UTC, or `"unknown"` |
 | `ended_at` | RFC 3339 time; `null` while the run has not ended; `"unknown"` when no source could say |
 
-When superpipeline does not answer, `card.id`, `state`, `agent` and `started_at` come from the
+When SuperPipeline does not answer, `card.id`, `state`, `agent` and `started_at` come from the
 AgentPod ledger where it has them: the card id, the dispatch outcome, the first attempt's agent
 principal, and the earliest attempt's start.
 
@@ -85,17 +85,17 @@ Up to 50 error-level log lines, oldest first:
 
 ### `verdicts[]`
 
-Gates from superpipeline first, in superpipeline's order, then verdicts recorded in superwitness,
+Gates from SuperPipeline first, in SuperPipeline's order, then verdicts recorded in SuperWitness,
 oldest first. Of each recorded chain, only the latest verdict appears.
 
 | Field | Gate | Recorded verdict |
 |---|---|---|
-| `id` | superpipeline's gate id | `vrd_…` |
+| `id` | SuperPipeline's gate id | `vrd_…` |
 | `kind` | `gate` | `grader`, `review`, `eval` or `calibration` |
 | `source` | `superpipeline` | `superwitness` |
 | `subject` | the run's ref | the verdict's `subject_ref`: the run's ref, or an attempt id |
 | `value` | `{"decision": "<superpipeline's decision>"}`, or `{"decision": null}` when not decided | as recorded |
-| `judge` | the decider's principal id; superpipeline's own id for a decider it has not mapped; or `"unknown"` | the principal that recorded it |
+| `judge` | the decider's principal id; SuperPipeline's own id for a decider it has not mapped; or `"unknown"` | the principal that recorded it |
 | `judge_kind` | `human`, `agent`, `grader` or `unknown` | `human`, `agent` or `grader` |
 | `standard` | `stage:<key>` | as recorded |
 | `status` | `pending`, `resolved`, `cancelled` or `unknown` | left out |
@@ -104,7 +104,7 @@ oldest first. Of each recorded chain, only the latest verdict appears.
 | `run_id` | the run the gate was raised on, or `"unknown"` | left out |
 | `supersedes` | left out | the verdict it corrects; left out when none |
 
-A gate superpipeline reports as resolved but without a decision shows as `pending`.
+A gate SuperPipeline reports as resolved but without a decision shows as `pending`.
 
 ### `cost`
 
@@ -190,22 +190,22 @@ its tests. [Run registry API](/build/run-registry/) explains each field.
 
 The span fields that matter to a run document are `run.id`, `attempt.id` and the root span name
 `dispatch`. [Sending telemetry](/use/telemetry/#spans) covers them and the trace shape
-superwitness expects.
+SuperWitness expects.
 
-## What superwitness reads, pinned
+## What SuperWitness reads, pinned
 
-superwitness keeps a recorded example of each payload it reads from another product, in
+SuperWitness keeps a recorded example of each payload it reads from another product, in
 `internal/contracts/` in its repository. Its adapter tests decode them, and fake mode serves the
 development run from them:
 
 | File | The answer from |
 |---|---|
-| `superpipeline_evidence.json` | superpipeline's run evidence route: run, card, gates and usage |
+| `superpipeline_evidence.json` | SuperPipeline's run evidence route: run, card, gates and usage |
 | `hub_evidence_run.json` | the AgentPod hub's run evidence route: the ledger, attempts and fingerprints |
 | `hub_evidence_attempt.json` | the hub's attempt route: which run an attempt belongs to |
 | `hub_principal.json` | the hub's principal route: a principal's id and kind |
 | `jaeger_trace_hub.json` | VictoriaTraces' Jaeger API: a `dispatch`, `attempt` and `turn` trace from `agentpod-hub` |
 | `jaeger_trace_workers.json` | VictoriaTraces' Jaeger API: a span from `superpipeline-api` carrying `run.id` |
 
-[With AgentPod and superpipeline](/use/with-agentpod-and-superpipeline/) lists the routes these
+[With AgentPod and SuperPipeline](/use/with-agentpod-and-superpipeline/) lists the routes these
 come from.
