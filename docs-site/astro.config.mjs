@@ -7,7 +7,7 @@ export default defineConfig({
   site: 'https://docs.superwitness.dev',
   integrations: [
     starlight({
-      title: 'superwitness',
+      title: 'SuperWitness',
       description:
         'Observability and evaluation for agent fleets: what your agents did, how your products behaved, and whether the work was any good, joined on one run.',
       // /llms.txt, /llms-full.txt and /llms-small.txt, for agents reading these docs. The
@@ -15,19 +15,19 @@ export default defineConfig({
       // and <details> but keeps every page too, since nothing here is noise.
       plugins: [
         starlightLlmsTxt({
-          projectName: 'superwitness',
+          projectName: 'SuperWitness',
           description:
-            'superwitness is observability and evaluation for agent fleets: what your agents did, how ' +
+            'SuperWitness is observability and evaluation for agent fleets: what your agents did, how ' +
             'your products behaved while they did it, and whether the work was any good, joined on ' +
             'one run. A run document answers three questions: what did it do (the attempts, the agent ' +
             'configuration behind each, and their trace spans), how did the products run (the logs ' +
             "and errors that share the run's id or trace), and was it any good (gate decisions read " +
-            'from superpipeline and verdicts recorded in superwitness). It is a single Go binary and ' +
+            'from SuperPipeline and verdicts recorded in SuperWitness). It is a single Go binary and ' +
             'a Postgres database, self-hosted and MIT licensed, with an HTTP API and MCP tools for ' +
             'building on it.',
           optionalLinks: [
-            { label: 'superwitness', url: 'https://superwitness.dev', description: 'The product site.' },
-            { label: 'Source', url: 'https://github.com/SuperJackfruitLabs/superwitness', description: 'The superwitness repository on GitHub.' },
+            { label: 'SuperWitness', url: 'https://superwitness.dev', description: 'The product site.' },
+            { label: 'Source', url: 'https://github.com/SuperJackfruitLabs/superwitness', description: 'The SuperWitness repository on GitHub.' },
           ],
         }),
       ],
@@ -54,7 +54,7 @@ export default defineConfig({
         { tag: 'meta', attrs: { property: 'og:image', content: 'https://docs.superwitness.dev/og.png' } },
         { tag: 'meta', attrs: { property: 'og:image:width', content: '1200' } },
         { tag: 'meta', attrs: { property: 'og:image:height', content: '630' } },
-        { tag: 'meta', attrs: { property: 'og:image:alt', content: 'superwitness — every run, on the record' } },
+        { tag: 'meta', attrs: { property: 'og:image:alt', content: 'SuperWitness — every run, on the record' } },
         { tag: 'meta', attrs: { name: 'twitter:image', content: 'https://docs.superwitness.dev/og.png' } },
       ],
       social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/SuperJackfruitLabs/superwitness' }],
@@ -64,7 +64,7 @@ export default defineConfig({
         {
           label: 'Start',
           items: [
-            { label: 'What superwitness is', slug: 'what-it-is' },
+            { label: 'What SuperWitness is', slug: 'what-it-is' },
             { label: 'Install', slug: 'install' },
             { label: 'Concepts', slug: 'concepts' },
           ],
@@ -77,7 +77,7 @@ export default defineConfig({
             { label: 'Transcripts', slug: 'use/transcripts' },
             { label: 'Verdicts', slug: 'use/verdicts' },
             { label: 'Sending telemetry', slug: 'use/telemetry' },
-            { label: 'With AgentPod and superpipeline', slug: 'use/with-agentpod-and-superpipeline' },
+            { label: 'With AgentPod and SuperPipeline', slug: 'use/with-agentpod-and-superpipeline' },
             { label: 'Operations', slug: 'use/operations' },
             { label: 'Configuration', slug: 'use/configuration' },
           ],

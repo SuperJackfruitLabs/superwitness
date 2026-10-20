@@ -1,25 +1,25 @@
 ---
 title: Concepts
-description: Runs, attempts, configuration fingerprints, verdicts, sources and their statuses, and why superwitness says unknown rather than 0.
+description: Runs, attempts, configuration fingerprints, verdicts, sources and their statuses, and why SuperWitness says unknown rather than 0.
 ---
 
-The words below are the field names and values superwitness returns. The run document,
+The words below are the field names and values SuperWitness returns. The run document,
 `GET /v1/runs/superpipeline/{board}/{run}`, uses all of them.
 
 ## Run
 
-A **run** is one piece of work on a superpipeline board. It is addressed by its board and run
+A **run** is one piece of work on a SuperPipeline board. It is addressed by its board and run
 ids, and the document names it in `run.ref` as `superpipeline:<board>/<run>`, for example
 `superpipeline:brd_01/run_01`. Board and run ids are letters, digits, `_` and `-`, starting with
 a letter or digit, up to 128 characters.
 
 The `run` section carries the card it belongs to (`card.id`, `card.title`), its `stage`, its
 `state`, `started_at` and `ended_at`, and two agent fields: `agent` is the agent's principal id
-and `agent_ref` is superpipeline's own id for it. `ended_at` is `null` while the run has not
+and `agent_ref` is SuperPipeline's own id for it. `ended_at` is `null` while the run has not
 ended, and `"unknown"` when no source could say.
 
-superwitness owns none of this. It reads the run from superpipeline every time the document is
-asked for. When superpipeline cannot answer, the document falls back to what AgentPod's ledger
+SuperWitness owns none of this. It reads the run from SuperPipeline every time the document is
+asked for. When SuperPipeline cannot answer, the document falls back to what AgentPod's ledger
 knows about the run: the card id, the state, the agent and the start time. When neither knows
 the run, the request answers 404 `run_not_found`.
 
@@ -53,20 +53,20 @@ Every attempt carries the **fingerprint** of the configuration that ran it:
 | `skill_release` | the skill release installed |
 | `reported_by` | which component reported the fingerprint |
 
-The fingerprint is reported with the attempt by AgentPod; superwitness shows it as reported. A
+The fingerprint is reported with the attempt by AgentPod; SuperWitness shows it as reported. A
 field nobody reported reads `"unknown"`. It is what lets you ask whether a change of
 configuration changed the results.
 
 ## Verdict
 
-A **verdict** is a judgement about a subject, against a named standard. superwitness's own
+A **verdict** is a judgement about a subject, against a named standard. SuperWitness's own
 database holds verdicts, append-only. The run document shows two kinds side by side in
 `verdicts`:
 
-- **Gates** from superpipeline: `kind` is `gate`, `source` is `superpipeline` and `standard` is
+- **Gates** from SuperPipeline: `kind` is `gate`, `source` is `superpipeline` and `standard` is
   `stage:<key>`. A gate's `status` is `pending`, `resolved` or `cancelled`, or `unknown` when
-  superpipeline reports a status this release does not know; a decided gate's
-  value is `{"decision": …}`. superwitness shows gates and never stores them.
+  SuperPipeline reports a status this release does not know; a decided gate's
+  value is `{"decision": …}`. SuperWitness shows gates and never stores them.
 - **Recorded verdicts**, posted to `POST /v1/verdicts` or the `record_verdict` MCP tool. Their
   `kind` is `grader`, `review`, `eval` or `calibration`. Left out, it is `review` for a human
   judge and `grader` for anyone else.
@@ -85,7 +85,7 @@ Every verdict has:
   principal records one in this release. Only a human may judge a run or attempt they executed;
   any other judge that executed it is refused.
 - **A standard**, always versioned or keyed: `rubric:<id>@<version>` for a rubric that exists in
-  superwitness, `stage:<key>` for a pipeline stage, or `case:<id>` for an eval case.
+  SuperWitness, `stage:<key>` for a pipeline stage, or `case:<id>` for an eval case.
 
 A verdict is never edited. To correct one, its judge records a new verdict on the same subject
 and standard that names the old one in `supersedes`. The run document shows only the latest
@@ -103,7 +103,7 @@ answered:
 | `traces` | the run's spans and trace ids, from VictoriaTraces |
 | `logs` | the run's log count, from VictoriaLogs |
 | `errors` | the run's error-level log lines, from VictoriaLogs |
-| `verdicts` | recorded verdicts, from superwitness's own database |
+| `verdicts` | recorded verdicts, from SuperWitness's own database |
 
 Each source's status is one of:
 
@@ -113,7 +113,7 @@ Each source's status is one of:
 | `unavailable` | it could not be reached or failed |
 | `timeout` | it did not answer in time (`SW_SOURCE_TIMEOUT`, 2 s by default) |
 | `not_found` | it answered and does not know the run |
-| `unauthorized` | it refused superwitness's credentials |
+| `unauthorized` | it refused SuperWitness's credentials |
 
 A source that fails never fails the document. The rest of it still renders. The counts and text
 fields that source would have supplied read `"unknown"`, and the lists it would have filled
@@ -127,8 +127,8 @@ number a source supplied or the string `"unknown"` when it could not. It is neve
 spans were found and `"unknown"` otherwise, and for text fields, which read `"unknown"` rather
 than being empty.
 
-Cost follows the same rule. `cost.status` is `reported` when superpipeline reported token counts
-and spend, `unreported` when superpipeline answered without them, and `unknown` when it did not
+Cost follows the same rule. `cost.status` is `reported` when SuperPipeline reported token counts
+and spend, `unreported` when SuperPipeline answered without them, and `unknown` when it did not
 answer.
 
 ## Trace status

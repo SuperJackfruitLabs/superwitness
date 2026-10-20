@@ -1,9 +1,9 @@
 ---
 title: Licences
-description: The licences of superwitness and of everything it links or runs beside.
+description: The licences of SuperWitness and of everything it links or runs beside.
 ---
 
-superwitness is released under the [MIT licence](https://github.com/SuperJackfruitLabs/superwitness/blob/main/LICENSE).
+SuperWitness is released under the [MIT licence](https://github.com/SuperJackfruitLabs/superwitness/blob/main/LICENSE).
 
 ## What ships
 
@@ -36,7 +36,7 @@ superwitness.dev and this documentation site: they are not part of any release.
 
 ## The allowlist
 
-superwitness's CI checks the licence of every Go module it builds with, using `go-licenses`,
+SuperWitness's CI checks the licence of every Go module it builds with, using `go-licenses`,
 against an allowlist of permissive licences:
 
 - MIT
@@ -53,8 +53,8 @@ is anything under a source-available licence such as ELv2, BSL, FSL or SSPL.
 
 ## What runs beside it
 
-The telemetry engines are not part of superwitness. They are separate upstream programs that
-you install and run as released, and superwitness only calls their published APIs over HTTP.
+The telemetry engines are not part of SuperWitness. They are separate upstream programs that
+you install and run as released, and SuperWitness only calls their published APIs over HTTP.
 This release queries VictoriaTraces and VictoriaLogs, fed by the OpenTelemetry Collector. Each
 is under its own licence:
 
@@ -64,6 +64,6 @@ is under its own licence:
 | [VictoriaLogs](https://github.com/VictoriaMetrics/VictoriaLogs) | Apache-2.0 |
 | [OpenTelemetry Collector](https://github.com/open-telemetry/opentelemetry-collector) | Apache-2.0 |
 
-superwitness is designed to sit beside [VictoriaMetrics](https://github.com/VictoriaMetrics/VictoriaMetrics)
+SuperWitness is designed to sit beside [VictoriaMetrics](https://github.com/VictoriaMetrics/VictoriaMetrics)
 and [Perses](https://github.com/perses/perses) (both Apache-2.0) the same way, but this release
 does not use them.

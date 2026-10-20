@@ -41,7 +41,7 @@ const SITE = 'https://superwitness.dev';
 const DOCS = 'https://docs.superwitness.dev';
 const REPO = 'https://github.com/SuperJackfruitLabs/superwitness';
 const VERSION = 'v0.0.8'; // the latest release tag; bump with each release
-const TITLE = 'superwitness — every run, on the record';
+const TITLE = 'SuperWitness — every run, on the record';
 const DESCRIPTION =
   'What your agents did, how your products behaved while they did it, and whether the work was any good, joined on one run. Self-hosted, MIT.';
 
@@ -349,9 +349,9 @@ const install = [
   <body>
     <header>
       <div class="wrap">
-        <a class="brand" href="/" aria-label="superwitness home">
+        <a class="brand" href="/" aria-label="SuperWitness home">
           <Mark size={28} />
-          <span class="name">superwitness</span>
+          <span class="name">SuperWitness</span>
         </a>
         <nav aria-label="Primary">
           <a href={DOCS}>Docs</a>
@@ -427,7 +427,7 @@ const install = [
             <h2 id="t">Telemetry and evidence are different things</h2>
             <p class="sub">
               Telemetry is sampled, lossy and short-lived. Verdicts are append-only and never lost.
-              superwitness keeps them in separate stores and never treats one as the other.
+              SuperWitness keeps them in separate stores and never treats one as the other.
             </p>
           </div>
           <table class="compare">
@@ -436,7 +436,7 @@ const install = [
             </thead>
             <tbody>
               <tr><th scope="row">loss</th><td>Expected: sampled, short retention</td><td class="never">Never</td></tr>
-              <tr><th scope="row">where</th><td>Upstream engines</td><td>superwitness's own database</td></tr>
+              <tr><th scope="row">where</th><td>Upstream engines</td><td>SuperWitness's own database</td></tr>
             </tbody>
           </table>
         </div>
@@ -455,7 +455,7 @@ const install = [
               </div>
             </div>
           </div>
-          <figure class="fall" aria-label="A trace waterfall: superpipeline, hub dispatch, attempt, turn and tool, node-agent, and the gate review, all sharing one run id">
+          <figure class="fall" aria-label="A trace waterfall: SuperPipeline, hub dispatch, attempt, turn and tool, node-agent, and the gate review, all sharing one run id">
             {lanes.map((l) => (
               <div class="lane" data-depth={l.depth}>
                 <span class="lname">{l.name}</span>
@@ -482,7 +482,7 @@ const install = [
           <h2 id="e">Standing on engines you'd pick anyway</h2>
           <p class="sub">
             VictoriaLogs, VictoriaTraces and the OpenTelemetry Collector: upstream, unforked,
-            permissively licensed. superwitness adds the run, the join and the verdicts. Designed
+            permissively licensed. SuperWitness adds the run, the join and the verdicts. Designed
             to sit beside VictoriaMetrics and Perses the same way.
           </p>
         </div>
@@ -515,10 +515,10 @@ const install = [
           <a href={DOCS}>Documentation</a>
           <a href={REPO}>GitHub</a>
           <a href="https://agentpod.dev">AgentPod</a>
-          <a href="https://superpipeline.dev">superpipeline</a>
-          <a href="https://supermessage.dev">supermessage</a>
+          <a href="https://superpipeline.dev">SuperPipeline</a>
+          <a href="https://supermessage.dev">SuperMessage</a>
         </span>
-        <span class="colophon"><Mark size={16} /> superwitness · self-hosted · MIT</span>
+        <span class="colophon"><Mark size={16} /> SuperWitness · self-hosted · MIT</span>
       </div>
     </footer>
   </body>

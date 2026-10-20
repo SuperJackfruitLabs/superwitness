@@ -1,18 +1,18 @@
 ---
-title: With AgentPod and superpipeline
-description: What superwitness reads from AgentPod and superpipeline, how it authenticates to them, and the tokens its own callers present.
+title: With AgentPod and SuperPipeline
+description: What SuperWitness reads from AgentPod and SuperPipeline, how it authenticates to them, and the tokens its own callers present.
 ---
 
-In this release a run document is for a superpipeline run, with its attempts read from the
-AgentPod hub. superwitness reads both products over their APIs, as a service principal of the
+In this release a run document is for a SuperPipeline run, with its attempts read from the
+AgentPod hub. SuperWitness reads both products over their APIs, as a service principal of the
 AgentPod hub, and owns none of what it reads.
 
-Neither product requires superwitness. They send plain OTLP to the collector and never wait on
-superwitness, and superwitness only ever reads from them.
+Neither product requires SuperWitness. They send plain OTLP to the collector and never wait on
+SuperWitness, and SuperWitness only ever reads from them.
 
 ## The service credential
 
-superwitness authenticates to both products with one AgentPod service credential:
+SuperWitness authenticates to both products with one AgentPod service credential:
 
 | Setting | Holds |
 |---|---|
@@ -20,24 +20,24 @@ superwitness authenticates to both products with one AgentPod service credential
 | `SW_HUB_CLIENT_ID` | the credential's id, `svc_…` |
 | `SW_HUB_CLIENT_SECRET_FILE` | a file holding the credential's secret alone, readable by its owner only |
 
-Create the credential at the hub as a service principal for superwitness with the
-`evidence:read` scope. superwitness refuses to start if the secret file is empty, or readable by
+Create the credential at the hub as a service principal for SuperWitness with the
+`evidence:read` scope. SuperWitness refuses to start if the secret file is empty, or readable by
 group or others.
 
-To read, superwitness exchanges the credential for a short-lived token:
+To read, SuperWitness exchanges the credential for a short-lived token:
 
 ```
 POST {SW_HUB_URL}/api/auth/service-token
 Authorization: Bearer <SW_HUB_CLIENT_ID>:<secret>
 ```
 
-The hub answers `{"token": …, "expiresIn": <seconds>}`. superwitness keeps the token until 30
+The hub answers `{"token": …, "expiresIn": <seconds>}`. SuperWitness keeps the token until 30
 seconds before it expires, and uses the same token for every request to the hub and to
-superpipeline. If the hub refuses the credential (400, 401 or 403), the sources that need it
-report `unauthorized`. If a product answers 401 or 403, superwitness drops the token and
+SuperPipeline. If the hub refuses the credential (400, 401 or 403), the sources that need it
+report `unauthorized`. If a product answers 401 or 403, SuperWitness drops the token and
 exchanges again on the next read.
 
-## What superwitness reads from AgentPod
+## What SuperWitness reads from AgentPod
 
 From the hub at `SW_HUB_URL`, with the service token:
 
@@ -53,9 +53,9 @@ callers present (below).
 
 A run the ledger knows on a different board from the one asked for counts as not found.
 
-## What superwitness reads from superpipeline
+## What SuperWitness reads from SuperPipeline
 
-From superpipeline at `SW_SUPERPIPELINE_URL`, for example `https://app.superpipeline.dev`, with
+From SuperPipeline at `SW_SUPERPIPELINE_URL`, for example `https://app.superpipeline.dev`, with
 the same service token:
 
 | Request | For |
@@ -63,7 +63,7 @@ the same service token:
 | `GET {SW_SUPERPIPELINE_URL}/v1/boards/{board}/runs/{run}/evidence` | the run, its card, stage and state, its agent, its gates, and its usage |
 | `GET /health` | `/health`'s `superpipeline` status (no token) |
 
-When superpipeline cannot answer, the run document falls back to what the AgentPod ledger knows
+When SuperPipeline cannot answer, the run document falls back to what the AgentPod ledger knows
 about the run ([Concepts](/concepts/#run)).
 
 ## How answers become statuses
@@ -80,12 +80,12 @@ For both products:
 | an answer about a different run | `unavailable` |
 
 The product's not-found error is `{"error": "not_found"}` from the hub, and an error whose
-`code` is `RUN_NOT_FOUND` or `BOARD_NOT_FOUND` from superpipeline. A bare 404, such as a route
+`code` is `RUN_NOT_FOUND` or `BOARD_NOT_FOUND` from SuperPipeline. A bare 404, such as a route
 that is not deployed, is `unavailable`, so a missing route never reads as a missing run.
 
 ## Tokens callers present
 
-Every `/v1` route and `/mcp` take a bearer token issued by the same AgentPod hub. superwitness
+Every `/v1` route and `/mcp` take a bearer token issued by the same AgentPod hub. SuperWitness
 verifies it offline, against the keys from `{SW_HUB_URL}/api/auth/jwks`, and accepts it only
 when:
 
@@ -99,23 +99,23 @@ when:
 
 Both URLs are compared as configured, less any trailing `/`.
 
-If the token has a `scope` claim, superwitness reads it as a space-separated list. Only
+If the token has a `scope` claim, SuperWitness reads it as a space-separated list. Only
 `POST /v1/runs` needs a scope today: `runs:write`, from a service principal
 ([Run registry API](/build/run-registry/#who-may-report)). A `scope` claim that is not a string
 makes the token invalid.
 
 Under the organization plane (`SW_ORG_PLANE_ISSUER` set), the issuer is that exact value, the
 keys come from `SW_ORG_PLANE_JWKS_URL`, `sub` must be a `prn_` id, and `org` and `ent` must be
-present in place of `tenant`. superwitness reads `scope` only from agent and service tokens. A
+present in place of `tenant`. SuperWitness reads `scope` only from agent and service tokens. A
 token whose `ent` claim lacks `superwitness` is answered
 `403 {"error":"product_not_enabled","org":"org_…"}`.
 
-Every such principal is admitted; which principals can get a token for superwitness's audience
+Every such principal is admitted; which principals can get a token for SuperWitness's audience
 is decided at the hub. The principal kind decides how its verdicts are recorded: their
 `judge_kind`, their default `kind`, and whether it may judge work it executed
 ([Verdicts](/use/verdicts/#subjects-and-who-may-judge-them)).
 
-superwitness keeps the hub's keys for 10 minutes. A token with an unknown key id makes it fetch
+SuperWitness keeps the hub's keys for 10 minutes. A token with an unknown key id makes it fetch
 the keys again, at most once every 10 seconds. If the hub cannot be reached, keys it already
 holds keep working.
 
@@ -128,6 +128,6 @@ A missing or refused token is 401 `unauthenticated`, with
 
 With no token at all, the message is `a bearer token is required`.
 
-In fake mode (`SW_FAKE_SOURCES=1`) none of this applies: superwitness reads no product and
+In fake mode (`SW_FAKE_SOURCES=1`) none of this applies: SuperWitness reads no product and
 accepts development tokens of the form `dev:<principal>:<human|agent|service>` instead
 ([Install](/install/#try-it-without-the-other-products)).

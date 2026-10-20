@@ -1,11 +1,11 @@
 ---
 title: Sending telemetry
-description: Which spans and log lines superwitness finds for a run, the trace conventions it relies on, and the telemetry it sends about itself.
+description: Which spans and log lines SuperWitness finds for a run, the trace conventions it relies on, and the telemetry it sends about itself.
 ---
 
-superwitness does not receive telemetry. Products send OTLP to the OpenTelemetry Collector,
+SuperWitness does not receive telemetry. Products send OTLP to the OpenTelemetry Collector,
 which writes spans to VictoriaTraces and logs to VictoriaLogs ([Install](/install/#the-telemetry-engines)
-has a minimal configuration). When a run is read, superwitness queries both engines through their
+has a minimal configuration). When a run is read, SuperWitness queries both engines through their
 published query APIs and keeps nothing. This page is what it looks for, so you know what to send.
 
 Both engines are searched over the last 7 days, and older telemetry is not found. A run whose
@@ -13,7 +13,7 @@ spans are not found has trace status `none`, which is not an error.
 
 ## Spans
 
-superwitness reads spans from VictoriaTraces' Jaeger-compatible API, with one request for each
+SuperWitness reads spans from VictoriaTraces' Jaeger-compatible API, with one request for each
 of these services:
 
 - `agentpod-hub`
@@ -24,14 +24,14 @@ of these services:
 GET /select/jaeger/api/traces?service=<service>&tags={"run.id":"<run>"}&start=<µs>&end=<µs>&limit=100
 ```
 
-So spans are found through the **`run.id` attribute**, which holds the superpipeline run id
+So spans are found through the **`run.id` attribute**, which holds the SuperPipeline run id
 (`run_01`, not the full ref), on a span from one of those three services. Each request returns
 up to 100 traces, and every span of those traces is listed, including spans without `run.id` of
 their own. A span that appears in more than one answer is listed once. A trace is found only
 through a span from one of these three services; spans from any other service appear only when
 they share a trace with one.
 
-From the spans it finds, superwitness uses:
+From the spans it finds, SuperWitness uses:
 
 | What | Used for |
 |---|---|
@@ -41,11 +41,11 @@ From the spans it finds, superwitness uses:
 | a span named `dispatch` with no parent | `trace.status` is `joined` when every span found is in one trace that has this root |
 
 If any of the three requests fails, the traces source reports the worst status among them, and
-superwitness uses none of the answers rather than some of them.
+SuperWitness uses none of the answers rather than some of them.
 
-### The trace shape superwitness expects
+### The trace shape SuperWitness expects
 
-superwitness's contract fixtures pin the trace it is built to read, with these spans from
+SuperWitness's contract fixtures pin the trace it is built to read, with these spans from
 `agentpod-hub`:
 
 - a root span **`dispatch`**, carrying `run.id`, `board.id`, `card.id` and `external.source`;
@@ -57,7 +57,7 @@ superwitness's contract fixtures pin the trace it is built to read, with these s
 ### Trace context between products
 
 For a run to land in one trace, each hop must continue the caller's trace context. This is the
-convention AgentPod and superpipeline follow. They carry the context; superwitness only reads
+convention AgentPod and SuperPipeline follow. They carry the context; SuperWitness only reads
 the trace that results:
 
 | Hop | Where the context travels |
@@ -66,19 +66,19 @@ the trace that results:
 | AgentPod's hub to its node-agent, over WebSocket | `_meta.traceparent` on each request message |
 | node-agent to the agent harness, over ACP | `traceparent` in `_meta` on `session/new` and `session/prompt` |
 
-superwitness does not send or read `_meta` itself. When a hop does not continue the trace, the
-run's spans arrive in more than one trace. superwitness still finds them through `run.id`, lists
+SuperWitness does not send or read `_meta` itself. When a hop does not continue the trace, the
+run's spans arrive in more than one trace. SuperWitness still finds them through `run.id`, lists
 every trace id, and reports `trace.status` as `partial` instead of `joined`.
 
 ## Log lines
 
-superwitness reads logs from VictoriaLogs with LogsQL (`POST /select/logsql/query`). A line
+SuperWitness reads logs from VictoriaLogs with LogsQL (`POST /select/logsql/query`). A line
 belongs to a run when either:
 
 - its `run.id` field equals the run id; or
 - its `trace_id` field is one of the run's trace ids, found as above.
 
-Lines from any service match; there is no service list for logs. The fields superwitness reads
+Lines from any service match; there is no service list for logs. The fields SuperWitness reads
 from each line:
 
 | Field | Becomes |
@@ -113,10 +113,10 @@ that holds it, and telemetry points at it instead: the `attempt` and `turn` span
 rule: their `evidence_refs` are span ids or `{session_id, seq_from, seq_to}` ranges, never the
 evidence.
 
-## superwitness's own telemetry
+## SuperWitness's own telemetry
 
 Set `SW_OTLP_ENDPOINT` to the collector's OTLP/HTTP address, for example
-`http://127.0.0.1:4318`, and superwitness sends its own:
+`http://127.0.0.1:4318`, and SuperWitness sends its own:
 
 - **traces**, on the standard OTLP/HTTP traces path under that endpoint: spans for the HTTP
   requests it serves and the HTTP requests it makes to the products and engines;
@@ -131,9 +131,9 @@ exactly two attributes: `source` (`superpipeline`, `agentpod`, `traces`, `logs` 
 station or fingerprint id is ever a label. Alert on `unavailable`, `timeout` and
 `unauthorized` to see a source failing; `not_found` only means a source did not know a run.
 
-superwitness propagates W3C trace context, so its spans for a request join the caller's trace
+SuperWitness propagates W3C trace context, so its spans for a request join the caller's trace
 when the request carries `traceparent`. Its exporters drop data rather than block: the span
 queue holds 2048 spans. Left unset, `SW_OTLP_ENDPOINT` sends nothing.
 
-superwitness also writes JSON logs to standard output: startup, migration retries, and a warning
+SuperWitness also writes JSON logs to standard output: startup, migration retries, and a warning
 naming any source that refused its credential.

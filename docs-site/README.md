@@ -1,4 +1,4 @@
-# superwitness docs site
+# SuperWitness docs site
 
 The user-facing documentation published at `docs.superwitness.dev`. Astro + Starlight.
 

@@ -25,7 +25,7 @@ curl -H 'Authorization: Bearer <token>' \
 
 `GET /v1/runs/superpipeline/{board}/{run}` returns the run document. Board and run ids are
 letters, digits, `_` and `-`, starting with a letter or digit, up to 128 characters; anything
-else is 400 `invalid_run_ref`. The answer is 404 `run_not_found` only when superpipeline and the
+else is 400 `invalid_run_ref`. The answer is 404 `run_not_found` only when SuperPipeline and the
 AgentPod hub both answer that they do not know the run. Any other failure of a source is a 200
 with that source's status in `sources`.
 
@@ -51,7 +51,7 @@ Location: /v1/runs/superpipeline/brd_01/run_01
 
 An attempt id is `attempt_<id>`; anything else is 400 `invalid_attempt_id`. The hub not knowing
 the attempt is 404 `attempt_not_found`, and an attempt that was not dispatched from a
-superpipeline run is 404 `attempt_has_no_run`.
+SuperPipeline run is 404 `attempt_has_no_run`.
 
 ## Spans, one page at a time
 
@@ -110,7 +110,7 @@ oldest first:
   when the line has none.
 - `next_cursor` is `null` on the last page.
 - A line belongs to the run when it carries the run's id, or one of the run's trace ids. To
-  know the trace ids, superwitness first reads the run's spans; `trace_join` is the traces
+  know the trace ids, SuperWitness first reads the run's spans; `trace_join` is the traces
   source's status for that read. When it is not `ok`, lines were matched by run id alone.
 
 ## Paging
@@ -120,7 +120,7 @@ Both lists page the same way:
 - `limit` is the page size. Left out, it is 100; above 500, it is 500. Anything that is not a
   whole number of at least 1 is 400 `invalid_limit`.
 - `cursor` is the `next_cursor` from the previous page. Treat it as opaque. A cursor
-  superwitness did not issue is 400 `invalid_cursor`.
+  SuperWitness did not issue is 400 `invalid_cursor`.
 
 If the engine behind a list cannot answer, the request fails rather than returning an empty
 page: `traces_unavailable` or `logs_unavailable` (503), `traces_timeout` or `logs_timeout` (504),

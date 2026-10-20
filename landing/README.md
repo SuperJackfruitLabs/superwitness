@@ -1,4 +1,4 @@
-# superwitness landing page
+# SuperWitness landing page
 
 The public page at `superwitness.dev`. Astro, one page and a 404, no framework, no scripts.
 
@@ -34,7 +34,7 @@ not share a dependency tree with it, so `landing/` has its own `package.json` an
 
 ## What is deliberate about the page
 
-**The hero is a run document**, not a headline over a gradient: the one thing superwitness does is
+**The hero is a run document**, not a headline over a gradient: the one thing SuperWitness does is
 join what an agent did, how the products behaved and how the work was judged into one record, so
 the page shows that record.
 
@@ -67,5 +67,5 @@ both.
 
 The link preview is rendered from `og/` — see the README there.
 
-**No analytics, no scripts, no sign-in.** There is nothing to sign in to: superwitness is
+**No analytics, no scripts, no sign-in.** There is nothing to sign in to: SuperWitness is
 self-hosted. The page says only what ships today.

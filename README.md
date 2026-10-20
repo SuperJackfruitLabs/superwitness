@@ -1,4 +1,4 @@
-# superwitness
+# SuperWitness
 
 [![CI](https://github.com/SuperJackfruitLabs/superwitness/actions/workflows/ci.yml/badge.svg)](https://github.com/SuperJackfruitLabs/superwitness/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/SuperJackfruitLabs/superwitness)](https://github.com/SuperJackfruitLabs/superwitness/releases)
@@ -10,20 +10,20 @@ one run.
 
 **Website:** [superwitness.dev](https://superwitness.dev) · **Docs:** [docs.superwitness.dev](https://docs.superwitness.dev) · **History:** [how it was built](docs/history.md)
 
-superwitness is part of a family of self-hosted tools for working with agents.
+SuperWitness is part of a family of self-hosted tools for working with agents.
 [AgentPod](https://github.com/SuperJackfruitLabs/agentpod) manages the machines and runtimes
-agents live in; [superpipeline](https://github.com/SuperJackfruitLabs/superpipeline) owns boards,
-cards, runs and approval gates; [supermessage](https://github.com/SuperJackfruitLabs/supermessage)
-is the Matrix client that puts agents in the conversation. superwitness records what happened and
+agents live in; [SuperPipeline](https://github.com/SuperJackfruitLabs/superpipeline) owns boards,
+cards, runs and approval gates; [SuperMessage](https://github.com/SuperJackfruitLabs/supermessage)
+is the Matrix client that puts agents in the conversation. SuperWitness records what happened and
 whether it was any good.
 
-> **Status: v0.0.8** ([changelog](CHANGELOG.md)). Run documents cover superpipeline runs, with attempts read from the
+> **Status: v0.0.8** ([changelog](CHANGELOG.md)). Run documents cover SuperPipeline runs, with attempts read from the
 > AgentPod hub, and a run registry lists the runs sources report; a web app reads and judges them. To try it without either product, `SW_FAKE_SOURCES=1` serves one development run
 > on loopback.
 
 ## What it is for
 
-Generic observability tools stop at a trace. superwitness goes one step further:
+Generic observability tools stop at a trace. SuperWitness goes one step further:
 from a trace to the run it belongs to, the attempts that executed it, the agent
 configuration that ran it, and the verdicts that judged it. That is what turns
 "did this configuration get better?" into a question you can answer.
@@ -34,21 +34,21 @@ It handles two kinds of data and keeps them apart:
 |---|---|---|
 | What | Traces, metrics, logs | Grader scores, offline eval results, calibration runs, configuration comparisons |
 | Loss | Expected: sampled, short retention | Never |
-| Where | Upstream engines (below) | superwitness's own database |
+| Where | Upstream engines (below) | SuperWitness's own database |
 
 Evidence that belongs to another product, such as a work run, a gate decision or
-a transcript, stays in that product. superwitness reads it through that
+a transcript, stays in that product. SuperWitness reads it through that
 product's API and never becomes its owner.
 
 ## Rules this repository keeps
 
 1. **Meant to stand alone.** The design rule is that no other SuperJackfruit product
    should be required, so that anyone's agents can send OTLP and record verdicts. This
-   release is not there yet: it reads runs from superpipeline and attempts from AgentPod,
+   release is not there yet: it reads runs from SuperPipeline and attempts from AgentPod,
    and without them it runs only in fake mode (`SW_FAKE_SOURCES=1`).
 2. **Nothing requires it.** Products send plain OTLP and never wait on
-   superwitness.
-3. **Upstream engines, unforked.** superwitness queries VictoriaTraces and
+   SuperWitness.
+3. **Upstream engines, unforked.** SuperWitness queries VictoriaTraces and
    VictoriaLogs, fed by the OpenTelemetry Collector, through their published query
    APIs only. It is designed to sit beside VictoriaMetrics and Perses the same way:
    upstream releases, run as released, never forked.
@@ -77,12 +77,12 @@ program at either name, and refuses a download it cannot verify. `VERSION=v0.0.8
 
 `superwitness skill` prints an operations skill for agents (what each command does and which ones change data); `suwi skill install` writes it to `~/.claude/skills`, and `SKILL_DIR=<dir>` on the installer does the same. Needs v0.0.7 or later.
 
-superwitness is a server. The installer sets up no service, writes no configuration and starts
+SuperWitness is a server. The installer sets up no service, writes no configuration and starts
 nothing; for running it as a server see [Deploying](#deploying) and `deploy/`.
 
 The installer and the macOS builds are published from v0.0.7 on; v0.0.6 and earlier have neither.
 
-## Running superwitness
+## Running SuperWitness
 
 ```bash
 make build
@@ -156,13 +156,13 @@ Rubrics are append-only: `superwitness rubric-add -id press -version 1 -name Pre
 The [install guide](https://docs.superwitness.dev/install/) covers one Linux host with systemd:
 the binary at `/usr/local/bin/superwitness`, `deploy/superwitness.service`, settings in
 `/etc/superwitness/env` from `deploy/env.example`, the AgentPod service credential's secret in
-`/etc/superwitness/hub-client-secret` (0600, the secret alone), and superwitness's own Postgres.
+`/etc/superwitness/hub-client-secret` (0600, the secret alone), and SuperWitness's own Postgres.
 
 ### Two database roles
 
 Verdicts are append-only: triggers refuse `UPDATE`, `DELETE` and `TRUNCATE` on `verdicts` and
 `rubrics`. A table's owner can disable or drop those triggers, so the running service must not
-own the tables. superwitness takes two DSNs:
+own the tables. SuperWitness takes two DSNs:
 
 - `SW_MIGRATE_DATABASE_URL` connects as `superwitness_owner`, which owns the database and the
   tables. It is used only to run migrations.
@@ -170,7 +170,7 @@ own the tables. superwitness takes two DSNs:
   verdicts and rubrics, insert, read and update registry runs, and nothing else.
 
 If `SW_MIGRATE_DATABASE_URL` is unset, migrations run over `SW_DATABASE_URL`, which must then
-be the owner. That suits development only. superwitness never logs either DSN.
+be the owner. That suits development only. SuperWitness never logs either DSN.
 
 The split stops SQL-level misuse through the runtime pool, not a compromised process: when
 `SW_MIGRATE_DATABASE_URL` sits in the service env, the running process holds the owner
@@ -250,13 +250,13 @@ over `SW_DATABASE_URL`.
 `superwitness serve` connects its runtime pool with `SW_DATABASE_URL` only. It starts serving
 at once and runs its migrations in the background over the migrate DSN, retrying with backoff (1 s doubling to 30 s) while its Postgres is unreachable. Until they succeed, run documents show `sources.verdicts: unavailable`, `POST /v1/verdicts` returns 503 `store_unavailable` (retryable) and `/health` reports `verdicts: unavailable`.
 
-`/health` stays 200 when a source is down, so an outside monitor can tell "superwitness is down"
+`/health` stays 200 when a source is down, so an outside monitor can tell "SuperWitness is down"
 from "a source is down". A source outage shows in its body (`sources.<name>`) and in the
 `superwitness.source.fetches{source,status}` metric, which an alerting rule can watch.
 
 ## Engine queries
 
-superwitness uses only the engines' published query APIs. Lookback is 7 days.
+SuperWitness uses only the engines' published query APIs. Lookback is 7 days.
 
 - **VictoriaTraces** (Jaeger API), one request per service (`agentpod-hub`,
   `agentpod-node-agent`, `superpipeline-api`):
