@@ -2,7 +2,7 @@
 /**
  * superwitness.dev — the public page.
  *
- * One page, no framework, no scripts. Its job is to explain the product to somebody who
+ * One page, no framework; one small script, the theme toggle. Its job is to explain the product to somebody who
  * typed the domain, and then send them to the docs or the source. There is no app to sign
  * in to: superwitness is self-hosted, so the page sells nothing it cannot hand over.
  *
@@ -27,7 +27,7 @@
  *   sources       sources map: superpipeline, agentpod, traces, logs, errors, verdicts → "ok"
  *                 (internal/source/source.go names; verdicts is the store's own key)
  * The waterfall's "configuration" row names attempts[].fingerprint's fields: harness, model,
- * profile, skill_release, digest. The MCP tool names are internal/mcp's.
+ * profile, skill_release, digest. The MCP tool names are read from internal/mcp/server.go.
  * If any of these change, this page is wrong.
  *
  * Colours and faces are listed once, in `:root` below; docs-site/src/styles/theme.css uses
@@ -36,17 +36,27 @@
  */
 import Mark from '../components/Mark.astro';
 import ShareMeta from '../components/ShareMeta.astro';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 const SITE = 'https://superwitness.dev';
 const DOCS = 'https://docs.superwitness.dev';
 const REPO = 'https://github.com/SuperJackfruitLabs/superwitness';
-const VERSION = 'v0.0.8'; // the latest release tag; bump with each release
+// The one hand-typed version on this page: the latest release tag. Bump with each release.
+const VERSION = 'v0.0.8';
 const TITLE = 'SuperWitness — every run, on the record';
 const DESCRIPTION =
-  'What your agents did, how your products behaved while they did it, and whether the work was any good, joined on one run. Self-hosted, MIT.';
+  'Self-hosted run evidence for agent work: a SuperPipeline run, its AgentPod attempts, spans, logs and verdicts joined into one document. MIT.';
 
-// The waterfall: one run.id across three products. Offsets and widths are percentages of
-// the run's duration — illustrative, the shape hero-visual option B settled on.
+// The MCP tool list is read from the server that registers the tools, at build time, so
+// this page cannot name a tool the code does not have, or miss one it does. The build
+// runs in landing/, so the Go source is one directory up.
+const mcpSource = readFileSync(resolve(process.cwd(), '../internal/mcp/server.go'), 'utf8');
+const tools = [...mcpSource.matchAll(/sdk\.AddTool\(s,\s*&sdk\.Tool\{Name:\s*"([a-z_]+)"/g)].map((m) => m[1]);
+if (tools.length === 0) throw new Error('landing: found no MCP tools in internal/mcp/server.go');
+
+// The waterfall: one run.id across products. Offsets and widths are percentages of
+// the run's duration, illustrative.
 const lanes = [
   { name: 'superpipeline', depth: 0, from: 0, width: 30, tone: 'marigold' },
   { name: 'hub · dispatch', depth: 0, from: 4, width: 92, tone: 'cyan' },
@@ -56,12 +66,13 @@ const lanes = [
   { name: 'gate · review', depth: 0, from: 84, width: 14, tone: 'jade' },
 ];
 
-// Must equal the commands on the docs site's install page.
-const install = [
-  `curl -LO ${REPO}/releases/download/v0.0.8/superwitness_0.0.8_linux_amd64.tar.gz`,
-  `curl -LO ${REPO}/releases/download/v0.0.8/SHA256SUMS`,
-  'sha256sum --ignore-missing -c SHA256SUMS',
-  'tar xzf superwitness_0.0.8_linux_amd64.tar.gz',
+const ROUTE = 'GET /v1/runs/superpipeline/{board}/{run}';
+
+// Must match the docs site's install page ("Quick install of the binary").
+const INSTALL = `curl -fsSL ${REPO}/releases/latest/download/install.sh | bash`;
+const FIRST = [
+  "SW_FAKE_SOURCES=1 SW_DATABASE_URL='postgres://<user>:<password>@127.0.0.1:5432/<database>?sslmode=disable' superwitness serve",
+  "curl -H 'Authorization: Bearer dev:prn_human01:human' localhost:8790/v1/runs/superpipeline/brd_01/run_01",
 ];
 ---
 
@@ -73,6 +84,9 @@ const install = [
     <title>{TITLE}</title>
     <meta name="description" content={DESCRIPTION} />
     <meta name="theme-color" content="#0e1116" />
+    <script is:inline>
+      try { const t = localStorage.getItem('theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch {}
+    </script>
     <ShareMeta title={TITLE} description={DESCRIPTION} />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -98,13 +112,25 @@ const install = [
         --mono: 'IBM Plex Mono', ui-monospace, monospace;
         color-scheme: dark light;
       }
+      /* Light tokens: chosen by the toggle (data-theme="light"), or by the system when the
+         visitor has not chosen. */
+      :root[data-theme='light'] {
+        --bg: #f7f8f6; --surface: #ffffff; --inset: #eef1ee; --line: rgba(14,17,22,.1);
+        --text: #12161c; --muted: #545e6b; --jade: #1b7f63; --jade-deep: #136049;
+        --jade-tint: rgba(27,127,99,.12); --warn: #8a5a06; --warn-tint: rgba(244,165,38,.18);
+        --jade-text: #136049; --jade-ink: #ffffff; --code: #2a313b;
+        --marigold: #e0961c; --cyan: #3f97bb; --grey: #8a96a8;
+        color-scheme: light;
+      }
+      :root[data-theme='dark'] { color-scheme: dark; }
       @media (prefers-color-scheme: light) {
-        :root {
+        :root:not([data-theme='dark']) {
           --bg: #f7f8f6; --surface: #ffffff; --inset: #eef1ee; --line: rgba(14,17,22,.1);
           --text: #12161c; --muted: #545e6b; --jade: #1b7f63; --jade-deep: #136049;
           --jade-tint: rgba(27,127,99,.12); --warn: #8a5a06; --warn-tint: rgba(244,165,38,.18);
           --jade-text: #136049; --jade-ink: #ffffff; --code: #2a313b;
           --marigold: #e0961c; --cyan: #3f97bb; --grey: #8a96a8;
+          color-scheme: light;
         }
       }
 
@@ -140,30 +166,48 @@ const install = [
         border: 1px solid var(--line); border-radius: 999px;
       }
 
+      #theme {
+        background: none; border: 1px solid var(--line); border-radius: 999px; color: var(--muted);
+        width: 30px; height: 30px; display: inline-grid; place-items: center; cursor: pointer; padding: 0;
+      }
+      #theme:hover { color: var(--text); border-color: var(--jade); }
+      #theme:focus-visible { outline: 2px solid var(--jade); outline-offset: 3px; }
+      .example { font-family: var(--mono); font-size: 12px; color: var(--muted); margin: 10px 0 0; text-align: right; position: relative; z-index: 1; }
+      .steps { counter-reset: step; }
+      .cell .step { font-family: var(--mono); font-size: 13px; color: var(--jade-text); }
+      .prose p { margin: 0 0 14px; max-width: 680px; }
+      .prose p:last-child { margin-bottom: 0; }
+      .tools { max-width: 680px; display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; padding: 0; list-style: none; }
+      .tools li { font-family: var(--mono); font-size: 12.5px; padding: 3px 9px; border-radius: 6px; background: var(--inset); }
+      h3.small { font-family: var(--display); font-weight: 600; font-size: 1.15rem; margin: 30px 0 10px; }
+      pre + p, .install p { margin: 12px 0 0; color: var(--muted); font-size: 15.5px; max-width: 680px; }
+      .install pre { max-width: 760px; }
+      ul.facts.limits { grid-auto-flow: row !important; max-width: 680px; }
+
       /* ── hero ─────────────────────────────────────────────────── */
       .hero .wrap {
-        display: grid; grid-template-columns: 1.05fr 1fr; gap: 56px; align-items: center;
-        padding-top: 56px; padding-bottom: 88px;
+        display: grid; grid-template-columns: minmax(0, 1fr) 500px; gap: 56px; align-items: center;
+        min-height: calc(100svh - 108px); padding-top: 56px; padding-bottom: 72px;
       }
       .hero .wrap > * { min-width: 0; }
       h1 {
         font-family: var(--display); font-weight: 600;
-        font-size: clamp(2.6rem, 6vw, 4.4rem); line-height: 1.02;
-        letter-spacing: -0.025em; margin: 0 0 22px; text-wrap: balance;
+        font-size: clamp(40px, 4.6vw, 60px); line-height: 1.04;
+        letter-spacing: -0.02em; margin: 0; max-width: 12ch; text-wrap: balance;
         font-variation-settings: 'opsz' 144;
       }
       h1 em { font-style: italic; font-weight: 500; color: var(--jade); }
-      .lede { color: var(--muted); font-size: 1.1rem; margin: 0 0 30px; max-width: 32em; }
+      .lede { color: var(--muted); font-family: var(--sans); font-size: 18px; line-height: 1.55; margin: 20px 0 28px; max-width: 34em; }
 
       .cta { display: flex; gap: 12px; flex-wrap: wrap; }
       .btn {
-        display: inline-flex; align-items: center; border-radius: 8px;
-        padding: 11px 19px; font-size: 15px; font-weight: 600; text-decoration: none;
+        display: inline-flex; align-items: center; border-radius: 10px;
+        height: 46px; padding: 0 20px; font: 600 15px var(--sans); text-decoration: none;
         border: 1px solid transparent; transition: filter .15s, border-color .15s;
       }
       .btn-primary { background: var(--jade); color: var(--jade-ink); }
       .btn-primary:hover { filter: brightness(1.08); }
-      .btn-ghost { border-color: var(--line); color: var(--text); }
+      .btn-ghost { background: transparent; border-color: var(--line); color: var(--text); }
       .btn-ghost:hover { border-color: var(--jade); }
 
       /* ── the run document: this page's signature ──────────────── */
@@ -181,8 +225,9 @@ const install = [
         box-shadow: 0 1px 0 rgba(255,255,255,.03) inset, 0 24px 48px -24px rgba(0,0,0,.45);
         font-size: 14px;
       }
+      :root[data-theme='light'] .doc { box-shadow: 0 24px 48px -28px rgba(14,17,22,.22); }
       @media (prefers-color-scheme: light) {
-        .doc { box-shadow: 0 24px 48px -28px rgba(14,17,22,.22); }
+        :root:not([data-theme='dark']) .doc { box-shadow: 0 24px 48px -28px rgba(14,17,22,.22); }
       }
       .doc-head {
         display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap;
@@ -214,28 +259,23 @@ const install = [
 
       /* ── bands ────────────────────────────────────────────────── */
       section.band { border-top: 1px solid var(--line); }
-      section.band .wrap { padding-top: 68px; padding-bottom: 68px; }
+      section.band .wrap { padding-top: 88px; padding-bottom: 88px; }
       .n {
         display: block; font-family: var(--mono); font-size: 12px; letter-spacing: .12em;
         color: var(--muted); margin-bottom: 10px;
       }
       h2 {
         font-family: var(--display); font-weight: 600;
-        font-size: clamp(1.65rem, 3.2vw, 2.25rem); line-height: 1.12; letter-spacing: -0.02em;
-        margin: 0 0 14px; text-wrap: balance; font-variation-settings: 'opsz' 72;
+        font-size: clamp(28px, 3vw, 36px); line-height: 1.15; letter-spacing: -0.02em;
+        margin: 0 0 12px; text-wrap: balance; font-variation-settings: 'opsz' 72;
       }
-      .sub { color: var(--muted); margin: 0; max-width: 60ch; font-size: 1.05rem; }
-      .split { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; }
-      .split > * { min-width: 0; }
+      .sub, .install p.sub { color: var(--muted); margin: 0 0 32px; max-width: 640px; font-size: 17px; line-height: 1.6; }
 
-      .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 34px; }
-      .cell {
-        background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
-        padding: 20px 20px 18px; display: flex; flex-direction: column; gap: 6px;
-      }
+      .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; margin-top: 32px; }
+      .cell { min-width: 0; }
       .cell h3 {
-        font-family: var(--display); font-weight: 600; font-size: 1.2rem;
-        letter-spacing: -0.01em; margin: 0;
+        font-family: var(--display); font-weight: 600; font-size: 18px;
+        letter-spacing: -0.01em; margin: 10px 0 6px;
       }
       .cell p { margin: 0; color: var(--muted); font-size: 15.5px; }
       .cell .field {
@@ -243,22 +283,9 @@ const install = [
         color: var(--muted); border-top: 1px dashed var(--line);
       }
 
-      /* telemetry vs verdicts */
-      table.compare {
-        width: 100%; border-collapse: collapse; font-size: 14.5px;
-        background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
-        overflow: hidden; border-style: hidden; box-shadow: 0 0 0 1px var(--line);
-      }
-      .compare th, .compare td { text-align: left; padding: 11px 16px; border-bottom: 1px solid var(--line); vertical-align: top; }
-      .compare tr:last-child td, .compare tr:last-child th { border-bottom: 0; }
-      .compare thead th { font-family: var(--display); font-weight: 600; font-size: 1.05rem; }
-      .compare tbody th { font-family: var(--mono); font-weight: 400; font-size: 12.5px; color: var(--muted); width: 22%; }
-      .compare td { color: var(--muted); }
-      .compare .never { color: var(--jade-text); font-weight: 500; }
-
       /* waterfall */
       .fall {
-        margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+        margin: 32px 0 0; background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
         padding: 18px 18px 14px;
       }
       .lane { display: grid; grid-template-columns: 130px 1fr; gap: 12px; align-items: center; height: 26px; }
@@ -277,14 +304,6 @@ const install = [
         font-family: var(--mono); font-size: 12px; color: var(--muted);
       }
       .fall figcaption b { font-weight: 500; color: var(--text); }
-      .config { margin-top: 26px; }
-      .config h3 { font-family: var(--display); font-weight: 600; font-size: 1.15rem; margin: 0 0 10px; }
-      .chain { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-family: var(--mono); font-size: 12.5px; }
-      .chain .k { padding: 3px 9px; border-radius: 6px; border: 1px solid var(--line); color: var(--text); }
-      .chain .out { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
-      .chain .to { color: var(--muted); }
-      .chain .fp { padding: 3px 9px; border-radius: 6px; background: var(--inset); color: var(--text); }
-      .chain .fp span { color: var(--muted); }
 
       /* code */
       pre, .codeline {
@@ -302,7 +321,7 @@ const install = [
         content: ''; position: absolute; left: 2px; top: .62em; width: 8px; height: 8px;
         border: 1.5px solid var(--jade); border-radius: 50%;
       }
-      ul.facts code { font-family: var(--mono); font-size: .88em; }
+      ul.facts code, .cell code, .sub code, .prose code { font-family: var(--mono); font-size: .86em; }
       .closing { margin: 22px 0 0; font-family: var(--display); font-style: italic; font-weight: 500; font-size: 1.2rem; }
       .more { display: inline-block; margin-top: 14px; font-size: 15px; color: var(--jade-text); text-decoration: none; font-weight: 500; }
       .more:hover { text-decoration: underline; text-underline-offset: 3px; }
@@ -323,24 +342,27 @@ const install = [
         ul.facts { grid-auto-flow: column; justify-content: start; gap: 10px 36px; }
       }
       @media (max-width: 899px) {
-        .hero .wrap { grid-template-columns: 1fr; gap: 44px; padding-top: 32px; padding-bottom: 64px; }
-        .split { grid-template-columns: 1fr; gap: 32px; }
+        .hero .wrap { grid-template-columns: 1fr; gap: 44px; min-height: auto; padding-top: 40px; padding-bottom: 56px; }
+        section.band .wrap { padding-top: 64px; padding-bottom: 64px; }
         .grid { grid-template-columns: 1fr; }
       }
       @media (max-width: 480px) {
-        .wrap { padding: 0 16px; }
+        .wrap { padding: 0 24px; }
         nav { gap: 14px; }
-        section.band .wrap { padding-top: 52px; padding-bottom: 52px; }
         .lane { grid-template-columns: 104px 1fr; gap: 8px; }
         .lane .lname { font-size: 11px; }
         .doc dl, .doc-head, .sources { padding-left: 14px; padding-right: 14px; }
-        .compare th, .compare td { padding: 10px 12px; }
       }
       @media (max-width: 360px) {
         .brand .name { font-size: 18px; }
         nav { gap: 12px; font-size: 14px; }
         nav .ver { display: none; }
       }
+      /* Hero moment: .doc.playing is set by the inline script below for one ~2.6s pass. */
+      .doc.playing dd { opacity: 0; animation: sw-fill 320ms ease-out forwards; animation-delay: calc(var(--i, 0) * 220ms); }
+      .doc.playing .verdict dd { animation: sw-stamp 380ms cubic-bezier(.2,.8,.3,1) forwards; animation-delay: 1700ms; }
+      @keyframes sw-fill { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+      @keyframes sw-stamp { from { opacity: 0; transform: scale(1.15); } to { opacity: 1; transform: none; } }
       @media (prefers-reduced-motion: reduce) {
         * { transition: none !important; animation: none !important; }
       }
@@ -357,22 +379,26 @@ const install = [
           <a href={DOCS}>Docs</a>
           <a href={REPO}>Source</a>
           <a class="ver" href={`${REPO}/releases/tag/${VERSION}`}>{VERSION}</a>
+          <button id="theme" type="button" aria-label="Switch light and dark theme">
+            <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.5a6.5 6.5 0 0 1 0 13z" fill="currentColor"/></svg>
+          </button>
         </nav>
       </div>
     </header>
 
     <main>
-      <div class="hero">
+      <section class="hero">
         <div class="wrap">
           <div>
             <h1>Every run, <em>on the record</em>.</h1>
             <p class="lede">
-              What your agents did, how your products behaved while they did it, and whether the work
-              was any good, joined on one run.
+              SuperWitness is a self-hosted service that joins a SuperPipeline run, its AgentPod
+              attempts, traces, logs and verdicts into one document: what your agents did, how your
+              products behaved, and whether the work was good.
             </p>
             <div class="cta">
-              <a class="btn btn-primary" href={DOCS}>Read the docs</a>
-              <a class="btn btn-ghost" href={REPO}>Source</a>
+              <a class="btn btn-primary" href={`${DOCS}/install/`}>Get started</a>
+              <a class="btn btn-ghost" href={DOCS}>Docs</a>
             </div>
           </div>
 
@@ -385,126 +411,118 @@ const install = [
               <dl>
                 <div class="row"><dt>agent</dt><dd class="mono">hermes 0.9 · <span class="muted">sha256:4dd8…</span></dd></div>
                 <div class="row"><dt>attempts</dt><dd><span class="pill">2 · completed</span></dd></div>
-                <div class="row"><dt>trace</dt><dd><span class="pill jade">joined · 41 spans</span></dd></div>
+                <div class="row"><dt>trace</dt><dd><span class="pill jade">joined · <span data-count="41">41</span> spans</span></dd></div>
                 <div class="row"><dt>errors</dt><dd><span class="pill">0</span></dd></div>
                 <div class="row"><dt>cost</dt><dd><span class="pill warn">unreported</span></dd></div>
-                <div class="row"><dt>verdicts</dt><dd><span class="pill jade">gate: approved · human</span> <span class="pill">grader 0.8</span></dd></div>
+                <div class="row verdict"><dt>verdicts</dt><dd><span class="pill jade">gate: approved · human</span> <span class="pill">grader 0.8</span></dd></div>
               </dl>
               <p class="sources mono">sources: superpipeline <b>ok</b> · agentpod <b>ok</b> · traces <b>ok</b> · logs <b>ok</b> · errors <b>ok</b> · verdicts <b>ok</b></p>
             </div>
+            <figcaption class="example">Example run document. The fields are real; the values are made up.</figcaption>
           </figure>
         </div>
-      </div>
+      </section>
 
-      <section class="band" aria-labelledby="q">
+      <section class="band" aria-labelledby="how">
         <div class="wrap">
-          <span class="n">01</span>
-          <h2 id="q">Three questions, one run</h2>
-          <div class="grid">
+          <h2 id="how">How it works</h2>
+          <div class="grid steps">
             <div class="cell">
-              <h3>What did it do?</h3>
-              <p>Attempts, turns, tool calls, spans.</p>
-              <span class="field">attempts · trace</span>
+              <span class="step">1</span>
+              <h3>Products send OTLP</h3>
+              <p>
+                SuperPipeline and AgentPod send plain OpenTelemetry to a Collector, which writes it
+                to VictoriaTraces and VictoriaLogs. SuperWitness only queries them. Nothing waits on it.
+              </p>
             </div>
             <div class="cell">
-              <h3>How did the products run?</h3>
-              <p>Logs and errors that share the run's trace.</p>
-              <span class="field">log_count · errors</span>
+              <span class="step">2</span>
+              <h3>Ask for a run</h3>
+              <p>
+                <code>{ROUTE}</code> joins the run, its
+                attempts with the configuration that ran them, spans, logs and errors when you read
+                it. A source that is down reads <code>unknown</code>, never 0.
+              </p>
             </div>
             <div class="cell">
-              <h3>Was it any good?</h3>
-              <p>Gate decisions and recorded verdicts.</p>
-              <span class="field">verdicts</span>
+              <span class="step">3</span>
+              <h3>Record a verdict</h3>
+              <p>
+                A person, a gate or a grader records a verdict. Verdicts are append-only in
+                SuperWitness's own Postgres: a correction is a new verdict. An agent cannot judge a
+                run it executed.
+              </p>
             </div>
           </div>
         </div>
       </section>
 
-      <section class="band" aria-labelledby="t">
-        <div class="wrap split">
-          <div>
-            <span class="n">02</span>
-            <h2 id="t">Telemetry and evidence are different things</h2>
-            <p class="sub">
-              Telemetry is sampled, lossy and short-lived. Verdicts are append-only and never lost.
-              SuperWitness keeps them in separate stores and never treats one as the other.
+      <section class="band" aria-labelledby="use">
+        <div class="wrap">
+          <div class="prose">
+            <h2 id="use">What it's like to use</h2>
+            <p>
+              Say an agent finished a draft on a SuperPipeline board overnight. In the morning you
+              open the SuperWitness app and pick the run from <b>Needs verdict</b>. The trace shows
+              where the time went across the products. Click a tool call and you see what the agent
+              sent and what came back, read live from AgentPod and never stored by SuperWitness.
+              You record a verdict against a rubric, and it stays on the run.
             </p>
+            <p>
+              An agent can do the same over MCP, with a bearer token, on the private side of your
+              deployment. The tools the server registers:
+            </p>
+            <ul class="tools" aria-label="MCP tools">
+              {tools.map((t) => <li>{t}</li>)}
+            </ul>
           </div>
-          <table class="compare">
-            <thead>
-              <tr><td></td><th scope="col">Telemetry</th><th scope="col">Verdicts</th></tr>
-            </thead>
-            <tbody>
-              <tr><th scope="row">loss</th><td>Expected: sampled, short retention</td><td class="never">Never</td></tr>
-              <tr><th scope="row">where</th><td>Upstream engines</td><td>SuperWitness's own database</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section class="band" aria-labelledby="j">
-        <div class="wrap split">
-          <div>
-            <span class="n">03</span>
-            <h2 id="j">Joined on the run, across products</h2>
-            <div class="config">
-              <h3>The configuration that ran it</h3>
-              <div class="chain">
-                <span class="k">harness</span><span class="k">model</span><span class="k">profile</span><span class="k">skills</span>
-                <span class="out"><span class="to" aria-hidden="true">→</span> <span class="fp">fingerprint <span>sha256:4dd8…</span></span></span>
-              </div>
-            </div>
-          </div>
-          <figure class="fall" aria-label="A trace waterfall: SuperPipeline, hub dispatch, attempt, turn and tool, node-agent, and the gate review, all sharing one run id">
+          <figure class="fall" aria-label="An illustrative trace waterfall: SuperPipeline, hub dispatch, attempt, turn and tool, node-agent, and the gate review, all sharing one run id">
             {lanes.map((l) => (
               <div class="lane" data-depth={l.depth}>
                 <span class="lname">{l.name}</span>
                 <span class="track"><span class={`bar ${l.tone}`} style={`left:${l.from}%;width:${l.width}%`}></span></span>
               </div>
             ))}
-            <figcaption><b>run.id</b> = run_7f3a</figcaption>
+            <figcaption><b>run.id</b> = run_7f3a · illustrative</figcaption>
           </figure>
         </div>
       </section>
 
-      <section class="band" aria-labelledby="a">
-        <div class="wrap">
-          <span class="n">04</span>
-          <h2 id="a">Built for agents first</h2>
-          <p class="sub">An MCP server: thin tools over the run, spans, logs and verdict operations.</p>
-          <code class="codeline">get_run · list_run_spans · list_run_logs · record_verdict</code>
-        </div>
-      </section>
-
-      <section class="band" aria-labelledby="e">
-        <div class="wrap">
-          <span class="n">05</span>
-          <h2 id="e">Standing on engines you'd pick anyway</h2>
+      <section class="band" aria-labelledby="run">
+        <div class="wrap install">
+          <h2 id="run">Run it yourself</h2>
           <p class="sub">
-            VictoriaLogs, VictoriaTraces and the OpenTelemetry Collector: upstream, unforked,
-            permissively licensed. SuperWitness adds the run, the join and the verdicts. Designed
-            to sit beside VictoriaMetrics and Perses the same way.
+            The latest release is <a href={`${REPO}/releases/tag/${VERSION}`}>{VERSION}</a>, for
+            Linux and macOS on amd64 and arm64. The installer checks the download against
+            <code>SHA256SUMS</code> and puts <code>superwitness</code> and its short alias
+            <code>suwi</code> in <code>~/.local/bin</code>. It installs no service and starts nothing.
+          </p>
+          <pre aria-label="Install"><code><span class="p">$ </span>{INSTALL}{'\n'}</code></pre>
+
+          <h3 class="small">First command</h3>
+          <pre aria-label="Try it with built-in fixtures"><code>{FIRST.map((line) => (<><span class="p">$ </span>{line}{'\n'}</>))}</code></pre>
+          <p>
+            Fake mode serves one development run from built-in fixtures, listens on loopback only,
+            and needs nothing but a Postgres database. It is for looking around, not for real runs.
+          </p>
+          <p>
+            A real deployment is one Linux host with systemd running SuperWitness next to Postgres,
+            VictoriaTraces, VictoriaLogs and the OpenTelemetry Collector, reading runs from your
+            SuperPipeline and attempts from your AgentPod hub with a service credential.
+            The <a href={`${DOCS}/install/`}>install guide</a> walks through it.
           </p>
         </div>
       </section>
 
-      <section class="band" aria-labelledby="h">
+      <section class="band" aria-labelledby="today">
         <div class="wrap">
-          <div class="host">
-            <span class="n">06</span>
-            <h2 id="h">You host all of it</h2>
-            <ul class="facts">
-              <li>A single Go binary plus Postgres.</li>
-              <li>Release tarballs with <code>SHA256SUMS</code>.</li>
-              <li>A systemd unit.</li>
-              <li>Tailnet-first.</li>
-            </ul>
-            <p class="closing">No product requires it: they send plain OTLP and never wait on it.</p>
-          </div>
-          <div class="install">
-            <pre aria-label="Install"><code>{install.map((line) => (<><span class="p">$ </span>{line}{'\n'}</>))}</code></pre>
-            <a class="more" href={`${DOCS}/install/`}>Full install guide →</a>
-          </div>
+          <h2 id="today">Where it runs today</h2>
+          <ul class="facts limits">
+            <li>It is not standalone yet. It reads runs from SuperPipeline and attempts from AgentPod, and only SuperPipeline runs can be looked up. Working with other agent stacks is a goal, not this release.</li>
+            <li>It stores verdicts and grader scores; it does not run graders, evaluations or calibration, and it does not compare configurations yet.</li>
+            <li>Verdicts are append-only, so the service cannot rewrite them. Keeping them is your Postgres backups' job.</li>
+            <li>No Windows build, no container image and no hosted service. The web app stays off until you allow people to sign in with AgentPod.</li>
+          </ul>
         </div>
       </section>
     </main>
@@ -512,14 +530,51 @@ const install = [
     <footer>
       <div class="wrap">
         <span class="fnav">
-          <a href={DOCS}>Documentation</a>
-          <a href={REPO}>GitHub</a>
-          <a href="https://agentpod.dev">AgentPod</a>
-          <a href="https://superpipeline.dev">SuperPipeline</a>
-          <a href="https://supermessage.dev">SuperMessage</a>
+          <a href={DOCS}>Docs</a>
+          <a href={REPO}>Source</a>
+          <a href="https://superjackfruit.com">SuperJackfruit Labs</a>
         </span>
         <span class="colophon"><Mark size={16} /> SuperWitness · self-hosted · MIT</span>
       </div>
     </footer>
+    <script is:inline>
+      (() => {
+        const b = document.getElementById('theme');
+        const root = document.documentElement;
+        b.addEventListener('click', () => {
+          const cur = root.dataset.theme || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+          const next = cur === 'light' ? 'dark' : 'light';
+          root.dataset.theme = next;
+          try { localStorage.setItem('theme', next); } catch {}
+        });
+      })();
+    </script>
+    <script is:inline>
+      (() => {
+        const doc = document.querySelector('.doc');
+        if (!doc || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        const dds = doc.querySelectorAll('dd');
+        dds.forEach((d, i) => d.style.setProperty('--i', i));
+        const n = doc.querySelector('[data-count]');
+        const play = () => {
+          doc.classList.add('playing');
+          if (n) {
+            const end = +n.dataset.count, t0 = performance.now() + 2 * 220, dur = 700;
+            n.textContent = '0';
+            const tick = (t) => {
+              const k = Math.min(1, Math.max(0, (t - t0) / dur));
+              n.textContent = String(Math.round(end * (1 - Math.pow(1 - k, 3))));
+              if (k < 1) requestAnimationFrame(tick);
+            };
+            requestAnimationFrame(tick);
+          }
+          setTimeout(() => { doc.classList.remove('playing'); if (n) n.textContent = n.dataset.count; }, 2600);
+        };
+        const io = new IntersectionObserver((es) => {
+          if (es.some((e) => e.isIntersecting)) { io.disconnect(); setTimeout(play, 600); }
+        });
+        io.observe(doc);
+      })();
+    </script>
   </body>
 </html>
