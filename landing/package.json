@@ -5,10 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev --port 4327",
-    "build": "astro build",
-    "preview": "astro preview --port 4327"
+    "build": "astro build && node scripts/check-frame.mjs",
+    "preview": "astro preview --port 4327",
+    "check:frame": "node scripts/check-frame.mjs"
   },
   "dependencies": {
-    "astro": "^7.3.2"
+    "astro": "^7.3.2",
+    "@superjackfruit/frontdoor": "file:vendor/superjackfruit-frontdoor-0.0.1.tgz",
+    "@superjackfruit/vibekit": "file:vendor/superjackfruit-vibekit-0.0.14.tgz"
   }
 }
