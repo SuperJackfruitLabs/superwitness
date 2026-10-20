@@ -2,7 +2,7 @@
 /**
  * superwitness.dev — the public page.
  *
- * One page, no framework; one small script, the theme toggle. Its job is to explain the product to somebody who
+ * One page, no framework; the suite frame owns the header, footer and theme toggle. Its job is to explain the product to somebody who
  * typed the domain, and then send them to the docs or the source. There is no app to sign
  * in to: superwitness is self-hosted, so the page sells nothing it cannot hand over.
  *
@@ -34,7 +34,6 @@
  * the same values. Jade is spent on three things only: "on the record", a joined trace and
  * an approved gate — the parts of the page that are evidence.
  */
-import Mark from '../components/Mark.astro';
 import ShareMeta from '../components/ShareMeta.astro';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -74,6 +73,8 @@ const FIRST = [
   "SW_FAKE_SOURCES=1 SW_DATABASE_URL='postgres://<user>:<password>@127.0.0.1:5432/<database>?sslmode=disable' superwitness serve",
   "curl -H 'Authorization: Bearer dev:prn_human01:human' localhost:8790/v1/runs/superpipeline/brd_01/run_01",
 ];
+import SuiteHead from '@superjackfruit/frontdoor/components/SuiteHead.astro';
+import Frame from '@superjackfruit/frontdoor/components/Frame.astro';
 ---
 
 <!doctype html>
@@ -84,9 +85,7 @@ const FIRST = [
     <title>{TITLE}</title>
     <meta name="description" content={DESCRIPTION} />
     <meta name="theme-color" content="#0e1116" />
-    <script is:inline>
-      try { const t = localStorage.getItem('theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch {}
-    </script>
+    <SuiteHead product="superwitness" />
     <ShareMeta title={TITLE} description={DESCRIPTION} />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -148,30 +147,6 @@ const FIRST = [
 
       .wrap { width: 100%; max-width: 1080px; margin: 0 auto; padding: 0 24px; }
 
-      /* ── masthead ─────────────────────────────────────────────── */
-      header .wrap {
-        display: flex; align-items: center; justify-content: space-between;
-        gap: 16px; padding-top: 24px; padding-bottom: 24px;
-      }
-      .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--jade); }
-      .brand .name {
-        font-family: var(--display); font-weight: 600; font-size: 21px; color: var(--text);
-        letter-spacing: -0.01em; font-variation-settings: 'opsz' 48;
-      }
-      nav { display: flex; gap: 20px; align-items: center; font-size: 15px; }
-      nav a { color: var(--muted); text-decoration: none; }
-      nav a:hover { color: var(--text); }
-      nav .ver {
-        font-family: var(--mono); font-size: 12.5px; padding: 2px 8px;
-        border: 1px solid var(--line); border-radius: 999px;
-      }
-
-      #theme {
-        background: none; border: 1px solid var(--line); border-radius: 999px; color: var(--muted);
-        width: 30px; height: 30px; display: inline-grid; place-items: center; cursor: pointer; padding: 0;
-      }
-      #theme:hover { color: var(--text); border-color: var(--jade); }
-      #theme:focus-visible { outline: 2px solid var(--jade); outline-offset: 3px; }
       .example { font-family: var(--mono); font-size: 12px; color: var(--muted); margin: 10px 0 0; text-align: right; position: relative; z-index: 1; }
       .steps { counter-reset: step; }
       .cell .step { font-family: var(--mono); font-size: 13px; color: var(--jade-text); }
@@ -326,17 +301,6 @@ const FIRST = [
       .more { display: inline-block; margin-top: 14px; font-size: 15px; color: var(--jade-text); text-decoration: none; font-weight: 500; }
       .more:hover { text-decoration: underline; text-underline-offset: 3px; }
 
-      /* ── footer ───────────────────────────────────────────────── */
-      footer { border-top: 1px solid var(--line); }
-      footer .wrap {
-        display: flex; justify-content: space-between; align-items: center; gap: 14px 24px; flex-wrap: wrap;
-        padding-top: 30px; padding-bottom: 44px; font-size: 14px; color: var(--muted);
-      }
-      footer a { color: var(--muted); text-decoration: none; }
-      footer a:hover { color: var(--text); }
-      .fnav { display: flex; gap: 6px 18px; flex-wrap: wrap; }
-      .colophon { display: inline-flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 12.5px; color: var(--muted); }
-      .colophon svg { color: var(--jade); }
 
       @media (min-width: 900px) {
         ul.facts { grid-auto-flow: column; justify-content: start; gap: 10px 36px; }
@@ -348,15 +312,9 @@ const FIRST = [
       }
       @media (max-width: 480px) {
         .wrap { padding: 0 24px; }
-        nav { gap: 14px; }
         .lane { grid-template-columns: 104px 1fr; gap: 8px; }
         .lane .lname { font-size: 11px; }
         .doc dl, .doc-head, .sources { padding-left: 14px; padding-right: 14px; }
-      }
-      @media (max-width: 360px) {
-        .brand .name { font-size: 18px; }
-        nav { gap: 12px; font-size: 14px; }
-        nav .ver { display: none; }
       }
       /* Hero moment: .doc.playing is set by the inline script below for one ~2.6s pass. */
       .doc.playing dd { opacity: 0; animation: sw-fill 320ms ease-out forwards; animation-delay: calc(var(--i, 0) * 220ms); }
@@ -369,23 +327,7 @@ const FIRST = [
     </style>
   </head>
   <body>
-    <header>
-      <div class="wrap">
-        <a class="brand" href="/" aria-label="SuperWitness home">
-          <Mark size={28} />
-          <span class="name">SuperWitness</span>
-        </a>
-        <nav aria-label="Primary">
-          <a href={DOCS}>Docs</a>
-          <a href={REPO}>Source</a>
-          <a class="ver" href={`${REPO}/releases/tag/${VERSION}`}>{VERSION}</a>
-          <button id="theme" type="button" aria-label="Switch light and dark theme">
-            <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.5a6.5 6.5 0 0 1 0 13z" fill="currentColor"/></svg>
-          </button>
-        </nav>
-      </div>
-    </header>
-
+    <Frame product="superwitness" cta={{ label: 'Get started', href: 'https://docs.superwitness.dev/install/' }}>
     <main>
       <section class="hero">
         <div class="wrap">
@@ -526,29 +468,8 @@ const FIRST = [
         </div>
       </section>
     </main>
+    </Frame>
 
-    <footer>
-      <div class="wrap">
-        <span class="fnav">
-          <a href={DOCS}>Docs</a>
-          <a href={REPO}>Source</a>
-          <a href="https://superjackfruit.com">SuperJackfruit Labs</a>
-        </span>
-        <span class="colophon"><Mark size={16} /> SuperWitness · self-hosted · MIT</span>
-      </div>
-    </footer>
-    <script is:inline>
-      (() => {
-        const b = document.getElementById('theme');
-        const root = document.documentElement;
-        b.addEventListener('click', () => {
-          const cur = root.dataset.theme || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
-          const next = cur === 'light' ? 'dark' : 'light';
-          root.dataset.theme = next;
-          try { localStorage.setItem('theme', next); } catch {}
-        });
-      })();
-    </script>
     <script is:inline>
       (() => {
         const doc = document.querySelector('.doc');
