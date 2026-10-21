@@ -3,6 +3,7 @@ package traces
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -101,6 +102,9 @@ func (a *Adapter) ListSpans(ctx context.Context, ref source.RunRef) ([]source.Sp
 			if st == source.StatusNotFound {
 				st = source.StatusOK
 			}
+			if len(body.Data) > 100 {
+				st = source.StatusUnavailable
+			}
 			results[i] = result{traces: body.Data, st: st}
 		})
 	}
@@ -114,9 +118,69 @@ func (a *Adapter) ListSpans(ctx context.Context, ref source.RunRef) ([]source.Sp
 		return nil, worst
 	}
 
+	// Service/tag searches discover traces; their span lists may contain only
+	// matching spans. Join the full trace so untagged cross-service children survive.
+	ids := []string{}
+	discovered := map[string]bool{}
+	for _, r := range results {
+		for _, tr := range r.traces {
+			id, ok := traceID(tr.TraceID)
+			if !ok {
+				return nil, source.StatusUnavailable
+			}
+			if !discovered[id] {
+				discovered[id] = true
+				ids = append(ids, id)
+			}
+		}
+	}
+	full := make([]result, len(ids))
+	jobs := make(chan int)
+	for range min(4, len(ids)) {
+		wg.Go(func() {
+			for i := range jobs {
+				var body jaegerResponse
+				_, st := source.GetJSON(ctx, a.HC, a.BaseURL+"/select/jaeger/api/traces/"+ids[i], a.Bearer, &body, nil)
+				if st == source.StatusOK {
+					if len(body.Data) == 0 {
+						st = source.StatusUnavailable
+					}
+					count := 0
+					for _, tr := range body.Data {
+						id, ok := traceID(tr.TraceID)
+						if !ok || id != ids[i] {
+							st = source.StatusUnavailable
+						}
+						for _, sp := range tr.Spans {
+							id, ok := traceID(sp.TraceID)
+							if !ok || id != ids[i] {
+								st = source.StatusUnavailable
+							}
+							count++
+						}
+					}
+					if count == 0 {
+						st = source.StatusUnavailable
+					}
+				}
+				full[i] = result{traces: body.Data, st: st}
+			}
+		})
+	}
+	for i := range ids {
+		jobs <- i
+	}
+	close(jobs)
+	wg.Wait()
+	for _, r := range full {
+		worst = worse(worst, r.st)
+	}
+	if worst != source.StatusOK {
+		return nil, worst
+	}
 	seen := map[string]bool{}
 	spans := []source.Span{}
-	for _, r := range results {
+	for _, r := range full {
 		for _, tr := range r.traces {
 			for _, s := range tr.Spans {
 				sp := convert(s, tr.Processes)
@@ -129,6 +193,7 @@ func (a *Adapter) ListSpans(ctx context.Context, ref source.RunRef) ([]source.Sp
 			}
 		}
 	}
+
 	sort.Slice(spans, func(i, j int) bool {
 		if !spans[i].Start.Equal(spans[j].Start) {
 			return spans[i].Start.Before(spans[j].Start)
@@ -172,6 +237,18 @@ func convert(s jaegerSpan, procs map[string]jaegerProcess) source.Span {
 		Name: s.OperationName, Service: procs[s.ProcessID].ServiceName,
 		Start: time.UnixMicro(s.StartTime).UTC(), DurationMS: float64(s.Duration) / 1000, Attributes: attrs,
 	}
+}
+
+// traceID accepts Jaeger's shortened hex IDs, never paths or the invalid zero ID.
+func traceID(id string) (string, bool) {
+	if len(id) == 0 || len(id) > 32 {
+		return "", false
+	}
+	id = padHex(id, 32)
+	if _, err := hex.DecodeString(id); err != nil || id == strings.Repeat("0", 32) {
+		return "", false
+	}
+	return id, true
 }
 
 // padHex restores leading zeros that Jaeger's JSON model may strip, so ids match OTLP's.

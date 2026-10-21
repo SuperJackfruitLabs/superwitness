@@ -2,9 +2,12 @@ package traces
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -36,6 +39,24 @@ func TestSearchURL(t *testing.T) {
 func jaegerServer(t *testing.T, byService map[string]string, status map[string]int) *httptest.Server {
 	t.Helper()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/select/jaeger/api/traces/") {
+			id := strings.TrimPrefix(r.URL.Path, "/select/jaeger/api/traces/")
+			for _, raw := range byService {
+				var body jaegerResponse
+				if err := json.Unmarshal([]byte(raw), &body); err != nil {
+					t.Error(err)
+					continue
+				}
+				for _, tr := range body.Data {
+					if padHex(tr.TraceID, 32) == id {
+						_ = json.NewEncoder(w).Encode(jaegerResponse{Data: []jaegerTrace{tr}})
+						return
+					}
+				}
+			}
+			http.NotFound(w, r)
+			return
+		}
 		if r.URL.Path != "/select/jaeger/api/traces" {
 			http.NotFound(w, r)
 			return
@@ -134,5 +155,156 @@ func TestBearerAndPaddedIDs(t *testing.T) {
 	spans, st := a.ListSpans(context.Background(), runRef(t))
 	if st != source.StatusOK || spans[0].TraceID != "0bf92f3577b34da6a3ce929d0e0e4736" || spans[0].SpanID != "00f067aa0ba902b7" {
 		t.Errorf("status = %s, span = %+v", st, spans)
+	}
+}
+
+func TestListSpansJoinsFullTrace(t *testing.T) {
+	const id = "cb0a0022bba3718d014901a38054eb09"
+	var lookups atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer vt-read" {
+			t.Error("missing bearer")
+			w.WriteHeader(401)
+			return
+		}
+		if r.URL.Path == "/select/jaeger/api/traces" {
+			fmt.Fprint(w, `{"data":[{"traceID":"`+strings.ToUpper(id)+`","spans":[{"traceID":"`+id+`","spanID":"1","operationName":"heartbeat","processID":"hub"}],"processes":{"hub":{"serviceName":"agentpod-hub"}}}]}`)
+			return
+		}
+		if r.URL.Path != "/select/jaeger/api/traces/"+id {
+			t.Error(r.URL.Path)
+			http.NotFound(w, r)
+			return
+		}
+		lookups.Add(1)
+		fmt.Fprint(w, `{"data":[{"traceID":"`+id+`","processes":{"hub":{"serviceName":"agentpod-hub"},"library":{"serviceName":"superlibrary"}},"spans":[
+   {"traceID":"`+id+`","spanID":"6ada289a01d51af8","operationName":"library.read","startTime":2,"processID":"library","references":[{"refType":"CHILD_OF","traceID":"`+id+`","spanID":"1"}],"tags":[{"key":"tool.name","value":"library.read"}]},
+   {"traceID":"`+id+`","spanID":"1","operationName":"heartbeat","startTime":1,"processID":"hub"},
+   {"traceID":"`+id+`","spanID":"1","operationName":"heartbeat","startTime":1,"processID":"hub"}]}]}`)
+	}))
+	defer srv.Close()
+	a := New(srv.URL, "vt-read", srv.Client())
+	spans, st := a.ListSpans(context.Background(), runRef(t))
+	if st != source.StatusOK || len(spans) != 2 {
+		t.Fatalf("status=%s spans=%+v", st, spans)
+	}
+	if lookups.Load() != 1 {
+		t.Fatalf("lookups=%d", lookups.Load())
+	}
+	child := spans[1]
+	if spans[0].Name != "heartbeat" || child.SpanID != "6ada289a01d51af8" || child.Service != "superlibrary" || child.ParentSpanID != "0000000000000001" || child.Attributes["tool.name"] != "library.read" {
+		t.Fatalf("joined spans=%+v", spans)
+	}
+	if _, exists := child.Attributes["run.id"]; exists {
+		t.Error("child must prove join without run.id")
+	}
+}
+
+func TestFullTraceFailureDoesNotReturnPartialSeed(t *testing.T) {
+	for _, tc := range []struct {
+		name, body string
+		code       int
+		want       source.SourceStatus
+	}{
+		{"unauthorized", "", 401, source.StatusUnauthorized},
+		{"unavailable", "", 500, source.StatusUnavailable},
+		{"missing", "", 404, source.StatusUnavailable},
+		{"empty", `{"data":[]}`, 200, source.StatusUnavailable},
+		{"foreign", `{"data":[{"traceID":"2","spans":[{"traceID":"2"}]}]}`, 200, source.StatusUnavailable},
+		{"foreign-span", `{"data":[{"traceID":"1","spans":[{"traceID":"2"}]}]}`, 200, source.StatusUnavailable},
+		{"malformed", `{`, 200, source.StatusUnavailable},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path == "/select/jaeger/api/traces" {
+					fmt.Fprint(w, `{"data":[{"traceID":"1","spans":[{"traceID":"1","spanID":"1"}]}]}`)
+					return
+				}
+				w.WriteHeader(tc.code)
+				fmt.Fprint(w, tc.body)
+			}))
+			defer srv.Close()
+			a := New(srv.URL, "", srv.Client())
+			spans, st := a.ListSpans(context.Background(), runRef(t))
+			if st != tc.want || spans != nil {
+				t.Fatalf("status=%s spans=%+v", st, spans)
+			}
+		})
+	}
+}
+
+func TestInvalidDiscoveredTraceIDIsUnavailable(t *testing.T) {
+	for _, id := range []string{"", "0", "../other", strings.Repeat("a", 33), "not-hex"} {
+		t.Run(id, func(t *testing.T) {
+			var full atomic.Int32
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path != "/select/jaeger/api/traces" {
+					full.Add(1)
+				}
+				_ = json.NewEncoder(w).Encode(map[string]any{"data": []map[string]string{{"traceID": id}}})
+			}))
+			defer srv.Close()
+			a := New(srv.URL, "", srv.Client())
+			spans, st := a.ListSpans(context.Background(), runRef(t))
+			if st != source.StatusUnavailable || spans != nil || full.Load() != 0 {
+				t.Fatalf("status=%s spans=%+v full=%d", st, spans, full.Load())
+			}
+		})
+	}
+}
+
+func TestFullTraceLookupsBoundConcurrency(t *testing.T) {
+	var active, maximum atomic.Int32
+	entered := make(chan struct{}, 4)
+	release := make(chan struct{})
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/select/jaeger/api/traces" {
+			fmt.Fprint(w, `{"data":[{"traceID":"1"},{"traceID":"2"},{"traceID":"3"},{"traceID":"4"},{"traceID":"5"}]}`)
+			return
+		}
+		n := active.Add(1)
+		for old := maximum.Load(); n > old; old = maximum.Load() {
+			if maximum.CompareAndSwap(old, n) {
+				break
+			}
+		}
+		defer active.Add(-1)
+		select {
+		case entered <- struct{}{}:
+		default:
+		}
+		<-release
+		id := strings.TrimPrefix(r.URL.Path, "/select/jaeger/api/traces/")
+		fmt.Fprintf(w, `{"data":[{"traceID":%q,"spans":[{"traceID":%q,"spanID":"1"}]}]}`, id, id)
+	}))
+	defer srv.Close()
+	a := New(srv.URL, "", srv.Client())
+	done := make(chan source.SourceStatus, 1)
+	go func() { _, st := a.ListSpans(context.Background(), runRef(t)); done <- st }()
+	for range 4 {
+		<-entered
+	}
+	close(release)
+	if st := <-done; st != source.StatusOK || maximum.Load() != 4 {
+		t.Fatalf("status=%s max=%d", st, maximum.Load())
+	}
+}
+
+func TestFullTraceLookupUsesCallerContext(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/select/jaeger/api/traces" {
+			fmt.Fprint(w, `{"data":[{"traceID":"1"}]}`)
+			return
+		}
+		cancel()
+		<-r.Context().Done()
+	}))
+	defer srv.Close()
+	a := New(srv.URL, "", srv.Client())
+	spans, st := a.ListSpans(ctx, runRef(t))
+	if st != source.StatusUnavailable || spans != nil {
+		t.Fatalf("status=%s spans=%+v", st, spans)
 	}
 }
