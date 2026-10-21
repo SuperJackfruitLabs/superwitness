@@ -52,6 +52,9 @@ type Config struct {
 	SessionSecretFile   string            // SW_SESSION_SECRET_FILE: 32+ bytes that key the login cookie
 	TrustedProxies      []netip.Prefix    // SW_TRUSTED_PROXIES; nil means this host's own addresses
 
+	SuperpipelineAudience string // optional exact registered resource; defaults to SuperpipelineURL
+	HubAudience           string // optional exact registered resource; defaults to HubURL
+
 	// The organization plane. SW_ORG_PLANE_ISSUER set switches every token path to the plane:
 	// caller verification, browser sign-in and superwitness's own service tokens. There is no
 	// dual-accept: unset, the hub does all three exactly as before.
@@ -84,6 +87,8 @@ func Load(getenv func(string) string) (Config, error) {
 		OTLPEndpoint:        trimURL(getenv("SW_OTLP_ENDPOINT")),
 		SourceTimeout:       DefaultSourceTimeout,
 	}
+	c.SuperpipelineAudience = getenv("SW_SUPERPIPELINE_AUDIENCE")
+	c.HubAudience = getenv("SW_HUB_AUDIENCE")
 	c.OrgPlaneIssuer = strings.TrimSpace(getenv("SW_ORG_PLANE_ISSUER"))
 	c.OrgPlaneJWKSURL = strings.TrimSpace(getenv("SW_ORG_PLANE_JWKS_URL"))
 	c.OrgPlaneURL = trimURL(getenv("SW_ORG_PLANE_URL"))
@@ -201,7 +206,34 @@ func Load(getenv func(string) string) (Config, error) {
 	if strings.HasSuffix(c.OrgPlaneIssuer, "/") {
 		return Config{}, fmt.Errorf("SW_ORG_PLANE_ISSUER is compared exactly with each token's iss; remove the trailing slash from %q", c.OrgPlaneIssuer)
 	}
+	for _, a := range []struct{ name, value string }{
+		{"SW_SUPERPIPELINE_AUDIENCE", c.SuperpipelineAudience}, {"SW_HUB_AUDIENCE", c.HubAudience},
+	} {
+		if a.value == "" {
+			continue
+		}
+		u, err := url.Parse(a.value)
+		if err != nil || strings.TrimSpace(a.value) != a.value || u.Scheme != "https" || u.Host == "" || u.User != nil || u.RawQuery != "" || u.ForceQuery || u.Fragment != "" || strings.Contains(a.value, "#") {
+			return Config{}, fmt.Errorf("%s: want an exact registered https resource URL without credentials, query or fragment", a.name)
+		}
+	}
 	return c, nil
+}
+
+// HubTokenAudience is the exact resource requested from the organization plane.
+func (c Config) HubTokenAudience() string {
+	if c.HubAudience != "" {
+		return c.HubAudience
+	}
+	return c.HubURL
+}
+
+// SuperpipelineTokenAudience is the exact resource requested from the organization plane.
+func (c Config) SuperpipelineTokenAudience() string {
+	if c.SuperpipelineAudience != "" {
+		return c.SuperpipelineAudience
+	}
+	return c.SuperpipelineURL
 }
 
 // MigrateDSN is the DSN migrations run over: SW_MIGRATE_DATABASE_URL, else SW_DATABASE_URL.

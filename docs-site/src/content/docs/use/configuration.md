@@ -19,6 +19,8 @@ are trimmed from every value.
 | `SW_MIGRATE_DATABASE_URL` | no / no | `SW_DATABASE_URL` | the Postgres DSN migrations run over: the owner role. |
 | `SW_SUPERPIPELINE_URL` | yes / no | none | SuperPipeline, where runs, cards, gates and usage are read. |
 | `SW_HUB_URL` | yes / no | none | the AgentPod hub: attempts, principals, the service token, and, without the plane, the issuer of caller tokens. |
+| `SW_SUPERPIPELINE_AUDIENCE` | no / no | `SW_SUPERPIPELINE_URL` | exact registered HTTPS resource for the plane service token; preserves trailing slashes. |
+| `SW_HUB_AUDIENCE` | no / no | `SW_HUB_URL` | exact registered HTTPS resource for the plane service token; preserves trailing slashes. |
 | `SW_HUB_CLIENT_ID` | yes / no | none | SuperWitness's AgentPod service credential id, `svc_…`. |
 | `SW_HUB_CLIENT_SECRET_FILE` | yes / no | none | a file holding that credential's secret. |
 | `SW_ORG_PLANE_ISSUER` | no / no | none: the hub issues every token | the organization plane's issuer, compared exactly with each token's `iss` (no trailing slash). Setting it switches caller tokens, browser sign-in and SuperWitness's own service tokens to the plane; nothing accepts both. |
@@ -38,9 +40,15 @@ are trimmed from every value.
 | `SW_OTLP_ENDPOINT` | no / no | none: SuperWitness sends no telemetry of its own | the OTLP/HTTP endpoint for SuperWitness's own traces and metrics ([Sending telemetry](/use/telemetry/#superwitnesss-own-telemetry)). |
 | `SW_FAKE_SOURCES` | no / – | `false` | `1` or `true` serves the built-in development run and accepts development tokens ([Install](/install/#try-it-without-the-other-products)). Accepts `true`/`false`/`1`/`0`; empty is false. |
 
-With the plane, SuperWitness asks for its hub token with audience `SW_HUB_URL` and its
-SuperPipeline token with audience `SW_SUPERPIPELINE_URL`, so both must be those products' public
-resource URLs.
+With the plane, SuperWitness asks for tokens using `SW_HUB_AUDIENCE` and
+`SW_SUPERPIPELINE_AUDIENCE`, falling back to each product's URL when omitted. Set the audience
+to the already registered resource when the API endpoint differs from that resource, for
+example `https://hub.agentpod.dev` or `https://app.superpipeline.dev`. The URL settings remain
+the fetch endpoints. These trusted operator settings do not register resources or change
+caller-token acceptance. A refused exchange fails without trying the endpoint as another
+audience. Legacy hub service-token exchange does not use these audience settings.
+Explicit audiences must be exact HTTPS URLs without credentials, query or fragment;
+whitespace is rejected and trailing slashes are preserved.
 
 In fake mode, the product, engine and credential settings are not used: the sources are built
 in. A URL among them that is set is still validated. `SW_OTLP_ENDPOINT` and `SW_SOURCE_TIMEOUT`
