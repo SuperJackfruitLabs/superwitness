@@ -63,6 +63,22 @@ func (s *Subjects) ResolveRun(ctx context.Context, ref source.RunRef) (verdicts.
 	case ap.status != source.StatusNotFound:
 		subj.Complete = false
 	}
+	if ap.frag.Execution != nil && ap.frag.ExecutionStatus == source.StatusOK && (sp.frag.Run == nil || ap.frag.Execution.MatchesRun(sp.frag.Run.Run)) {
+		ids, complete := ap.frag.Execution.ContributorClosure()
+		subj.Executors = append(subj.Executors, ids...)
+		subj.Complete = subj.Complete && complete
+		subj.Evidence = ap.frag.Execution
+	} else {
+		subj.Complete = false
+	}
+	if sp.frag.Work != nil && sp.frag.WorkStatus == source.StatusOK {
+		reader := Joiner{AgentPod: s.AgentPod, Timeout: s.timeout()}
+		for _, joined := range reader.readExports(ctx, sp.frag.Work) {
+			if joined.Status == source.StatusOK && joined.Receipt != nil {
+				subj.Exports = append(subj.Exports, *joined.Receipt)
+			}
+		}
+	}
 	return subj, nil
 }
 
@@ -93,7 +109,23 @@ func (s *Subjects) ResolveAttempt(ctx context.Context, attemptID string) (verdic
 			if a.AgentPrincipalID == "" {
 				return verdicts.Subject{Found: true, Complete: false}, nil
 			}
-			return verdicts.Subject{Found: true, Complete: true, Executors: []string{a.AgentPrincipalID}}, nil
+			subj := verdicts.Subject{Found: true, Complete: false, Executors: []string{a.AgentPrincipalID}}
+			if ap.frag.Execution != nil && ap.frag.ExecutionStatus == source.StatusOK {
+				scoped := *ap.frag.Execution
+				scoped.Executions = nil
+				for _, execution := range ap.frag.Execution.Executions {
+					if execution.Binding.HubSessionID == a.SessionID {
+						scoped.Executions = append(scoped.Executions, execution)
+					}
+				}
+				if len(scoped.Executions) > 0 {
+					ids, complete := scoped.ContributorClosure()
+					subj.Executors = append(subj.Executors, ids...)
+					subj.Complete = complete
+					subj.Evidence = &scoped
+				}
+			}
+			return subj, nil
 		}
 	}
 	return verdicts.Subject{Found: true, Complete: false}, nil

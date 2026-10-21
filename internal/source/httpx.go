@@ -30,9 +30,12 @@ func GetJSON(ctx context.Context, hc *http.Client, url, bearer string, out any, 
 		return 0, ClassifyErr(ctx, err)
 	}
 	defer resp.Body.Close()
-	body, err := io.ReadAll(io.LimitReader(resp.Body, maxBody))
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxBody+1))
 	if err != nil {
 		return resp.StatusCode, ClassifyErr(ctx, err)
+	}
+	if len(body) > maxBody {
+		return resp.StatusCode, StatusUnavailable
 	}
 	switch resp.StatusCode {
 	case http.StatusOK:
@@ -40,6 +43,9 @@ func GetJSON(ctx context.Context, hc *http.Client, url, bearer string, out any, 
 			dec := json.NewDecoder(bytes.NewReader(body))
 			dec.UseNumber()
 			if err := dec.Decode(out); err != nil {
+				return resp.StatusCode, StatusUnavailable
+			}
+			if dec.Decode(new(any)) != io.EOF {
 				return resp.StatusCode, StatusUnavailable
 			}
 		}

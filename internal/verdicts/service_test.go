@@ -464,3 +464,55 @@ func TestNULBypassesAndSupersedesFormat(t *testing.T) {
 	_, _, err = svc.Record(ctx, human, r)
 	wantCode(t, err, 400, "invalid_evidence_refs")
 }
+
+func TestTypedEvidenceMustBelongToSubject(t *testing.T) {
+	if err := ValidateEvidenceRefs(json.RawMessage(`[{"kind":"artifact","id":"artifact_1"}]`)); err != nil {
+		t.Fatal(err)
+	}
+	if err := validateScopedEvidence(json.RawMessage(`[{"kind":"artifact","id":"artifact_1"}]`), nil); err == nil {
+		t.Fatal("accepted unavailable evidence")
+	}
+	if err := ValidateEvidenceRefs(json.RawMessage(`[{"kind":"artifact","id":"artifact_1","claim":"verified"}]`)); err == nil {
+		t.Fatal("accepted claimed effect")
+	}
+}
+
+func TestChildContributorCannotJudgeParent(t *testing.T) {
+	svc, _, subj := newService(t)
+	subj.run.Executors = append(subj.run.Executors, grader.ID)
+	_, _, err := svc.Record(context.Background(), grader, req("child-self"))
+	wantCode(t, err, 403, "self_judgement")
+	subj.run.Executors = []string{executor.ID}
+	if _, created, err := svc.Record(context.Background(), grader, req("independent")); err != nil || !created {
+		t.Fatalf("independent verdict: %v", err)
+	}
+}
+
+func TestIndependentJudgeCitesJoinedReceipt(t *testing.T) {
+	svc, _, subj := newService(t)
+	digest := strings.Repeat("a", 64)
+	subj.run.Evidence = &source.ExecutionEnvelope{Executions: []source.ExecutionEvidence{{Tools: []source.ExecutionTool{{ID: "receipt_1", Source: "managed-http", ReceiptDigest: &digest}}}}}
+	good := req("joined-receipt")
+	good.EvidenceRefs = json.RawMessage(`[{"kind":"tool_receipt","source":"managed-http","id":"receipt_1"}]`)
+	if _, created, err := svc.Record(context.Background(), grader, good); err != nil || !created {
+		t.Fatalf("joined receipt: %v", err)
+	}
+	foreign := req("foreign-receipt")
+	foreign.EvidenceRefs = json.RawMessage(`[{"kind":"tool_receipt","source":"operation","id":"receipt_1"}]`)
+	_, _, err := svc.Record(context.Background(), grader, foreign)
+	wantCode(t, err, 400, "invalid_evidence_refs")
+}
+
+func TestIndependentJudgeCitesScopedMetadataExport(t *testing.T) {
+	svc, _, subj := newService(t)
+	subj.run.Exports = []source.ExecutionExportReceipt{{ExportID: "export_1"}}
+	r := req("export-citation")
+	r.EvidenceRefs = json.RawMessage(`[{"kind":"execution_export","id":"export_1"}]`)
+	if _, created, err := svc.Record(context.Background(), grader, r); err != nil || !created {
+		t.Fatalf("joined export receipt: %v", err)
+	}
+	r = req("foreign-export")
+	r.EvidenceRefs = json.RawMessage(`[{"kind":"execution_export","id":"other"}]`)
+	_, _, err := svc.Record(context.Background(), grader, r)
+	wantCode(t, err, 400, "invalid_evidence_refs")
+}

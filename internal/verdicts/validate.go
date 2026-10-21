@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/SuperJackfruitLabs/superwitness/internal/source"
 	"regexp"
 	"strings"
 )
@@ -43,8 +44,8 @@ func ValidateValue(raw json.RawMessage) error {
 	return nil
 }
 
-// ValidateEvidenceRefs accepts span ids and {session_id, seq_from, seq_to} ranges only:
-// pointers to evidence, never the evidence itself.
+// ValidateEvidenceRefs accepts pointers to spans, transcript ranges, and typed
+// receipt/artifact metadata. Typed references also require a joined subject snapshot.
 func ValidateEvidenceRefs(raw json.RawMessage) error {
 	var items []json.RawMessage
 	if err := json.Unmarshal(raw, &items); err != nil {
@@ -61,6 +62,16 @@ func ValidateEvidenceRefs(raw json.RawMessage) error {
 			}
 			continue
 		}
+		var typed struct {
+			Kind   string `json:"kind"`
+			ID     string `json:"id"`
+			Source string `json:"source,omitempty"`
+		}
+		td := json.NewDecoder(bytes.NewReader(it))
+		td.DisallowUnknownFields()
+		if td.Decode(&typed) == nil && ((typed.Kind == "tool_receipt" && typed.Source != "") || ((typed.Kind == "artifact" || typed.Kind == "execution_export") && typed.Source == "")) && typed.ID != "" {
+			continue
+		}
 		var r struct {
 			SessionID string `json:"session_id"`
 			SeqFrom   *int64 `json:"seq_from"`
@@ -71,6 +82,39 @@ func ValidateEvidenceRefs(raw json.RawMessage) error {
 		if err := dec.Decode(&r); err != nil || r.SessionID == "" || r.SeqFrom == nil || r.SeqTo == nil ||
 			*r.SeqFrom < 0 || *r.SeqTo < *r.SeqFrom {
 			return fmt.Errorf("evidence_refs[%d]: want a span id or {session_id, seq_from, seq_to}", i)
+		}
+	}
+	return nil
+}
+
+func validateScopedEvidence(raw json.RawMessage, evidence *source.ExecutionEnvelope, exports ...source.ExecutionExportReceipt) error {
+	var refs []json.RawMessage
+	if err := json.Unmarshal(raw, &refs); err != nil {
+		return err
+	}
+	for _, r := range refs {
+		var ref struct {
+			Kind   string `json:"kind"`
+			ID     string `json:"id"`
+			Source string `json:"source,omitempty"`
+		}
+		if json.Unmarshal(r, &ref) != nil || ref.Kind == "" {
+			continue
+		}
+		if ref.Kind == "execution_export" {
+			found := false
+			for _, r := range exports {
+				if r.ExportID == ref.ID {
+					found = true
+				}
+			}
+			if !found {
+				return fmt.Errorf("export receipt is not in the joined subject evidence")
+			}
+			continue
+		}
+		if evidence == nil || !evidence.ContainsTypedReference(ref.Kind, ref.ID, ref.Source) {
+			return fmt.Errorf("receipt or artifact is not in the joined subject evidence")
 		}
 	}
 	return nil

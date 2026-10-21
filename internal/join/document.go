@@ -17,16 +17,28 @@ const (
 	TraceUnknown = "unknown"
 )
 
+type ExecutionSection struct {
+	Status   source.SourceStatus       `json:"status"`
+	Evidence *source.ExecutionEnvelope `json:"evidence"`
+}
+
+type WorkSection struct {
+	Status   source.SourceStatus  `json:"status"`
+	Evidence *source.WorkEvidence `json:"evidence"`
+}
 type RunDocument struct {
-	Run      RunSection                     `json:"run"`
-	Attempts []Attempt                      `json:"attempts"`
-	Trace    TraceSection                   `json:"trace"`
-	Errors   []ErrorItem                    `json:"errors"`
-	Verdicts []VerdictView                  `json:"verdicts"`
-	Cost     Cost                           `json:"cost"`
-	LogCount Count                          `json:"log_count"`
-	Sources  map[string]source.SourceStatus `json:"sources"`
-	Links    Links                          `json:"links"`
+	Exports   []ExportSection                `json:"execution_exports"`
+	Work      WorkSection                    `json:"work_evidence"`
+	Execution ExecutionSection               `json:"execution"`
+	Run       RunSection                     `json:"run"`
+	Attempts  []Attempt                      `json:"attempts"`
+	Trace     TraceSection                   `json:"trace"`
+	Errors    []ErrorItem                    `json:"errors"`
+	Verdicts  []VerdictView                  `json:"verdicts"`
+	Cost      Cost                           `json:"cost"`
+	LogCount  Count                          `json:"log_count"`
+	Sources   map[string]source.SourceStatus `json:"sources"`
+	Links     Links                          `json:"links"`
 }
 
 type RunSection struct {
@@ -82,23 +94,24 @@ type ErrorItem struct {
 }
 
 type VerdictView struct {
-	ID         string          `json:"id"`
-	Kind       string          `json:"kind"`
-	Source     string          `json:"source"`
-	Subject    string          `json:"subject"`
-	Value      json.RawMessage `json:"value"`
-	Judge      string          `json:"judge"`
-	JudgeKind  string          `json:"judge_kind"`
-	Standard   string          `json:"standard"`
-	Status     string          `json:"status,omitempty"` // gates only: pending | resolved | cancelled
-	Comment    string          `json:"comment,omitempty"`
-	At         string          `json:"at"`
-	RunID      string          `json:"run_id,omitempty"`
-	Supersedes *string         `json:"supersedes,omitempty"`
+	EvidenceRefs json.RawMessage `json:"evidence_refs,omitempty"`
+	ID           string          `json:"id"`
+	Kind         string          `json:"kind"`
+	Source       string          `json:"source"`
+	Subject      string          `json:"subject"`
+	Value        json.RawMessage `json:"value"`
+	Judge        string          `json:"judge"`
+	JudgeKind    string          `json:"judge_kind"`
+	Standard     string          `json:"standard"`
+	Status       string          `json:"status,omitempty"` // gates only: pending | resolved | cancelled
+	Comment      string          `json:"comment,omitempty"`
+	At           string          `json:"at"`
+	RunID        string          `json:"run_id,omitempty"`
+	Supersedes   *string         `json:"supersedes,omitempty"`
 }
 
 type Cost struct {
-	Status       string   `json:"status"` // reported | unreported | unknown
+	Status       string   `json:"status"` // reported | estimated | partial | unreported | unknown
 	InputTokens  *int64   `json:"input_tokens"`
 	OutputTokens *int64   `json:"output_tokens"`
 	USD          *float64 `json:"usd"`
@@ -194,6 +207,9 @@ func unknownPtr() *string {
 func newDocument(ref source.RunRef) RunDocument {
 	self := "/v1/runs/superpipeline/" + ref.BoardID + "/" + ref.RunID
 	return RunDocument{
+		Exports:   []ExportSection{},
+		Work:      WorkSection{Status: source.StatusUnavailable},
+		Execution: ExecutionSection{Status: source.StatusUnavailable},
 		Run: RunSection{Ref: ref.String(), Card: CardView{ID: Unknown, Title: Unknown}, Stage: Unknown, Agent: Unknown,
 			AgentRef: Unknown, State: Unknown, StartedAt: Unknown, EndedAt: unknownPtr()},
 		Attempts: []Attempt{},

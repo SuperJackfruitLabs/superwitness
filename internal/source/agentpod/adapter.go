@@ -58,13 +58,28 @@ func (a *Adapter) Fetch(ctx context.Context, ref source.RunRef) (source.Fragment
 	if st != source.StatusOK {
 		return source.Fragment{}, st
 	}
-	if body.ExternalRunID != ref.RunID {
+	if body.ExternalSource != string(source.Superpipeline) || body.ExternalRunID != ref.RunID {
 		return source.Fragment{}, source.StatusUnavailable
 	}
 	if body.BoardID != nil && *body.BoardID != ref.BoardID {
 		return source.Fragment{}, source.StatusNotFound // the run exists, but not on the board the caller named
 	}
-	return source.Fragment{Source: source.AgentPod, FetchedAt: time.Now().UTC(), Version: body.AsOf, Ledger: &body}, source.StatusOK
+	f := source.Fragment{Source: source.AgentPod, FetchedAt: time.Now().UTC(), Version: body.AsOf, Ledger: &body, ExecutionStatus: source.StatusUnavailable}
+	var execution source.ExecutionEnvelope
+	est := a.get(ctx, "/api/evidence/runs/superpipeline/"+url.PathEscape(ref.RunID)+"/execution?schema_version="+url.QueryEscape(source.ExecutionSchemaV1), &execution)
+	if est == source.StatusOK && execution.ExternalRunID == ref.RunID && execution.BoardID != nil && *execution.BoardID == ref.BoardID && len(execution.Executions) > 0 {
+		valid := true
+		for _, x := range execution.Executions {
+			if x.Task.BoardID != ref.BoardID || execution.CardID == nil || x.Task.CardID != *execution.CardID || (body.CardID != nil && x.Task.CardID != *body.CardID) {
+				valid = false
+			}
+		}
+		if valid {
+			f.Execution = &execution
+			f.ExecutionStatus = source.StatusOK
+		}
+	}
+	return f, source.StatusOK
 }
 
 func (a *Adapter) ResolveAttempt(ctx context.Context, attemptID string) (source.AttemptLink, source.SourceStatus) {
@@ -120,3 +135,19 @@ func isNotFound(b []byte) bool {
 	}
 	return json.Unmarshal(b, &e) == nil && e.Error == "not_found"
 }
+
+// FetchExport reads the owner's persisted immutable export verification receipt.
+// It never follows a Library URL supplied by a model or Pipeline reference.
+func (a *Adapter) FetchExport(ctx context.Context, id string) (source.ExecutionExportReceipt, source.SourceStatus) {
+	var receipt source.ExecutionExportReceipt
+	if !exportIDPattern.MatchString(id) {
+		return receipt, source.StatusUnavailable
+	}
+	st := a.get(ctx, "/api/evidence/exports/"+url.PathEscape(id)+"?schema_version="+url.QueryEscape(source.ExecutionExportSchemaV1), &receipt)
+	if st == source.StatusOK && receipt.ExportID != id {
+		return source.ExecutionExportReceipt{}, source.StatusUnavailable
+	}
+	return receipt, st
+}
+
+var exportIDPattern = regexp.MustCompile(`^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$`)

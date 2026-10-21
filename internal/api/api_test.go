@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
@@ -30,6 +31,23 @@ func newTestServer(t *testing.T, mutate func(*api.Ops, *verdicts.MemStore)) *htt
 	if err != nil {
 		t.Fatal(err)
 	}
+	fixtureBytes, err := os.ReadFile("../source/testdata/execution-evidence-v1.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var corpus struct {
+		Success []struct{ Value source.ExecutionEvidence }
+	}
+	if err := json.Unmarshal(fixtureBytes, &corpus); err != nil {
+		t.Fatal(err)
+	}
+	execution := corpus.Success[0].Value
+	execution.Contributors.Closure = "complete"
+	execution.Binding.Run.ID = fake.DevRun
+	execution.Task.BoardID = fake.DevBoard
+	execution.Task.CardID = *d.AP.Fragment.Ledger.CardID
+	d.AP.Fragment.Execution = &source.ExecutionEnvelope{SchemaVersion: "agentpod-execution-evidence/v1", ExternalSource: "superpipeline", ExternalRunID: fake.DevRun, BoardID: d.AP.Fragment.Ledger.BoardID, CardID: d.AP.Fragment.Ledger.CardID, AsOf: execution.AsOf, Executions: []source.ExecutionEvidence{execution}}
+	d.AP.Fragment.ExecutionStatus = source.StatusOK
 	store := verdicts.NewMemStore()
 	ops := &api.Ops{
 		Join: &join.Joiner{Superpipeline: d.SP, AgentPod: d.AP, Traces: d.Traces, Logs: d.Logs, Errors: d.Errors,

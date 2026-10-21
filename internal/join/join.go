@@ -105,9 +105,24 @@ func (j *Joiner) Build(ctx context.Context, ref source.RunRef) (RunDocument, err
 	if sp.status == source.StatusOK && sp.frag.Run != nil {
 		run = sp.frag.Run
 		applyRun(&doc, run)
+		if sp.frag.Work != nil && sp.frag.WorkStatus == source.StatusOK {
+			doc.Work = WorkSection{Status: source.StatusOK, Evidence: sp.frag.Work}
+			usage := sp.frag.Work.Usage
+			switch usage.Status {
+			case "known":
+				doc.Cost.USD = usage.RecordedCostUSD
+			case "estimated":
+				doc.Cost = Cost{Status: "estimated", USD: usage.EstimatedCostUSD}
+			case "unknown", "unreported", "partial":
+				doc.Cost = Cost{Status: usage.Status}
+			}
+		}
 	}
 	if ap.status == source.StatusOK && ap.frag.Ledger != nil {
 		applyLedger(&doc, ap.frag.Ledger, run != nil)
+		if ap.frag.Execution != nil && ap.frag.ExecutionStatus == source.StatusOK && (run == nil || ap.frag.Execution.MatchesRun(run.Run)) {
+			doc.Execution = ExecutionSection{Status: source.StatusOK, Evidence: ap.frag.Execution}
+		}
 	}
 	if tr.status == source.StatusOK && tr.frag.Traces != nil {
 		applyTraces(&doc, tr.frag.Traces)
@@ -127,6 +142,11 @@ func (j *Joiner) Build(ctx context.Context, ref source.RunRef) (RunDocument, err
 	var owned []verdicts.Verdict
 	verdictStatus := source.StatusOK
 	var judges map[string]judge
+	wg.Go(func() {
+		if doc.Work.Status == source.StatusOK {
+			doc.Exports = j.readExports(ctx, doc.Work.Evidence)
+		}
+	})
 	wg.Go(func() { lg = j.fetch(ctx, source.Logs, j.Logs, phase2) })
 	wg.Go(func() { er = j.fetch(ctx, source.Errors, j.Errors, phase2) })
 	wg.Go(func() { owned, verdictStatus = j.readVerdicts(ctx, subjects) })
@@ -348,5 +368,5 @@ func gateViews(ref source.RunRef, gates []source.SPGate, judges map[string]judge
 func ownedView(v verdicts.Verdict) VerdictView {
 	return VerdictView{ID: v.ID, Kind: v.Kind, Source: "superwitness", Subject: v.SubjectRef, Value: v.Value,
 		Judge: v.Judge, JudgeKind: string(v.JudgeKind), Standard: v.Standard, Comment: v.Comment,
-		At: fmtTime(v.CreatedAt), Supersedes: v.Supersedes}
+		At: fmtTime(v.CreatedAt), Supersedes: v.Supersedes, EvidenceRefs: v.EvidenceRefs}
 }

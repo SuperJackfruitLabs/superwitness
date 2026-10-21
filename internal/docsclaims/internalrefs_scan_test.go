@@ -152,7 +152,7 @@ func TestNoInternalIdentifiersInTrackedTree(t *testing.T) {
 		}
 		for i, line := range strings.Split(string(data), "\n") {
 			for _, r := range scanLine(line, privateNameDigests) {
-				if !allowed(file, r.pattern) {
+				if !allowed(file, r.pattern) && !syntheticExecutionRef(file, data, r) {
 					problems = append(problems, fmt.Sprintf("%s:%d: [%s] %q", file, i+1, r.pattern, r.match))
 				}
 			}
@@ -160,5 +160,87 @@ func TestNoInternalIdentifiersInTrackedTree(t *testing.T) {
 	}
 	if len(problems) > 0 {
 		t.Errorf("internal identifiers in tracked files:\n%s", strings.Join(problems, "\n"))
+	}
+}
+
+// The canonical cross-language evidence corpus requires principal syntax. Only
+// these reviewed synthetic principals in these exact bytes get this exception.
+const executionFixturePath = "internal/source/testdata/execution-evidence-v1.json"
+const executionFixtureDigest = "f77d4b2171da3e704ed259771148dfd59fea6230ff29eddd4e65f37222097862"
+
+func syntheticExecutionRef(file string, data []byte, r internalRef) bool {
+	expected := map[string]string{
+		executionFixturePath: executionFixtureDigest,
+		"internal/source/testdata/execution-export-v1.json": "6af4eebb36ecd99258ed5e9d7049a86163b6c1e7cbb3bd4500491902e7ff0de1",
+	}[file]
+	if expected == "" || r.pattern != "real-looking-id" {
+		return false
+	}
+	sum := sha256.Sum256(data)
+	if hex.EncodeToString(sum[:]) != expected {
+		return false
+	}
+	return r.match == "prn_"+strings.Repeat("a", 20) || r.match == "prn_"+strings.Repeat("b", 20)
+}
+func TestExecutionFixtureExceptionIsExact(t *testing.T) {
+	b, err := os.ReadFile(filepath.Join(repoRoot(t), executionFixturePath))
+	if err != nil {
+		t.Fatal(err)
+	}
+	sum := sha256.Sum256(b)
+	if hex.EncodeToString(sum[:]) != executionFixtureDigest {
+		t.Fatal("shared execution corpus bytes changed; review canonical mirror and synthetic identity exception")
+	}
+	refs := 0
+	for _, line := range strings.Split(string(b), "\n") {
+		for _, r := range scanLine(line, privateNameDigests) {
+			refs++
+			if !syntheticExecutionRef(executionFixturePath, b, r) {
+				t.Fatalf("non-synthetic reference: %s", r.match)
+			}
+		}
+	}
+	if refs == 0 {
+		t.Fatal("fixture no longer exercises synthetic exception")
+	}
+	for _, tc := range []struct {
+		file string
+		data []byte
+		r    internalRef
+	}{
+		{"other.json", b, internalRef{"real-looking-id", "prn_" + strings.Repeat("a", 20)}},
+		{executionFixturePath, append(append([]byte{}, b...), ' '), internalRef{"real-looking-id", "prn_" + strings.Repeat("a", 20)}},
+		{executionFixturePath, b, internalRef{"real-looking-id", "prn_0123456789abcdef0123"}},
+		{executionFixturePath, b, internalRef{"tailnet-ip", "100.1.2.3"}},
+	} {
+		if syntheticExecutionRef(tc.file, tc.data, tc.r) {
+			t.Fatal("exception accepted non-reviewed identity, bytes or path")
+		}
+	}
+}
+
+func TestExportFixtureExceptionIsExact(t *testing.T) {
+	path := "internal/source/testdata/execution-export-v1.json"
+	b, err := os.ReadFile(filepath.Join(repoRoot(t), path))
+	if err != nil {
+		t.Fatal(err)
+	}
+	refs := 0
+	for _, line := range strings.Split(string(b), "\n") {
+		for _, r := range scanLine(line, privateNameDigests) {
+			refs++
+			if !syntheticExecutionRef(path, b, r) {
+				t.Fatal("export corpus exception requires reviewed exact bytes and synthetic identity")
+			}
+		}
+	}
+	if refs == 0 {
+		t.Fatal("missing synthetic export identity")
+	}
+	if syntheticExecutionRef(path, append(append([]byte{}, b...), ' '), internalRef{"real-looking-id", "prn_" + strings.Repeat("a", 20)}) {
+		t.Fatal("changed corpus bytes accepted")
+	}
+	if syntheticExecutionRef(path, b, internalRef{"real-looking-id", "prn_0123456789abcdef0123"}) {
+		t.Fatal("non-synthetic identity accepted")
 	}
 }
