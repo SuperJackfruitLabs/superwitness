@@ -1,0 +1,23 @@
+# SuperWitness
+
+> Observability and evaluation for agent fleets: what an agent did, how the product it ran on behaved, and whether the work was any good, joined on one run.
+
+SuperWitness is a self-hosted service that joins a SuperPipeline run, its AgentPod attempts, spans, logs and verdicts into one run document, readable through an HTTP API, an MCP server and a web app. It is MIT licensed, installs on Linux and macOS, and a real deployment is one Linux host with systemd running SuperWitness next to Postgres.
+
+## Docs
+
+- [What it is](https://docs.superwitness.dev/what-it-is/): the product and what it is for
+- [Install](https://docs.superwitness.dev/install/): install the binary and run it
+- [Concepts](https://docs.superwitness.dev/concepts/): runs, attempts, telemetry and verdicts
+
+## Links
+
+- [Home](https://superwitness.dev)
+- [Documentation](https://docs.superwitness.dev)
+- [Source repository](https://github.com/SuperJackfruitLabs/superwitness)
+- [Releases](https://github.com/SuperJackfruitLabs/superwitness/releases)
+
+## Optional
+
+- [Super Jackfruit Labs](https://superjackfruit.com): the company behind SuperWitness
+- [Super Jackfruit Labs llms.txt](https://superjackfruit.com/llms.txt): all products in the family

@@ -47,6 +47,20 @@ const TITLE = 'SuperWitness — every run, on the record';
 const DESCRIPTION =
   'Self-hosted run evidence for agent work: a SuperPipeline run, its AgentPod attempts, spans, logs and verdicts joined into one document. MIT.';
 
+// Structured data for search and agents; every value is one the page already states.
+const JSON_LD = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'SuperWitness',
+  description: DESCRIPTION,
+  url: SITE,
+  applicationCategory: 'DeveloperApplication',
+  operatingSystem: 'Linux, macOS',
+  softwareVersion: VERSION,
+  sameAs: [REPO],
+  publisher: { '@type': 'Organization', name: 'Super Jackfruit Labs', url: 'https://superjackfruit.com' },
+};
+
 // The MCP tool list is read from the server that registers the tools, at build time, so
 // this page cannot name a tool the code does not have, or miss one it does. The build
 // runs in landing/, so the Go source is one directory up.
@@ -87,6 +101,7 @@ import Frame from '@superjackfruit/frontdoor/components/Frame.astro';
     <meta name="theme-color" content="#0e1116" />
     <SuiteHead product="superwitness" />
     <ShareMeta title={TITLE} description={DESCRIPTION} />
+    <script type="application/ld+json" set:html={JSON.stringify(JSON_LD)} />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
