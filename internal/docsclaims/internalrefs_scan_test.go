@@ -166,7 +166,7 @@ func TestNoInternalIdentifiersInTrackedTree(t *testing.T) {
 // The canonical cross-language evidence corpus requires principal syntax. Only
 // these reviewed synthetic principals in these exact bytes get this exception.
 const executionFixturePath = "internal/source/testdata/execution-evidence-v1.json"
-const executionFixtureDigest = "f77d4b2171da3e704ed259771148dfd59fea6230ff29eddd4e65f37222097862"
+const executionFixtureDigest = "0c29ac94d21fcef7bc854a2fbf0b7d81d8261d77162ae530f51de0799120e96f"
 
 func syntheticExecutionRef(file string, data []byte, r internalRef) bool {
 	expected := map[string]string{
