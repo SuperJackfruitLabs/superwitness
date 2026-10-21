@@ -64,6 +64,8 @@ func retryable(code, msg string) *Error {
 // Subject says whether a verdict's subject exists and which principals executed it.
 // Complete is false when any executor could not be mapped to a hub principal.
 type Subject struct {
+	Evidence  *source.ExecutionEnvelope
+	Exports   []source.ExecutionExportReceipt
 	Found     bool
 	Complete  bool
 	Executors []string
@@ -273,6 +275,9 @@ func (s *Service) checkSubject(ctx context.Context, req Request, judge string, k
 	var err error
 	switch req.SubjectKind {
 	case SubjectEvalCaseRun:
+		if err := validateScopedEvidence(req.EvidenceRefs, nil); err != nil {
+			return refuse(400, "invalid_evidence_refs", "%v", err)
+		}
 		return nil
 	case SubjectRun:
 		ref, _ := source.ParseRunRef(req.SubjectRef)
@@ -285,6 +290,9 @@ func (s *Service) checkSubject(ctx context.Context, req Request, judge string, k
 	}
 	if !subj.Found {
 		return refuse(404, "subject_not_found", "%s %s was not found", req.SubjectKind, req.SubjectRef)
+	}
+	if err := validateScopedEvidence(req.EvidenceRefs, subj.Evidence, subj.Exports...); err != nil {
+		return refuse(400, "invalid_evidence_refs", "%v", err)
 	}
 	if kind == JudgeHuman {
 		return nil

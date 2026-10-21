@@ -2,9 +2,12 @@ package superpipeline
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -36,11 +39,14 @@ func TestFetchDecodesC4(t *testing.T) {
 	if st != source.StatusOK {
 		t.Fatalf("status = %s", st)
 	}
-	if gotPath != "/v1/boards/brd_01/runs/run_01/evidence" || gotAuth != "Bearer tok-sp" {
+	if gotPath != "/v1/boards/brd_01/runs/run_01/evidence-v1" || gotAuth != "Bearer tok-sp" {
 		t.Errorf("request = %s %q", gotPath, gotAuth)
 	}
 	if tokens.Calls() != 1 {
 		t.Errorf("token calls = %d", tokens.Calls())
+	}
+	if f.Work != nil || f.WorkStatus != source.StatusUnavailable {
+		t.Fatal("legacy must not imply versioned provenance")
 	}
 	if f.Source != source.Superpipeline || f.Version != "2026-10-04T11:00:00Z" || f.Run == nil {
 		t.Fatalf("fragment = %+v", f)
@@ -121,5 +127,37 @@ func TestTimeout(t *testing.T) {
 	defer cancel()
 	if _, st := a.Fetch(ctx, ref(t, "run_01")); st != source.StatusTimeout {
 		t.Errorf("status = %s", st)
+	}
+}
+
+func TestVersionedWorkEvidenceFetch(t *testing.T) {
+	b, err := os.ReadFile("../testdata/run-evidence-v1.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var work source.WorkEvidence
+	if err := json.Unmarshal(b, &work); err != nil {
+		t.Fatal(err)
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.URL.Path, "evidence-v1") {
+			json.NewEncoder(w).Encode(work)
+			return
+		}
+		json.NewEncoder(w).Encode(work.Pipeline)
+	}))
+	defer srv.Close()
+	a := New(srv.URL, &auth.StaticTokenSource{Value: "test"}, srv.Client())
+	f, st := a.Fetch(context.Background(), ref(t, "run_01"))
+	if st != source.StatusOK || f.WorkStatus != source.StatusOK || f.Work == nil {
+		t.Fatalf("%s %+v", st, f)
+	}
+	if f.Work.Usage.CostProvenance != "agent-reported-not-provider-bill" {
+		t.Fatal("cost provenance lost")
+	}
+	work.ExecutorEvidence.ExternalRunID = "foreign"
+	f, st = a.Fetch(context.Background(), ref(t, "run_01"))
+	if st != source.StatusOK || f.Work != nil {
+		t.Fatal("foreign metadata accepted")
 	}
 }

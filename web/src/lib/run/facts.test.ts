@@ -3,6 +3,12 @@ import type { Span } from "../types";
 import { facts, tabOf, waterfall } from "./facts";
 
 describe("facts", () => {
+  it("preserves estimated and partial cost qualifications", () => {
+    for (const status of ["estimated", "partial"]) {
+      expect(facts({ cost: { status, usd: 0.3 } }).at(-1)?.value).toBe(`$0.30 (${status}; not provider bill)`);
+      expect(facts({ cost: { status, usd: null } }).at(-1)?.value).toBe(status);
+    }
+  });
   it("says unknown, never 0, for what a source could not supply", () => {
     const f = facts({ run: { agent: "prn_agent01", started_at: "unknown", ended_at: "unknown" }, attempts: [], errors: [],
       cost: { status: "unknown" }, sources: { agentpod: "timeout", errors: "unavailable" } });

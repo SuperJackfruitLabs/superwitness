@@ -315,3 +315,34 @@ func TestLoadOrgPlaneInFakeModeSignsInWithoutAHub(t *testing.T) {
 		t.Fatalf("fake mode with the plane: %+v %v; want no SW_HUB_URL and no service credential needed", c, err)
 	}
 }
+
+func TestProductTokenAudiences(t *testing.T) {
+	m := full()
+	c, err := Load(env(m))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.HubTokenAudience() != c.HubURL || c.SuperpipelineTokenAudience() != c.SuperpipelineURL {
+		t.Fatal("default audiences changed")
+	}
+	m["SW_HUB_URL"] = "http://127.0.0.1:3313"
+	m["SW_SUPERPIPELINE_URL"] = "https://candidate.example"
+	m["SW_HUB_AUDIENCE"] = "https://hub.agentpod.dev/"
+	m["SW_SUPERPIPELINE_AUDIENCE"] = "https://app.superpipeline.dev"
+	c, err = Load(env(m))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.HubTokenAudience() != "https://hub.agentpod.dev/" || c.SuperpipelineTokenAudience() != "https://app.superpipeline.dev" || c.HubURL != m["SW_HUB_URL"] || c.SuperpipelineURL != m["SW_SUPERPIPELINE_URL"] {
+		t.Fatalf("endpoint/resource separation lost: %+v", c)
+	}
+	for _, name := range []string{"SW_HUB_AUDIENCE", "SW_SUPERPIPELINE_AUDIENCE"} {
+		for _, invalid := range []string{"https://resource.example ", " http://resource.example", "http://resource.example", "https://user@resource.example", "https://resource.example?aud=other", "https://resource.example#other", "resource"} {
+			copy := full()
+			copy[name] = invalid
+			if _, err := Load(env(copy)); err == nil || !strings.Contains(err.Error(), name) {
+				t.Errorf("%s=%q: %v", name, invalid, err)
+			}
+		}
+	}
+}

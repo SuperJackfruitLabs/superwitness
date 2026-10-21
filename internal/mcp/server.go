@@ -72,7 +72,7 @@ type VerdictArgs struct {
 	Standard       string         `json:"standard" jsonschema:"rubric:<id>@<version>, stage:<key> or case:<id>"`
 	Value          map[string]any `json:"value" jsonschema:"exactly one of {decision}, {score 0..1}, {label}, {text}"`
 	Comment        string         `json:"comment,omitempty" jsonschema:"free text, at most 10000 characters"`
-	EvidenceRefs   []any          `json:"evidence_refs,omitempty" jsonschema:"span ids or {session_id, seq_from, seq_to}"`
+	EvidenceRefs   []any          `json:"evidence_refs,omitempty" jsonschema:"span ids; {session_id, seq_from, seq_to}; joined artifact {kind: artifact, id}; joined receipt {kind: tool_receipt, source, id}; owner-verified export receipt {kind: execution_export, id}"`
 	Supersedes     string         `json:"supersedes,omitempty" jsonschema:"the id of your earlier verdict this one corrects"`
 }
 

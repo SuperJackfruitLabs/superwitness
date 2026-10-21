@@ -2,10 +2,13 @@ package agentpod
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"strings"
 	"sync/atomic"
 	"testing"
 
@@ -71,8 +74,11 @@ func TestFetchDecodesC5(t *testing.T) {
 	if st != source.StatusOK {
 		t.Fatalf("status = %s", st)
 	}
-	if tokens.Calls() != 1 {
+	if tokens.Calls() != 2 {
 		t.Errorf("token calls = %d", tokens.Calls())
+	}
+	if f.Execution != nil || f.ExecutionStatus != source.StatusUnavailable {
+		t.Fatal("legacy C5 must not imply execution evidence")
 	}
 	at := f.Ledger.Attempts[0]
 	if at.ID != "attempt_01" || at.EndSeq == nil || *at.EndSeq != 9 || at.Fingerprint.Harness != "hermes" ||
@@ -194,5 +200,83 @@ func TestUnauthorizedInvalidates(t *testing.T) {
 	}
 	if tokens.Invalidations() != 1 {
 		t.Error("token not invalidated")
+	}
+}
+
+func TestNegotiatedExecutionEvidence(t *testing.T) {
+	b, err := os.ReadFile("../testdata/execution-evidence-v1.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var corpus struct {
+		Success []struct{ Value source.ExecutionEvidence }
+	}
+	if err := json.Unmarshal(b, &corpus); err != nil {
+		t.Fatal(err)
+	}
+	execution := corpus.Success[1].Value
+	execution.Binding.Run.ID = "run_01"
+	execution.Task.BoardID = "brd_01"
+	execution.Task.CardID = "crd_01"
+	board, card := "brd_01", "crd_01"
+	envelope := source.ExecutionEnvelope{SchemaVersion: "agentpod-execution-evidence/v1", ExternalSource: "superpipeline", ExternalRunID: "run_01", BoardID: &board, CardID: &card, Executions: []source.ExecutionEvidence{execution}, AsOf: execution.AsOf}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.URL.Path, "/execution") {
+			if r.URL.Query().Get("schema_version") != source.ExecutionSchemaV1 {
+				t.Error("missing explicit schema negotiation")
+			}
+			json.NewEncoder(w).Encode(envelope)
+			return
+		}
+		// Use the legacy fixture; its card binding is the authority checked below.
+		var ledger source.LedgerFragment
+		json.Unmarshal(contracts.HubEvidenceRun, &ledger)
+		ledger.CardID = &card
+		json.NewEncoder(w).Encode(ledger)
+	}))
+	defer srv.Close()
+	adapter := New(srv.URL, &auth.StaticTokenSource{Value: "test"}, srv.Client())
+	ref, _ := source.NewSuperpipelineRef(board, "run_01")
+	f, st := adapter.Fetch(context.Background(), ref)
+	if st != source.StatusOK || f.ExecutionStatus != source.StatusOK || f.Execution == nil {
+		t.Fatalf("%s %+v", st, f)
+	}
+	if len(f.Execution.Executions[0].Tools) != 2 {
+		t.Fatal("actual receipt metadata omitted")
+	}
+	envelope.Executions[0].Task.CardID = "crd_foreign"
+	f, st = adapter.Fetch(context.Background(), ref)
+	if st != source.StatusOK || f.Execution != nil || f.ExecutionStatus != source.StatusUnavailable {
+		t.Fatal("conflicting execution evidence should be unavailable while legacy remains readable")
+	}
+}
+
+func TestFetchCommittedExportReceipt(t *testing.T) {
+	b, err := os.ReadFile("../testdata/execution-export-v1.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var corpus struct {
+		Success []struct{ Value source.ExecutionExportReceipt }
+	}
+	if err := json.Unmarshal(b, &corpus); err != nil {
+		t.Fatal(err)
+	}
+	receipt := corpus.Success[0].Value
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/evidence/exports/"+receipt.ExportID || r.URL.Query().Get("schema_version") != source.ExecutionExportSchemaV1 || r.Header.Get("Authorization") != "Bearer test" {
+			t.Error("unscoped export receipt request")
+		}
+		json.NewEncoder(w).Encode(receipt)
+	}))
+	defer srv.Close()
+	a := New(srv.URL, &auth.StaticTokenSource{Value: "test"}, srv.Client())
+	got, status := a.FetchExport(context.Background(), receipt.ExportID)
+	if status != source.StatusOK || got.ManifestSHA256 != receipt.ManifestSHA256 || got.Verification != "download-sha256-verified" {
+		t.Fatalf("%s %+v", status, got)
+	}
+	receipt.Library.Bytes++
+	if _, status = a.FetchExport(context.Background(), receipt.ExportID); status != source.StatusUnavailable {
+		t.Fatal("contradictory Library commit receipt accepted")
 	}
 }

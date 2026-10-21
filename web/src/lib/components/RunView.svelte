@@ -8,6 +8,7 @@
   import type { Doc, HistoryVerdict, Me } from "../types";
   import Loading from "../ui/Loading.svelte";
   import Tabs from "../ui/Tabs.svelte";
+  import EvidencePanel from "./EvidencePanel.svelte";
   import AttemptsPanel from "./AttemptsPanel.svelte";
   import EdgePage from "./EdgePage.svelte";
   import ErrorsPanel from "./ErrorsPanel.svelte";
@@ -50,7 +51,9 @@
     <RunHeader {board} {run} doc={doc.data} onrecord={() => (drawer = {})} />
     <Tabs label="Run" items={tabs} value={tab} onactivate={navigate} />
     <div class="sw-run__panel" role="tabpanel" aria-label={TAB_LABEL[tab]}>
-      {#if status !== "ok"}
+      {#if tab === "evidence"}
+        <EvidencePanel doc={doc.data} />
+      {:else if status !== "ok"}
         <SourceUnavailable {source} {status} />
       {:else if tab === "trace"}
         <TracePanel {api} page={base} attempts={list(doc.data.attempts)} selected={params.get("span")} {evidence} />

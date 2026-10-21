@@ -43,10 +43,17 @@ func (a *Adapter) Fetch(ctx context.Context, ref source.RunRef) (source.Fragment
 	if st != source.StatusOK {
 		return source.Fragment{}, st
 	}
-	if body.Run.ID != ref.RunID {
+	if body.Run.ID != ref.RunID || body.Run.BoardID != ref.BoardID || body.Run.CardID != body.Card.ID {
 		return source.Fragment{}, source.StatusUnavailable // an answer about another run is not an answer
 	}
-	return source.Fragment{Source: source.Superpipeline, FetchedAt: time.Now().UTC(), Version: body.AsOf, Run: &body}, source.StatusOK
+	f := source.Fragment{Source: source.Superpipeline, FetchedAt: time.Now().UTC(), Version: body.AsOf, Run: &body, WorkStatus: source.StatusUnavailable}
+	var work source.WorkEvidence
+	_, wst := source.GetJSON(ctx, a.HC, u+"-v1", tok, &work, isNotFound)
+	if wst == source.StatusOK && work.Pipeline.Run.ID == ref.RunID && work.Pipeline.Run.BoardID == ref.BoardID && work.Pipeline.Run.CardID == body.Run.CardID {
+		f.Work = &work
+		f.WorkStatus = source.StatusOK
+	}
+	return f, source.StatusOK
 }
 
 func (a *Adapter) Ping(ctx context.Context) source.SourceStatus {

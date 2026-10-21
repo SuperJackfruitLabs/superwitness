@@ -8,6 +8,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -16,6 +17,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -32,10 +34,15 @@ import (
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/SuperJackfruitLabs/superwitness/internal/app"
+	"github.com/SuperJackfruitLabs/superwitness/internal/auth"
 	"github.com/SuperJackfruitLabs/superwitness/internal/config"
 	"github.com/SuperJackfruitLabs/superwitness/internal/contracts"
 	"github.com/SuperJackfruitLabs/superwitness/internal/join"
+	"github.com/SuperJackfruitLabs/superwitness/internal/source"
+	"github.com/SuperJackfruitLabs/superwitness/internal/source/agentpod"
+	"github.com/SuperJackfruitLabs/superwitness/internal/source/superpipeline"
 	"github.com/SuperJackfruitLabs/superwitness/internal/testutil"
+	"github.com/SuperJackfruitLabs/superwitness/internal/verdicts"
 )
 
 const (
@@ -68,8 +75,9 @@ func startVictoria(t *testing.T, image, port string) string {
 }
 
 type hubFake struct {
-	srv  *httptest.Server
-	priv ed25519.PrivateKey
+	executionAvailable atomic.Bool
+	srv                *httptest.Server
+	priv               ed25519.PrivateKey
 }
 
 func svcOnly(next http.HandlerFunc) http.HandlerFunc {
@@ -83,10 +91,47 @@ func svcOnly(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
+// The versioned fixture explicitly proves execution contributor closure. Legacy
+// C5 alone must not imply that no child contributors exist.
+func integrationExecutionEvidence(t *testing.T) source.ExecutionEnvelope {
+	t.Helper()
+	b, err := os.ReadFile("../../internal/source/testdata/execution-evidence-v1.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var corpus struct {
+		Success []struct{ Value source.ExecutionEvidence }
+	}
+	if err := json.Unmarshal(b, &corpus); err != nil {
+		t.Fatal(err)
+	}
+	execution := corpus.Success[0].Value
+	execution.Binding.Run.ID = "run_01"
+	execution.Binding.HubSessionID = "acps_01"
+	execution.Task.BoardID = "brd_01"
+	execution.Task.CardID = "crd_01"
+	execution.Task.StageKey = "draft"
+	execution.Contributors.Closure = "complete"
+	board, card := "brd_01", "crd_01"
+	envelope := source.ExecutionEnvelope{SchemaVersion: "agentpod-execution-evidence/v1", ExternalSource: "superpipeline", ExternalRunID: "run_01", BoardID: &board, CardID: &card, Executions: []source.ExecutionEvidence{execution}, AsOf: execution.AsOf}
+	// Exercise the same closed decoder as the real source adapter before serving it.
+	raw, err := json.Marshal(envelope)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(raw, &envelope); err != nil {
+		t.Fatal(err)
+	}
+	return envelope
+}
+
 func newHub(t *testing.T) *hubFake {
 	t.Helper()
 	_, priv, _ := ed25519.GenerateKey(rand.Reader)
 	pub := priv.Public().(ed25519.PublicKey)
+	h := &hubFake{priv: priv}
+	h.executionAvailable.Store(true)
+	execution := integrationExecutionEvidence(t)
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/auth/jwks", func(w http.ResponseWriter, r *http.Request) {
 		_ = json.NewEncoder(w).Encode(map[string]any{"keys": []map[string]string{{"kty": "OKP", "crv": "Ed25519",
@@ -106,6 +151,18 @@ func newHub(t *testing.T) *hubFake {
 			return
 		}
 		_, _ = w.Write(contracts.HubEvidenceRun)
+	}))
+	mux.HandleFunc("GET /api/evidence/runs/superpipeline/{run}/execution", svcOnly(func(w http.ResponseWriter, r *http.Request) {
+		if r.PathValue("run") != "run_01" || !h.executionAvailable.Load() {
+			w.WriteHeader(404)
+			fmt.Fprint(w, `{"error":"not_found"}`)
+			return
+		}
+		if r.URL.Query().Get("schema_version") != source.ExecutionSchemaV1 {
+			w.WriteHeader(400)
+			return
+		}
+		_ = json.NewEncoder(w).Encode(execution)
 	}))
 	mux.HandleFunc("GET /api/evidence/attempts/{id}", svcOnly(func(w http.ResponseWriter, r *http.Request) {
 		if r.PathValue("id") != "attempt_01" {
@@ -127,7 +184,7 @@ func newHub(t *testing.T) *hubFake {
 		}
 	}))
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, "ok") })
-	h := &hubFake{srv: httptest.NewServer(mux), priv: priv}
+	h.srv = httptest.NewServer(mux)
 	t.Cleanup(h.srv.Close)
 	return h
 }
@@ -368,5 +425,35 @@ func TestRunDocumentEndToEnd(t *testing.T) {
 	otherTok, _ := other.SignedString(hub.priv)
 	if code, _, _ := call(t, srv, "GET", "/v1/runs/superpipeline/brd_01/run_01", otherTok, ""); code != 401 {
 		t.Errorf("wrong audience: %d", code)
+	}
+}
+
+// This adapter/SoD regression needs only local HTTP stubs. It catches missing
+// versioned evidence in the larger Postgres/Victoria integration before Docker.
+func TestHubExecutionEvidenceSubjectClosure(t *testing.T) {
+	hub := newHub(t)
+	sp := newSuperpipeline(t)
+	tokens := &auth.StaticTokenSource{Value: "svc-token"}
+	subjects := &join.Subjects{AgentPod: agentpod.New(hub.srv.URL, tokens, hub.srv.Client()), Superpipeline: superpipeline.New(sp.URL, tokens, sp.Client())}
+	svc := &verdicts.Service{Store: verdicts.NewMemStore(), Subjects: subjects}
+	request := func(key string) verdicts.Request {
+		return verdicts.Request{IdempotencyKey: key, SubjectKind: verdicts.SubjectRun, SubjectRef: "superpipeline:brd_01/run_01", Standard: "stage:review", Value: json.RawMessage(`{"score":1}`)}
+	}
+	grader := auth.Principal{ID: "prn_canary", Kind: auth.KindService}
+	if _, created, err := svc.Record(context.Background(), grader, request("joined")); err != nil || !created {
+		t.Fatalf("explicit joined closure: %v", err)
+	}
+	_, _, err := svc.Record(context.Background(), auth.Principal{ID: "prn_agent01", Kind: auth.KindAgent}, request("self"))
+	var refusal *verdicts.Error
+	if !errors.As(err, &refusal) || refusal.Status != 403 || refusal.Code != "self_judgement" {
+		t.Fatalf("executor refusal: %v", err)
+	}
+	hub.executionAvailable.Store(false)
+	_, _, err = svc.Record(context.Background(), grader, request("legacy-only"))
+	if !errors.As(err, &refusal) || refusal.Status != 503 || refusal.Code != "subject_unresolved" {
+		t.Fatalf("legacy cannot prove contributor closure: %v", err)
+	}
+	if _, created, err := svc.Record(context.Background(), auth.Principal{ID: "prn_human01", Kind: auth.KindHuman}, request("human")); err != nil || !created {
+		t.Fatalf("human policy unchanged: %v", err)
 	}
 }

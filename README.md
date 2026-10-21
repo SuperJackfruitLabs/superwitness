@@ -260,7 +260,12 @@ SuperWitness uses only the engines' published query APIs. Lookback is 7 days.
 
 - **VictoriaTraces** (Jaeger API), one request per service (`agentpod-hub`,
   `agentpod-node-agent`, `superpipeline-api`):
-  `GET /select/jaeger/api/traces?service=<svc>&tags={"run.id":"<run>"}&start=<µs>&end=<µs>&limit=100`
+  `GET /select/jaeger/api/traces?service=<svc>&tags={"run.id":"<run>"}&start=<µs>&end=<µs>&limit=100`.
+  These searches discover trace IDs. Each distinct trace is then fetched with
+  `GET /select/jaeger/api/traces/<traceID>` (at most four concurrent lookups), so
+  child spans from other services join even when they omit `run.id`. A failed or
+  missing full trace makes the trace source report an error rather than returning a
+  successful partial join.
 - **VictoriaLogs** (LogsQL), `POST /select/logsql/query`, all queries prefixed `_time:7d`:
   - run filter `("run.id":="<run>" or trace_id:in("<trace>",…))`
   - level filter `(severity_number:range[17, 24] or severity_text:i("error"))` (error shown; debug 5-8, info 9-12, warn 13-16)

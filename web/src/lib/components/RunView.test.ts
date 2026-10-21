@@ -102,6 +102,7 @@ describe("the tabs", () => {
       ["Errors", `${BASE}?tab=errors`],
       ["Verdicts", `${BASE}?tab=verdicts`],
       ["Attempts", `${BASE}?tab=attempts`],
+      ["Evidence", `${BASE}?tab=evidence`],
     ]);
     expect(screen.getByRole("tablist", { name: "Run" })).toBeTruthy();
     expect(screen.getByRole("tabpanel", { name: "Attempts" })).toBeTruthy();
@@ -110,6 +111,13 @@ describe("the tabs", () => {
   it("an unknown tab is the Trace tab", async () => {
     await mount("tab=nonsense");
     expect(document.querySelector('[role="tab"][aria-selected="true"]')?.textContent).toBe("Trace");
+  });
+
+  it("opens Evidence by URL and keeps export coverage independent of execution availability", async () => {
+    await mount("tab=evidence", { ...doc, execution: { status: "timeout" }, execution_exports: [{ export_id: "export-one", status: "ok", receipt: { artifact_kind: "execution-metadata-manifest", library: { item_id: "library-one" } } }] });
+    expect(screen.getByRole("tabpanel", { name: "Evidence" })).toBeTruthy();
+    expect(screen.getByText("Metadata-only manifest")).toBeTruthy();
+    expect(screen.getByText("library-one")).toBeTruthy();
   });
 
   it("arrow keys move to the next tab's URL", async () => {

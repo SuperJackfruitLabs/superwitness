@@ -1,0 +1,84 @@
+{
+  "schema_version": "superpipeline-run-evidence/v1",
+  "pipeline": {
+    "run": {
+      "id": "run_01",
+      "board_id": "brd_01",
+      "card_id": "card_01",
+      "stage_key": "research",
+      "agent_id": "agt_researcher",
+      "agent_principal_id": "prn_agent01",
+      "status": "ended",
+      "outcome": "completed",
+      "started_at": "2026-10-04T10:12:38.000Z",
+      "ended_at": "2026-10-04T10:15:00.000Z"
+    },
+    "card": {
+      "id": "card_01",
+      "title": "Add OAuth login",
+      "stage_key": "review"
+    },
+    "gates": [
+      {
+        "id": "gate_01",
+        "run_id": "run_01",
+        "stage_key": "review",
+        "status": "resolved",
+        "decision": "rejected",
+        "decided_by": "usr_the_actual_person",
+        "produced_by": "agt_researcher",
+        "produced_by_principal_id": "prn_agent01",
+        "decided_by_principal_id": "prn_human01",
+        "decided_by_hub_sub": null,
+        "created_at": "2026-10-04T10:15:00.000Z",
+        "resolved_at": "2026-10-04T11:02:10.000Z"
+      }
+    ],
+    "usage": {
+      "status": "reported",
+      "input_tokens": 120,
+      "output_tokens": 40,
+      "cost_usd": 0.002
+    },
+    "as_of": "2026-10-04T11:05:00.000Z"
+  },
+  "provenance": {
+    "lease_epoch": 1,
+    "queued_by": null,
+    "completion": {
+      "met": true,
+      "unchecked_count": 0
+    },
+    "handoff_recorded": true,
+    "references_truncated": false,
+    "references": [
+      {
+        "id": "ref_evidence",
+        "cardId": "card_01",
+        "runId": "run_01",
+        "url": "https://library.test/artifacts/example",
+        "provider": "superlibrary",
+        "sourceType": "artifact",
+        "externalId": "artifact_example",
+        "createdAt": "2026-10-04T11:05:00.000Z",
+        "execution_export": {
+          "schema_version": "agentpod-execution-export/v1",
+          "export_id": "00000000-0000-4000-8000-000000000001",
+          "manifest_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "verification": "unverified"
+        }
+      }
+    ]
+  },
+  "usage": {
+    "status": "known",
+    "recorded_cost_usd": 0.002,
+    "estimated_cost_usd": null,
+    "cost_provenance": "agent-reported-not-provider-bill"
+  },
+  "executor_evidence": {
+    "external_source": "superpipeline",
+    "external_run_id": "run_01",
+    "agentpod_path": "/api/evidence/runs/superpipeline/run_01/execution?schema_version=salaam-execution-evidence%2Fv1"
+  }
+}

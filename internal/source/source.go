@@ -63,9 +63,13 @@ type Fragment struct {
 	FetchedAt time.Time
 	Version   string // the source's own as_of / sequence, when it has one
 
-	Run    *RunFragment
-	Ledger *LedgerFragment
-	Traces *TracesFragment
-	Logs   *LogsFragment
-	Errors *ErrorsFragment
+	Run             *RunFragment
+	Work            *WorkEvidence
+	WorkStatus      SourceStatus
+	Execution       *ExecutionEnvelope
+	ExecutionStatus SourceStatus // unavailable for legacy/no execution evidence
+	Ledger          *LedgerFragment
+	Traces          *TracesFragment
+	Logs            *LogsFragment
+	Errors          *ErrorsFragment
 }

@@ -289,8 +289,8 @@ func identity(cfg config.Config, hc *http.Client) (hub, sp auth.TokenSource, aut
 		if err != nil {
 			return nil, nil, nil, fmt.Errorf("SW_ORG_PLANE_SERVICE_CREDENTIAL_FILE: %w", err)
 		}
-		return auth.NewPlaneTokenSource(cfg.OrgPlaneURL, cred, cfg.HubURL, hc),
-			auth.NewPlaneTokenSource(cfg.OrgPlaneURL, cred, cfg.SuperpipelineURL, hc),
+		return auth.NewPlaneTokenSource(cfg.OrgPlaneURL, cred, cfg.HubTokenAudience(), hc),
+			auth.NewPlaneTokenSource(cfg.OrgPlaneURL, cred, cfg.SuperpipelineTokenAudience(), hc),
 			auth.NewPlaneVerifier(cfg.OrgPlaneIssuer, cfg.OrgPlaneJWKSURL, cfg.PublicURL, hc), nil
 	}
 	secret, err := auth.ReadSecretFile(cfg.HubClientSecretFile)
