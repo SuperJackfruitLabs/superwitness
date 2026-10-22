@@ -158,6 +158,22 @@ the binary at `/usr/local/bin/superwitness`, `deploy/superwitness.service`, sett
 `/etc/superwitness/env` from `deploy/env.example`, the AgentPod service credential's secret in
 `/etc/superwitness/hub-client-secret` (0600, the secret alone), and SuperWitness's own Postgres.
 
+### Staging and production (this project's own deploys)
+
+Every push to `main` deploys that commit to staging (`ci.yml` `deploy-staging`, workbench,
+https://staging-app.superwitness.dev). A `v*` tag deploys production (`release.yml`
+`deploy-production`, https://app.superwitness.dev): after the release job publishes the tarballs
+and `SHA256SUMS`, it refuses unless the tag is on `main` and `main`'s `go`, `web` and
+`integration` checks passed for that commit, then runs `ssh root@$PROD_HOST superwitness <tag>`.
+That key is forced to the host's `prod-deploy` wrapper (installed by the host's provisioning),
+which runs [`deploy/release.sh`](deploy/release.sh) taken from the tag: download and verify the
+tarball, unpack it into `/opt/superwitness/releases/<tag>`, `pg_dump` the database (kept 14 days),
+migrate, apply the runtime grants below, point the unit at the release with a drop-in, wait for
+`/health` to report the tag, run `deploy/staging/smoke.sh`, and roll back to the previous release
+on any failure. The workflow ends with the same smoke against the public URL. Migrations are not
+rolled back; the dump is. `RELEASE_CHECK=1 deploy/release.sh <tag>` exercises everything up to
+the backup and changes nothing. The manual fallback is the host's documented ship-by-hand procedure.
+
 ### Two database roles
 
 Verdicts are append-only: triggers refuse `UPDATE`, `DELETE` and `TRUNCATE` on `verdicts` and
