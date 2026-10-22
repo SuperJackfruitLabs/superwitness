@@ -1,4 +1,5 @@
 import { ApiError, postJSON } from "./api";
+import { markSignedOut } from "./session.svelte";
 
 export type SignOutState = { kind: "idle" } | { kind: "busy" } | { kind: "lingering" } | { kind: "failed"; reason: string };
 
@@ -25,10 +26,13 @@ export function signOut(assign: (to: string) => void = reload) {
     try {
       await postJSON("/auth/logout");
     } catch (e) {
-      if (e instanceof ApiError && e.status === 503 && e.code === "store_unavailable") state = { kind: "lingering" };
-      else state = { kind: "failed", reason: signOutReason(e) };
+      if (e instanceof ApiError && e.status === 503 && e.code === "store_unavailable") {
+        markSignedOut();
+        state = { kind: "lingering" };
+      } else state = { kind: "failed", reason: signOutReason(e) };
       return;
     }
+    markSignedOut();
     assign("/");
   }
   return {

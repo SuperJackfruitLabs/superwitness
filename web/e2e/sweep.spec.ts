@@ -66,6 +66,8 @@ for (const vibe of VIBES) {
             storageState: s.signedOut ? undefined : AUTH,
           });
           await ctx.addCookies([{ name: "vk_appearance", value: `${vibe}.${theme}.strong.0`, url: baseURL! }]);
+          // Signed-out states are what a person sees after signing out: no automatic sign-in.
+          if (s.signedOut) await ctx.addInitScript(() => localStorage.setItem("sw_signed_out", "1"));
           const page = await ctx.newPage();
           const { problems } = watch(page);
           await script(page, s.mocks ?? []);

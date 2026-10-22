@@ -8,8 +8,7 @@ async function signInAs(request: APIRequestContext, sub: string, email = "") {
 
 test("someone the allowlist does not name is refused", async ({ page, request }) => {
   await signInAs(request, "hubuser_7f3a"); // the development set's prn_human02
-  await page.goto("/");
-  await page.getByRole("link", { name: "Sign in", exact: true }).click();
+  await page.goto("/"); // no session: signs in on its own
   await expect(page.getByRole("heading", { name: "Not authorised" })).toBeVisible();
 });
 
@@ -17,8 +16,7 @@ test("sign in, browse, record a verdict and revise it", async ({ page, request }
   await signInAs(request, "hubuser_01", "human01@example.com");
 
   await test.step("sign in", async () => {
-    await page.goto("/");
-    await page.getByRole("link", { name: "Sign in", exact: true }).click();
+    await page.goto("/"); // no session: signs in on its own
     await expect(page.getByRole("heading", { name: "All runs" })).toBeVisible();
     await expect(page.getByText("human01@example.com")).toBeVisible();
   });
@@ -91,14 +89,16 @@ test("sign in, browse, record a verdict and revise it", async ({ page, request }
     await page.getByRole("menuitem", { name: "Sign out" }).click();
     await expect(page.getByRole("link", { name: "Sign in", exact: true })).toBeVisible();
     await expect(page.getByRole("alert")).toHaveCount(0);
+    // A sign-out sticks: opening the app again does not sign back in on its own.
+    await page.reload();
+    await expect(page.getByRole("link", { name: "Sign in", exact: true })).toBeVisible();
   });
 });
 
 test("on a phone the sidebar folds into a menu", async ({ page, request }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await signInAs(request, "hubuser_01", "human01@example.com");
-  await page.goto("/");
-  await page.getByRole("link", { name: "Sign in", exact: true }).click();
+  await page.goto("/"); // no session: signs in on its own
   await expect(page.getByRole("heading", { name: "All runs" })).toBeVisible();
   const nav = page.getByRole("navigation", { name: "Main" });
   await expect(nav).toBeHidden();

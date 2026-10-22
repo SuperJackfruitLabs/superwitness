@@ -6,21 +6,25 @@
 <script lang="ts">
   import { Button } from "@superjackfruit/vibekit";
   import type { ApiError } from "../api";
+  import { untrack } from "svelte";
   import { signOut } from "../signout.svelte";
   import Panel from "../ui/Panel.svelte";
   import InShell from "../ui/InShell.svelte";
   import ErrorPanel from "../ui/ErrorPanel.svelte";
-  import { signInHref } from "../session.svelte";
+  import { autoSignIn, clearSignedOut, signInHref } from "../session.svelte";
   import SignedOutLingering from "./SignedOutLingering.svelte";
 
   // EdgePage turns an API refusal into the page it calls for (the old ErrorView). next is where a
-  // sign-in returns to; retry, when given, reloads what failed; assign is for tests.
+  // sign-in returns to; retry, when given, reloads what failed; assign is for tests. auto, on the
+  // first load only, sends a 401 straight to sign-in (see autoSignIn); a session that ends mid-use
+  // never leaves the page on its own, so nothing typed is lost.
   let {
     error,
     next = "/",
     retry,
     assign,
-  }: { error: ApiError; next?: string; retry?: () => void; assign?: (to: string) => void } = $props();
+    auto = false,
+  }: { error: ApiError; next?: string; retry?: () => void; assign?: (to: string) => void; auto?: boolean } = $props();
 
   const out = signOut((to) => (assign ? assign(to) : window.location.assign(to)));
   const kind = $derived(
@@ -30,6 +34,13 @@
         ? error.code
         : "other",
   );
+
+  // Decided once, before the first render, so the Sign in page never flashes on the way out.
+  const leaving = untrack(() => {
+    if (!auto || error.status !== 401 || !autoSignIn()) return false;
+    (assign ?? ((to: string) => window.location.assign(to)))(signInHref(next, ""));
+    return true;
+  });
 
   $effect(() => {
     if (kind !== "store_unavailable" || !retry) return;
@@ -50,6 +61,8 @@
     <h1>Rubric not found</h1>
     <Button variant="secondary" href="/rubrics">Rubrics</Button>
   </InShell>
+{:else if leaving}
+  <!-- on the way to sign-in -->
 {:else if out.state.kind === "lingering"}
   <SignedOutLingering />
 {:else}
@@ -57,7 +70,7 @@
     {#if kind === "signed_out"}
       <h1>superwitness</h1>
       <p class="sw-lead">Sign in to browse runs and record verdicts.</p>
-      <p class="sw-act"><Button href={signInHref(next, "")} data-sveltekit-reload>Sign in</Button></p>
+      <p class="sw-act"><Button href={signInHref(next, "")} data-sveltekit-reload onclick={() => clearSignedOut()}>Sign in</Button></p>
     {:else if kind === "not_authorised"}
       <h1>Not authorised</h1>
       <p class="sw-lead">This account is not allowed to use this superwitness. Ask its operator to add you.</p>

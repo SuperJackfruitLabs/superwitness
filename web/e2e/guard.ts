@@ -3,16 +3,17 @@ import { expect, type APIRequestContext, type Page } from "@playwright/test";
 export const HUB = "http://127.0.0.1:8791";
 
 // signIn goes through the stub hub as the development human. The stub signs in whoever it was last
-// told to, and another spec may name someone else in between, so the identity is checked.
+// told to, and another spec may name someone else in between, so the identity is checked. Opening
+// the app with no session signs in on its own.
 export async function signIn(page: Page, request: APIRequestContext) {
   for (let i = 0; ; i++) {
     await request.post(`${HUB}/__stub/sign-in-as`, { data: { sub: "hubuser_01", kind: "human", email: "human01@example.com" } });
     await page.goto("/");
-    await page.getByRole("link", { name: "Sign in", exact: true }).click();
     const ok = await page.getByRole("heading", { name: "All runs" }).waitFor({ timeout: 5_000 }).then(() => true, () => false);
     if (ok) return;
     if (i >= 2) throw new Error("could not sign in as the development human");
     await page.context().clearCookies();
+    await page.evaluate(() => localStorage.clear()); // the automatic attempt's once-a-minute mark
   }
 }
 
