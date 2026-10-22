@@ -22,6 +22,28 @@ describe("EdgePage", () => {
     // A full page load: /auth is the Go server's, never a client-side route.
     expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute("data-sveltekit-reload");
   });
+  it("on the first load, sends a 401 straight to sign-in, once", () => {
+    localStorage.clear();
+    const assign = vi.fn();
+    view(new ApiError(401, "unauthenticated", "x"), { auto: true, assign });
+    expect(assign).toHaveBeenCalledWith("/auth/login?next=%2Fruns%3Fx%3D1");
+    expect(screen.queryByRole("link", { name: "Sign in" })).toBeNull();
+    cleanup();
+    const again = vi.fn();
+    view(new ApiError(401, "unauthenticated", "x"), { auto: true, assign: again });
+    expect(again).not.toHaveBeenCalled();
+    screen.getByRole("link", { name: "Sign in" });
+    localStorage.clear();
+  });
+  it("after a sign-out, shows Sign in instead of going on its own", () => {
+    localStorage.clear();
+    localStorage.setItem("sw_signed_out", "1");
+    const assign = vi.fn();
+    view(new ApiError(401, "unauthenticated", "x"), { auto: true, assign });
+    expect(assign).not.toHaveBeenCalled();
+    screen.getByRole("link", { name: "Sign in" });
+    localStorage.clear();
+  });
   it("says not authorised and offers sign out", () => {
     view(new ApiError(403, "not_authorised", "x"));
     expect(h1()).toBe("Not authorised");

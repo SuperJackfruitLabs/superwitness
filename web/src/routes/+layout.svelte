@@ -30,7 +30,7 @@
 
 <VibeRoot vibe={appearance.value.vibe} theme={appearance.theme} accent={appearance.accent} product="superwitness">
   {#if me.error}
-    <EdgePage error={me.error} next={path + (query ? `?${query}` : "")} retry={me.reload} />
+    <EdgePage error={me.error} auto next={path + (query ? `?${query}` : "")} retry={me.reload} />
   {:else if session.expired}
     <EdgePage error={expired} next={path + (query ? `?${query}` : "")} />
   {:else if !me.data}
