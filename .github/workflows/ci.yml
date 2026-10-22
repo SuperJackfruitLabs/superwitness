@@ -14,6 +14,7 @@ jobs:
       - run: make test
       - run: make licenses
       - run: sudo useradd -r superwitness && sudo install -m 0755 /bin/true /usr/local/bin/superwitness && systemd-analyze verify deploy/superwitness.service
+      - run: bash deploy/release.test.sh
   web:
     runs-on: ubuntu-latest
     steps:

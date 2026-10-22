@@ -4,6 +4,7 @@ on:
     tags: ['v*']
 permissions:
   contents: write
+  checks: read
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -26,3 +27,43 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh release create "$GITHUB_REF_NAME" dist/*.tar.gz dist/SHA256SUMS scripts/install.sh --generate-notes
+
+  # The tag's release is now published; put it in production on foundry. It does not rerun the
+  # tests: it refuses unless the tag is on main and main's CI (go, web, integration) passed for
+  # this exact commit. The key can only run /usr/local/sbin/prod-deploy (`superwitness v<x.y.z>`,
+  # estate provision/303-prod-deploy-foundry.sh), which runs deploy/release.sh from the tag: the
+  # checksum, a database backup, migrate, the switch, /health, the smoke, rollback on failure.
+  deploy-production:
+    name: deploy (production)
+    needs: [release]
+    runs-on: ubuntu-latest
+    concurrency: { group: deploy-production, cancel-in-progress: false }
+    environment: { name: production, url: https://app.superwitness.dev }
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with: { fetch-depth: 0, persist-credentials: false }
+      - name: The tag is on main
+        run: git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+      - name: Main's CI passed for this commit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for job in go web integration; do
+            got=$(gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/check-runs?check_name=$job&per_page=100" \
+              --jq '[.check_runs[] | select(.app.slug == "github-actions") | .conclusion] | if any(. == "success") then "success" else (first // "missing") end')
+            echo "$job: $got"
+            [ "$got" = success ] || { echo "ci job '$job' has not passed for $GITHUB_SHA" >&2; exit 1; }
+          done
+      - name: Deploy to production
+        env:
+          KEY: ${{ secrets.PROD_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.PROD_KNOWN_HOSTS }}
+          HOST: ${{ vars.PROD_HOST }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/id_ed25519 && chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          # shellcheck disable=SC2029  # expanding the tag on this side is the point
+          ssh root@"$HOST" superwitness "$GITHUB_REF_NAME"
+      - name: Smoke the public URL
+        run: EXPECT_ISSUER=https://accounts.superjackfruit.com sh deploy/staging/smoke.sh https://app.superwitness.dev
