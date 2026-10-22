@@ -1,0 +1,93 @@
+# Superwitness on the staging plane (workbench), checked out at /opt/suite-staging/superwitness.
+# It signs in against staging-accounts and reads only other staging copies (staging-hub,
+# staging-app.superpipeline.dev); no production secret is reused. The shared edge (cloudflared on
+# the external `suite-staging` network) routes staging-app.superwitness.dev here.
+#
+# deploy.sh builds the binary per commit into /opt/suite-staging/superwitness-bin/<sha> (in a
+# golang container, from `git archive`; the web app ships prebuilt in internal/web/dist) and points
+# `current` at it. Traces and logs come from single-node VictoriaTraces and VictoriaLogs in this
+# project, on its own network only, with small retention: nothing ships to them yet, so they answer
+# empty, but the run pages and /health have a real store behind them.
+name: staging-superwitness
+
+x-sw: &sw
+  image: gcr.io/distroless/static-debian12:latest
+  working_dir: /
+  environment:
+    SW_LISTEN: 0.0.0.0:8790
+    SW_PUBLIC_URL: https://staging-app.superwitness.dev
+    SW_SUPERPIPELINE_URL: https://staging-app.superpipeline.dev
+    SW_HUB_URL: https://staging-hub.agentpod.dev
+    SW_ORG_PLANE_ISSUER: https://staging-accounts.superjackfruit.com
+    SW_ORG_PLANE_URL: https://staging-accounts.superjackfruit.com
+    SW_ORG_PLANE_JWKS_URL: https://staging-accounts.superjackfruit.com/api/auth/jwks
+    SW_ORG_PLANE_SERVICE_CREDENTIAL_FILE: /run/secrets/org-plane-credential
+    SW_APP_CLIENT_ID: superwitness-web
+    SW_SESSION_SECRET_FILE: /run/secrets/session-secret
+    SW_TRACES_URL: http://victoria-traces:10428
+    SW_LOGS_URL: http://victoria-logs:9428
+    SW_SOURCE_TIMEOUT: 2s
+    # cloudflared reaches serve over the suite-staging network; only it may vouch for CF-Connecting-IP.
+    SW_TRUSTED_PROXIES: 172.16.0.0/12
+  env_file:
+    # SW_DATABASE_URL and SW_MIGRATE_DATABASE_URL; deploy.sh generates it once.
+    - ../../../env/superwitness/db.env
+    # SW_ALLOWED_PRINCIPALS and SW_RUN_SOURCES (prn_ ids from staging-accounts); deploy.sh writes
+    # it once from env/superwitness/{operator,reporter}-principal.
+    - ../../../env/superwitness/access.env
+  volumes:
+    - /opt/suite-staging/superwitness-bin/current:/sw:ro
+    - ../../../env/superwitness/org-plane-credential:/run/secrets/org-plane-credential:ro
+    - ../../../env/superwitness/session-secret:/run/secrets/session-secret:ro
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    env_file: ../../../env/superwitness/postgres.env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres"]
+      interval: 5s
+      retries: 20
+
+  victoria-logs:
+    image: victoriametrics/victoria-logs:v1.53.0
+    restart: unless-stopped
+    command: ["-httpListenAddr=:9428", "-storageDataPath=/data", "-retentionPeriod=3d", "-retention.maxDiskSpaceUsageBytes=2GiB"]
+    volumes:
+      - logs:/data
+
+  victoria-traces:
+    image: victoriametrics/victoria-traces:v0.12.0
+    restart: unless-stopped
+    command: ["-httpListenAddr=:10428", "-storageDataPath=/data", "-retentionPeriod=3d", "-retention.maxDiskSpaceUsageBytes=2GiB"]
+    volumes:
+      - traces:/data
+
+  superwitness:
+    <<: *sw
+    restart: unless-stopped
+    command: ["/sw/superwitness", "serve"]
+    ports:
+      - "127.0.0.1:8790:8790"
+    networks: [default, suite-staging]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # `superwitness migrate` as the owner role. Run by deploy.sh before `up` (profile: tools).
+  migrate:
+    <<: *sw
+    profiles: [tools]
+    command: ["/sw/superwitness", "migrate"]
+
+networks:
+  suite-staging:
+    external: true
+
+volumes:
+  pgdata:
+  logs:
+  traces:

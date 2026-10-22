@@ -50,6 +50,28 @@ jobs:
             web/playwright-report
           retention-days: 7
           if-no-files-found: ignore
+  # Every push to main deploys that commit to the staging plane (workbench), where it signs in
+  # against staging-accounts. Production is unchanged: a v* tag (release.yml). The key can only run
+  # /usr/local/sbin/staging-deploy (`<product> <sha>`), and the deploy ends with
+  # deploy/staging/smoke.sh.
+  deploy-staging:
+    name: deploy (staging)
+    runs-on: ubuntu-latest
+    needs: [go, web, integration]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    concurrency: { group: deploy-staging, cancel-in-progress: false }
+    environment: { name: staging, url: https://staging-app.superwitness.dev }
+    steps:
+      - name: Deploy
+        env:
+          KEY: ${{ secrets.STAGING_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.STAGING_KNOWN_HOSTS }}
+          HOST: ${{ vars.STAGING_HOST }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/id_ed25519 && chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          ssh root@"$HOST" superwitness "$GITHUB_SHA"
   # The two public sites. Build-only: deploys run from the operator's machine with
   # scripts/deploy-sites.sh and a wrangler login, so this repository holds no
   # Cloudflare token. npm, scoped to each directory, because both sit outside the
