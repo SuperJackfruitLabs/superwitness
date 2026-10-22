@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
-# Deploy a release tag of Superwitness to production, as root on foundry: run by
+# Deploy a release tag of Superwitness to production, as root on the production host: run by
 # /usr/local/sbin/prod-deploy (`superwitness v<x.y.z>`), which takes this script from the tag itself
-# (estate provision/303-prod-deploy-foundry.sh). The manual fallback is estate bin/ship-superwitness
-# plus provision/260-superwitness.sh.
+# (installed by the host's provisioning). The manual fallback is the host's ship-by-hand procedure.
 #
 # In order: download the tag's linux_amd64 tarball and SHA256SUMS from the GitHub release, verify
 # the checksum, unpack it into its own directory /opt/superwitness/releases/<tag>, check the binary
@@ -14,7 +13,7 @@
 # What a rollback does not undo: migrations are forward-only. The dump taken before them is in
 # /opt/superwitness/backups (kept 14 days) for a manual pg_restore.
 #
-# SW_RELEASE_CHECK=1 stops before anything changes: download, checksum, unpack, version, the
+# RELEASE_CHECK=1 stops before anything changes: download, checksum, unpack, version, the
 # backup, and /health of the running release. Nothing is migrated, switched or restarted.
 set -euo pipefail
 
@@ -100,7 +99,7 @@ chmod 600 "$dump"
 echo "   $dump ($(stat -c %s "$dump") bytes)"
 find "$backups" -maxdepth 1 -name 'db-*.dump' -mtime +14 -delete
 
-if [ "${SW_RELEASE_CHECK:-}" = 1 ]; then
+if [ "${RELEASE_CHECK:-}" = 1 ]; then
   log "check only"
   echo "   running: $(curl -fsS -m 5 "$health_url")"
   echo "check passed for $tag: fetched, verified, unpacked, backed up; nothing switched"

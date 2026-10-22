@@ -28,10 +28,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh release create "$GITHUB_REF_NAME" dist/*.tar.gz dist/SHA256SUMS scripts/install.sh --generate-notes
 
-  # The tag's release is now published; put it in production on foundry. It does not rerun the
+  # The tag's release is now published; put it in production on the production host. It does not rerun the
   # tests: it refuses unless the tag is on main and main's CI (go, web, integration) passed for
   # this exact commit. The key can only run /usr/local/sbin/prod-deploy (`superwitness v<x.y.z>`,
-  # estate provision/303-prod-deploy-foundry.sh), which runs deploy/release.sh from the tag: the
+  # installed by the host's provisioning), which runs deploy/release.sh from the tag: the
   # checksum, a database backup, migrate, the switch, /health, the smoke, rollback on failure.
   deploy-production:
     name: deploy (production)

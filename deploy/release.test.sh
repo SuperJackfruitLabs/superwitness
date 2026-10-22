@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Tests for deploy/release.sh that need no foundry: env_get reads an EnvironmentFile as systemd
+# Tests for deploy/release.sh that need no production host: env_get reads an EnvironmentFile as systemd
 # does (never by sourcing it), and the script refuses anything but v<x.y.z>.
 set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd)
@@ -7,14 +7,14 @@ tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
 fail() { echo "FAIL: $*" >&2; exit 1; }
 
 cat > "$tmp/env" <<'ENV'
-SW_LISTEN=100.1.2.3:8790
+SW_LISTEN=192.0.2.10:8790
 SW_MIGRATE_DATABASE_URL=postgres://o:p@127.0.0.1:5433/superwitness?sslmode=disable
 SW_QUOTED="has spaces; touch /tmp/sw-release-test-pwned"
 SW_LISTEN=second-ignored
 ENV
 # shellcheck disable=SC1091
 SW_RELEASE_LIB=1 SW_ENV_FILE="$tmp/env" . "$here/release.sh"
-[ "$(env_get SW_LISTEN)" = 100.1.2.3:8790 ] || fail "first line wins"
+[ "$(env_get SW_LISTEN)" = 192.0.2.10:8790 ] || fail "first line wins"
 [ "$(env_get SW_MIGRATE_DATABASE_URL)" = "postgres://o:p@127.0.0.1:5433/superwitness?sslmode=disable" ] || fail "value with = and ?"
 [ "$(env_get SW_QUOTED)" = "has spaces; touch /tmp/sw-release-test-pwned" ] || fail "quotes stripped, nothing run"
 [ ! -e /tmp/sw-release-test-pwned ] || fail "a value was executed"

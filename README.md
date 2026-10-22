@@ -165,15 +165,14 @@ https://staging-app.superwitness.dev). A `v*` tag deploys production (`release.y
 `deploy-production`, https://app.superwitness.dev): after the release job publishes the tarballs
 and `SHA256SUMS`, it refuses unless the tag is on `main` and `main`'s `go`, `web` and
 `integration` checks passed for that commit, then runs `ssh root@$PROD_HOST superwitness <tag>`.
-That key is forced to the host's `prod-deploy` wrapper (estate `provision/303-prod-deploy-foundry.sh`),
+That key is forced to the host's `prod-deploy` wrapper (installed by the host's provisioning),
 which runs [`deploy/release.sh`](deploy/release.sh) taken from the tag: download and verify the
 tarball, unpack it into `/opt/superwitness/releases/<tag>`, `pg_dump` the database (kept 14 days),
 migrate, apply the runtime grants below, point the unit at the release with a drop-in, wait for
 `/health` to report the tag, run `deploy/staging/smoke.sh`, and roll back to the previous release
 on any failure. The workflow ends with the same smoke against the public URL. Migrations are not
-rolled back; the dump is. `SW_RELEASE_CHECK=1 deploy/release.sh <tag>` exercises everything up to
-the backup and changes nothing. The manual fallback is estate `bin/ship-superwitness` with
-`provision/260-superwitness.sh`.
+rolled back; the dump is. `RELEASE_CHECK=1 deploy/release.sh <tag>` exercises everything up to
+the backup and changes nothing. The manual fallback is the host's documented ship-by-hand procedure.
 
 ### Two database roles
 
