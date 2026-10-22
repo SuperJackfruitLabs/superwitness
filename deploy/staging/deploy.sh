@@ -10,7 +10,7 @@
 #   session-secret  the login cookie key
 #   access.env      SW_ALLOWED_PRINCIPALS / SW_RUN_SOURCES, from operator-principal and
 #                   reporter-principal (prn_ ids at staging-accounts); delete it to rewrite it
-# Minted by hand at staging-accounts (estate docs/2026-10-22-workbench.md), never here:
+# Minted by hand at staging-accounts (see the staging host's runbook), never here:
 #   org-plane-credential  svc_…:<secret> of service `superwitness` (evidence:read, transcripts:read)
 set -euo pipefail
 sha=${1:-$(git -C /opt/suite-staging/superwitness rev-parse origin/main)}
