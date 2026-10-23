@@ -4,7 +4,55 @@ on:
   push:
     branches: [main]
 jobs:
+  # Which parts changed. A pull request or push that only touches landing/ or docs-site/ runs
+  # just their builds; anything else, the workflows themselves, or any other trigger runs it all.
+  # A skipped go/web/integration on main is safe for release.yml's production check: the app is
+  # then the code its parent tested, and the check accepts "skipped" only when this job passed.
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      app: ${{ steps.plan.outputs.app }}
+      landing: ${{ steps.plan.outputs.landing }}
+      docs: ${{ steps.plan.outputs.docs }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        id: filter
+        with:
+          predicate-quantifier: every
+          filters: |
+            app:
+              - '**'
+              - '!landing/**'
+              - '!docs-site/**'
+            workflows:
+              - '.github/**'
+            landing:
+              - 'landing/**'
+            docs:
+              - 'docs-site/**'
+      - id: plan
+        env:
+          EVENT: ${{ github.event_name }}
+          APP: ${{ steps.filter.outputs.app }}
+          WORKFLOWS: ${{ steps.filter.outputs.workflows }}
+          LANDING: ${{ steps.filter.outputs.landing }}
+          DOCS: ${{ steps.filter.outputs.docs }}
+        run: |
+          app=false
+          case "$EVENT" in push|pull_request) ;; *) app=true ;; esac
+          if [ "$APP" = true ] || [ "$WORKFLOWS" = true ]; then app=true; fi
+          landing=$LANDING; docs=$DOCS
+          if [ "$app" = true ]; then landing=true; docs=true; fi
+          { echo "app=$app"; echo "landing=$landing"; echo "docs=$docs"; } >> "$GITHUB_OUTPUT"
+          echo "app=$app landing=$landing docs=$docs"
   go:
+    needs: [changes]
+    if: needs.changes.outputs.app == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,6 +64,8 @@ jobs:
       - run: sudo useradd -r superwitness && sudo install -m 0755 /bin/true /usr/local/bin/superwitness && systemd-analyze verify deploy/superwitness.service
       - run: bash deploy/release.test.sh
   web:
+    needs: [changes]
+    if: needs.changes.outputs.app == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -23,6 +73,8 @@ jobs:
         with: { node-version: 26 }
       - run: make web-check
   integration:
+    needs: [changes]
+    if: needs.changes.outputs.app == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -30,6 +82,8 @@ jobs:
         with: { go-version-file: go.mod }
       - run: make test-integration
   e2e:
+    needs: [changes]
+    if: needs.changes.outputs.app == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -78,6 +132,8 @@ jobs:
   # Cloudflare token. npm, scoped to each directory, because both sit outside the
   # Go module and have their own lockfiles.
   landing:
+    needs: [changes]
+    if: needs.changes.outputs.landing == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -88,6 +144,8 @@ jobs:
       - run: npm run build
         working-directory: landing
   docs:
+    needs: [changes]
+    if: needs.changes.outputs.docs == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
