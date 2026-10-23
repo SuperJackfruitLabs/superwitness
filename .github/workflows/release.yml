@@ -48,11 +48,19 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Passed means success, or skipped by ci.yml's `changes` job (which itself passed) because
+          # the commit touched only landing/ or docs-site/: the app then is the code its parent tested.
+          conclusion() {
+            gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/check-runs?check_name=$1&per_page=100" \
+              --jq '[.check_runs[] | select(.app.slug == "github-actions") | .conclusion] | if any(. == "success") then "success" elif any(. == "skipped") then "skipped" else (first // "missing") end'
+          }
+          planned=$(conclusion changes)
+          echo "changes: $planned"
           for job in go web integration; do
-            got=$(gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/check-runs?check_name=$job&per_page=100" \
-              --jq '[.check_runs[] | select(.app.slug == "github-actions") | .conclusion] | if any(. == "success") then "success" else (first // "missing") end')
+            got=$(conclusion "$job")
             echo "$job: $got"
-            [ "$got" = success ] || { echo "ci job '$job' has not passed for $GITHUB_SHA" >&2; exit 1; }
+            [ "$got" = success ] || { [ "$got" = skipped ] && [ "$planned" = success ]; } \
+              || { echo "ci job '$job' has not passed for $GITHUB_SHA" >&2; exit 1; }
           done
       - name: Deploy to production
         env:
