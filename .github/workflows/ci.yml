@@ -19,7 +19,7 @@ jobs:
       landing: ${{ steps.plan.outputs.landing }}
       docs: ${{ steps.plan.outputs.docs }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         id: filter
         with:
@@ -55,7 +55,7 @@ jobs:
     if: needs.changes.outputs.app == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-go@v5
         with: { go-version-file: go.mod }
       - run: make lint
@@ -68,7 +68,7 @@ jobs:
     if: needs.changes.outputs.app == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with: { node-version: 26 }
       - run: make web-check
@@ -77,7 +77,7 @@ jobs:
     if: needs.changes.outputs.app == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-go@v5
         with: { go-version-file: go.mod }
       - run: make test-integration
@@ -87,7 +87,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-go@v5
         with: { go-version-file: go.mod }
       - uses: actions/setup-node@v4
@@ -136,7 +136,7 @@ jobs:
     if: needs.changes.outputs.landing == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
       - run: npm ci
@@ -148,7 +148,7 @@ jobs:
     if: needs.changes.outputs.docs == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
       - run: npm ci
