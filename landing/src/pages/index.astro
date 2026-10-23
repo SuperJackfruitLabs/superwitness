@@ -30,6 +30,12 @@
  * profile, skill_release, digest. The MCP tool names are read from internal/mcp/server.go.
  * If any of these change, this page is wrong.
  *
+ * "How it works" carries a small three.js scene (src/scripts/scenes): an evidence table pinned
+ * beside the three steps; scroll scrubs it, one beat per step, as each crosses the viewport's
+ * centre. It loads only near the panel, after the page's load; a still per beat and sun phase in
+ * public/scenes covers reduced motion, no WebGL and the moment before it loads. Its labels are
+ * the HTML around it.
+ *
  * Colours and faces are listed once, in `:root` below; docs-site/src/styles/theme.css uses
  * the same values. Jade is spent on three things only: "on the record", a joined trace and
  * an approved gate — the parts of the page that are evidence.
@@ -316,6 +322,28 @@ import Frame from '@superjackfruit/frontdoor/components/Frame.astro';
       .more { display: inline-block; margin-top: 14px; font-size: 15px; color: var(--jade-text); text-decoration: none; font-weight: 500; }
       .more:hover { text-decoration: underline; text-underline-offset: 3px; }
 
+      /* ── section scenes: one lazy three.js canvas shared by every figure (src/scripts/scenes) ── */
+      figure.scene { margin: 0; }
+      .scene-box { position: relative; width: 100%; aspect-ratio: var(--ar); }
+      /* The canvas is made by script, so it carries no scoped-style attribute: hence :global. */
+      .scene-box img, .scene-box :global(canvas) { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+      .scene-box :global(canvas) { opacity: 0; transition: opacity .45s ease; }
+      .scene-box img { transition: opacity .45s ease; }
+      figure.scene.pending img, figure.scene.live img, figure.scene.rested img { opacity: 0; }
+      figure.scene.live :global(canvas), .scene-box :global(canvas.scene-rest) { opacity: 1; }
+      .scene-caption { margin: 8px 0 0; font: 12px var(--mono); color: var(--muted); }
+      /* How it works: the table pinned beside its steps; the step at the viewport's centre picks the
+         panel's beat (loader.js). On a phone each step carries its own scene above its text.
+         The panel comes after the steps in the markup, so the copy reads first. */
+      .steps-layout { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 56px; margin-top: 8px; }
+      .panel { grid-column: 1; grid-row: 1; position: sticky; top: max(24px, calc(50svh - 200px)); align-self: start; }
+      .step-list { grid-column: 2; grid-row: 1; list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+      .step-list li { min-height: 62svh; display: flex; flex-direction: column; justify-content: center; }
+      .step-list li:first-child { min-height: 46svh; justify-content: flex-start; padding-top: 40px; }
+      .step-scene { display: none; }
+      :global(html.scene-steps) .step-list li { opacity: .5; transition: opacity .35s ease; }
+      :global(html.scene-steps) .step-list li.focus { opacity: 1; }
+
 
       @media (min-width: 900px) {
         ul.facts { grid-auto-flow: column; justify-content: start; gap: 10px 36px; }
@@ -324,6 +352,13 @@ import Frame from '@superjackfruit/frontdoor/components/Frame.astro';
         .hero .wrap { grid-template-columns: 1fr; gap: 44px; min-height: auto; padding-top: 40px; padding-bottom: 56px; }
         section.band .wrap { padding-top: 64px; padding-bottom: 64px; }
         .grid { grid-template-columns: 1fr; }
+        .steps-layout { grid-template-columns: 1fr; gap: 0; }
+        .step-list { grid-column: 1; }
+        .panel { display: none; }
+        .step-list { gap: 48px; }
+        .step-list li, .step-list li:first-child { min-height: 0; padding-top: 0; justify-content: flex-start; }
+        :global(html.scene-steps) .step-list li { opacity: 1; }
+        .step-scene { display: block; order: -1; margin-bottom: 16px; }
       }
       @media (max-width: 480px) {
         .wrap { padding: 0 24px; }
@@ -383,33 +418,61 @@ import Frame from '@superjackfruit/frontdoor/components/Frame.astro';
       <section class="band" aria-labelledby="how">
         <div class="wrap">
           <h2 id="how">How it works</h2>
-          <div class="grid steps">
-            <div class="cell">
-              <span class="step">1</span>
-              <h3>Products send OTLP</h3>
-              <p>
-                SuperPipeline and AgentPod send plain OpenTelemetry to a Collector, which writes it
-                to VictoriaTraces and VictoriaLogs. SuperWitness only queries them. Nothing waits on it.
-              </p>
-            </div>
-            <div class="cell">
-              <span class="step">2</span>
-              <h3>Ask for a run</h3>
-              <p>
-                <code>{ROUTE}</code> joins the run, its
-                attempts with the configuration that ran them, spans, logs and errors when you read
-                it. A source that is down reads <code>unknown</code>, never 0.
-              </p>
-            </div>
-            <div class="cell">
-              <span class="step">3</span>
-              <h3>Record a verdict</h3>
-              <p>
-                A person, a gate or a grader records a verdict. Verdicts are append-only in
-                SuperWitness's own Postgres: a correction is a new verdict. An agent cannot judge a
-                run it executed.
-              </p>
-            </div>
+          <div class="steps-layout">
+            <ol class="steps step-list">
+              <li class="cell" data-steps-for="record-panel" data-beat="0">
+                <figure class="scene step-scene" data-scene="record" data-beat="0">
+                  <div class="scene-box" style="--ar: 3 / 2" aria-hidden="true">
+                    <img data-still alt="" width="560" height="373" loading="lazy" decoding="async" />
+                    <noscript><img src="/scenes/record/0-noon.webp" alt="" width="560" height="373" loading="lazy" decoding="async" /></noscript>
+                  </div>
+                  <figcaption class="scene-caption">At the back, SuperPipeline and AgentPod, then the trace and log stores; at the front, the run's record and the verdict stamp.</figcaption>
+                </figure>
+                <span class="step">1</span>
+                <h3>Products send OTLP</h3>
+                <p>
+                  SuperPipeline and AgentPod send plain OpenTelemetry to a Collector, which writes it
+                  to VictoriaTraces and VictoriaLogs. SuperWitness only queries them. Nothing waits on it.
+                </p>
+              </li>
+              <li class="cell" data-steps-for="record-panel" data-beat="1">
+                <figure class="scene step-scene" data-scene="record" data-beat="1">
+                  <div class="scene-box" style="--ar: 3 / 2" aria-hidden="true">
+                    <img data-still alt="" width="560" height="373" loading="lazy" decoding="async" />
+                    <noscript><img src="/scenes/record/1-noon.webp" alt="" width="560" height="373" loading="lazy" decoding="async" /></noscript>
+                  </div>
+                </figure>
+                <span class="step">2</span>
+                <h3>Ask for a run</h3>
+                <p>
+                  <code>{ROUTE}</code> joins the run, its
+                  attempts with the configuration that ran them, spans, logs and errors when you read
+                  it. A source that is down reads <code>unknown</code>, never 0.
+                </p>
+              </li>
+              <li class="cell" data-steps-for="record-panel" data-beat="2">
+                <figure class="scene step-scene" data-scene="record" data-beat="2">
+                  <div class="scene-box" style="--ar: 3 / 2" aria-hidden="true">
+                    <img data-still alt="" width="560" height="373" loading="lazy" decoding="async" />
+                    <noscript><img src="/scenes/record/2-noon.webp" alt="" width="560" height="373" loading="lazy" decoding="async" /></noscript>
+                  </div>
+                </figure>
+                <span class="step">3</span>
+                <h3>Record a verdict</h3>
+                <p>
+                  A person, a gate or a grader records a verdict. Verdicts are append-only in
+                  SuperWitness's own Postgres: a correction is a new verdict. An agent cannot judge a
+                  run it executed.
+                </p>
+              </li>
+            </ol>
+            <figure class="scene panel" id="record-panel" data-scene="record" data-beat="0">
+              <div class="scene-box" style="--ar: 3 / 2" aria-hidden="true">
+                <img data-still alt="" width="560" height="373" loading="lazy" decoding="async" />
+                <noscript><img src="/scenes/record/0-noon.webp" alt="" width="560" height="373" loading="lazy" decoding="async" /></noscript>
+              </div>
+              <figcaption class="scene-caption">At the back, SuperPipeline and AgentPod, then the trace and log stores; at the front, the run's record and the verdict stamp.</figcaption>
+            </figure>
           </div>
         </div>
       </section>
@@ -483,6 +546,9 @@ import Frame from '@superjackfruit/frontdoor/components/Frame.astro';
         </div>
       </section>
     </main>
+    <script>
+      import '../scripts/scenes/loader.js';
+    </script>
     </Frame>
 
     <script is:inline>
