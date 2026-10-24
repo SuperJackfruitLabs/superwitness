@@ -12,6 +12,16 @@
          :where() keeps these below vibekit's own rules once its stylesheet is in. -->
     <style>:where(html){background:#fff8ee;color-scheme:light}:where(html[data-vibe=daylight][data-theme=dark]){background:#17162a;color-scheme:dark}:where(html[data-vibe=paper][data-theme=light]){background:#fbf8f2}:where(html[data-vibe=paper][data-theme=dark]){background:#1a1916;color-scheme:dark}:where(html[data-vibe=studio][data-theme=light]){background:#f6f3ec}:where(html[data-vibe=studio][data-theme=dark]){background:#14130f;color-scheme:dark}:where(html[data-vibe=quiet][data-theme=light]){background:#fff}:where(html[data-vibe=quiet][data-theme=dark]){background:#0e0e10;color-scheme:dark}</style>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- Installable to a home screen. No service worker: nothing is cached offline, because a
+         stale app shell would fight the sign-in. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#17162a" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#fff8ee" media="(prefers-color-scheme: light)" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="SuperWitness" />
     <title>superwitness</title>
     <link href="/_app/immutable/entry/start.DziHFzsh.js" rel="modulepreload">
 		<link href="/_app/immutable/chunks/C2oeMted.js" rel="modulepreload">

@@ -58,6 +58,11 @@ func Handler() http.Handler {
 			http.Redirect(w, r, "/favicon.svg", http.StatusMovedPermanently)
 			return
 		}
+		if p == "manifest.webmanifest" {
+			// Go knows no type for .webmanifest, and an install prompt ignores a manifest served
+			// as anything but this one.
+			w.Header().Set("Content-Type", "application/manifest+json")
+		}
 		if p == "" || p == "." {
 			files.ServeHTTP(w, r)
 			return
