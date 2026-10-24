@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/binary"
+	"encoding/json"
+	"fmt"
 	"io/fs"
 	"net/http/httptest"
 	"os"
@@ -56,6 +59,70 @@ func TestFavicon(t *testing.T) {
 	h.ServeHTTP(rec, httptest.NewRequest("GET", "/favicon.ico", nil))
 	if rec.Code != 301 || rec.Header().Get("Location") != "/favicon.svg" {
 		t.Errorf("/favicon.ico: %d Location %q, want 301 to /favicon.svg", rec.Code, rec.Header().Get("Location"))
+	}
+}
+
+// The app installs to a phone's home screen. Nothing on screen breaks when this does: a manifest
+// served with the wrong type, or an icon missing or of the wrong size, just means no install offer
+// and a blank tile on iOS. So the served manifest, its icons and the iOS tags are checked here.
+func TestInstallable(t *testing.T) {
+	h := Handler()
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest("GET", "/manifest.webmanifest", nil))
+	if rec.Code != 200 || rec.Header().Get("Content-Type") != "application/manifest+json" {
+		t.Fatalf("/manifest.webmanifest: %d %q", rec.Code, rec.Header().Get("Content-Type"))
+	}
+	var m struct {
+		Name     string `json:"name"`
+		StartURL string `json:"start_url"`
+		Scope    string `json:"scope"`
+		Display  string `json:"display"`
+		Icons    []struct{ Src, Sizes, Purpose string }
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &m); err != nil {
+		t.Fatal(err)
+	}
+	if m.Name != "SuperWitness" || m.StartURL != "/" || m.Scope != "/" || m.Display != "standalone" {
+		t.Errorf("manifest: %+v", m)
+	}
+
+	// Each icon is an opaque PNG at the size it declares (an iOS icon with alpha turns black).
+	icons := map[string]string{"/apple-touch-icon.png": "180x180"}
+	purposes := map[string]bool{}
+	for _, i := range m.Icons {
+		icons[i.Src] = i.Sizes
+		purposes[i.Sizes+" "+i.Purpose] = true
+	}
+	for _, want := range []string{"192x192 any", "512x512 any", "192x192 maskable", "512x512 maskable"} {
+		if !purposes[want] {
+			t.Errorf("manifest has no %s icon", want)
+		}
+	}
+	for src, sizes := range icons {
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, httptest.NewRequest("GET", src, nil))
+		b := rec.Body.Bytes()
+		if rec.Code != 200 || len(b) < 26 || string(b[1:4]) != "PNG" {
+			t.Errorf("%s: %d, not a PNG", src, rec.Code)
+			continue
+		}
+		got := fmt.Sprintf("%dx%d", binary.BigEndian.Uint32(b[16:20]), binary.BigEndian.Uint32(b[20:24]))
+		if got != sizes || b[25] == 4 || b[25] == 6 {
+			t.Errorf("%s: %s colour type %d, want %s and opaque", src, got, b[25], sizes)
+		}
+	}
+
+	rec = httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest("GET", "/", nil))
+	for _, tag := range []string{
+		`<link rel="manifest" href="/manifest.webmanifest"`,
+		`<link rel="apple-touch-icon" href="/apple-touch-icon.png"`,
+		`<meta name="apple-mobile-web-app-capable" content="yes"`,
+		`<meta name="apple-mobile-web-app-title" content="SuperWitness"`,
+	} {
+		if !strings.Contains(rec.Body.String(), tag) {
+			t.Errorf("index.html lacks %s", tag)
+		}
 	}
 }
 
