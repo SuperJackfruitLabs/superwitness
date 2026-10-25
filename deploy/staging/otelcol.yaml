@@ -1,0 +1,33 @@
+# The staging OTLP collector: one endpoint the staging hub exports to (OTEL_EXPORTER_OTLP_ENDPOINT
+# http://staging-otelcol:4318 on the suite-staging network), fanned out to this project's stores:
+# traces to VictoriaTraces, logs to VictoriaLogs, metrics to VictoriaMetrics. Same exporters as the
+# production gateway, without auth: it listens only on the compose networks.
+receivers:
+  otlp:
+    protocols:
+      http: {endpoint: "0.0.0.0:4318"}
+
+processors:
+  batch: {}
+
+exporters:
+  otlp_http/victoriatraces:
+    traces_endpoint: http://victoria-traces:10428/insert/opentelemetry/v1/traces
+    sending_queue: {enabled: true, num_consumers: 2, queue_size: 1000}
+    retry_on_failure: {enabled: true, max_elapsed_time: 120s}
+  otlp_http/victorialogs:
+    logs_endpoint: http://victoria-logs:9428/insert/opentelemetry/v1/logs
+    headers:
+      VL-Stream-Fields: service.name
+    sending_queue: {enabled: true, num_consumers: 2, queue_size: 1000}
+    retry_on_failure: {enabled: true, max_elapsed_time: 120s}
+  otlp_http/victoriametrics:
+    metrics_endpoint: http://victoria-metrics:8428/opentelemetry/v1/metrics
+    sending_queue: {enabled: true, num_consumers: 2, queue_size: 1000}
+    retry_on_failure: {enabled: true, max_elapsed_time: 120s}
+
+service:
+  pipelines:
+    traces: {receivers: [otlp], processors: [batch], exporters: [otlp_http/victoriatraces]}
+    logs: {receivers: [otlp], processors: [batch], exporters: [otlp_http/victorialogs]}
+    metrics: {receivers: [otlp], processors: [batch], exporters: [otlp_http/victoriametrics]}
