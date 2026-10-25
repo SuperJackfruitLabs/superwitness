@@ -62,7 +62,7 @@ chmod 600 "$env"/*
 . "$env/db.env"
 
 echo "== postgres"
-$compose up -d --wait postgres victoria-logs victoria-traces
+$compose up -d --wait postgres victoria-logs victoria-traces victoria-metrics otelcol
 psql_as() { $compose exec -T postgres psql -q -v ON_ERROR_STOP=1 -U "$1" -d "$2"; }
 # On stdin, so the passwords are in no process's arguments; failed statements are not logged.
 psql_as postgres postgres <<SQL

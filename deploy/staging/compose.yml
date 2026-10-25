@@ -7,7 +7,8 @@
 # golang container, from `git archive`; the web app ships prebuilt in internal/web/dist) and points
 # `current` at it. Traces and logs come from single-node VictoriaTraces and VictoriaLogs in this
 # project, on its own network only, with small retention: nothing ships to them yet, so they answer
-# empty, but the run pages and /health have a real store behind them.
+# empty, but the run pages and /health have a real store behind them. The staging hub exports
+# its spans, logs and metrics to them through `otelcol` (otelcol.yaml).
 name: staging-superwitness
 
 x-sw: &sw
@@ -66,6 +67,26 @@ services:
     volumes:
       - traces:/data
 
+  victoria-metrics:
+    image: victoriametrics/victoria-metrics:v1.153.0
+    restart: unless-stopped
+    command: ["-httpListenAddr=:8428", "-storageDataPath=/data", "-retentionPeriod=3d"]
+    volumes:
+      - metrics:/data
+
+  # The staging hub's one OTLP endpoint (otelcol.yaml): reachable on suite-staging as staging-otelcol.
+  otelcol:
+    image: otel/opentelemetry-collector-contrib:0.161.0
+    restart: unless-stopped
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ./otelcol.yaml:/etc/otelcol/config.yaml:ro
+    networks:
+      default: {}
+      suite-staging:
+        aliases: [staging-otelcol]
+    depends_on: [victoria-traces, victoria-logs, victoria-metrics]
+
   superwitness:
     <<: *sw
     restart: unless-stopped
@@ -91,3 +112,4 @@ volumes:
   pgdata:
   logs:
   traces:
+  metrics:
