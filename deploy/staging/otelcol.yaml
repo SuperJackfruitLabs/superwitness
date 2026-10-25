@@ -1,7 +1,7 @@
 # The staging OTLP collector: one endpoint the staging hub exports to (OTEL_EXPORTER_OTLP_ENDPOINT
 # http://staging-otelcol:4318 on the suite-staging network), fanned out to this project's stores:
 # traces to VictoriaTraces, logs to VictoriaLogs, metrics to VictoriaMetrics. Same exporters as the
-# foundry gateway (estate provision/220), without auth: it listens only on the compose networks.
+# production gateway, without auth: it listens only on the compose networks.
 receivers:
   otlp:
     protocols:
