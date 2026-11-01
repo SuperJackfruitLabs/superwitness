@@ -78,6 +78,7 @@ publishes a GitHub release. Update `CHANGELOG.md` and the version in the docs
 and install snippets in the same change; the docs-claims test keeps them
 consistent.
 
-The two sites deploy from a maintainer's machine with `scripts/deploy-sites.sh`,
-using a `wrangler login`. No deploy credentials are stored in the repository or
-in CI.
+The two sites deploy on every merge to main that touches them:
+`.github/workflows/sites.yml` runs `scripts/deploy-sites.sh` with the organisation's
+`CLOUDFLARE_API_TOKEN`, in a `websites` environment that only accepts main. No
+credentials are stored in the repository.

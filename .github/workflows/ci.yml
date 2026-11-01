@@ -127,9 +127,8 @@ jobs:
           printf '%s\n' "$KEY" > ~/.ssh/id_ed25519 && chmod 600 ~/.ssh/id_ed25519
           printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
           ssh root@"$HOST" superwitness "$GITHUB_SHA"
-  # The two public sites. Build-only: deploys run from the operator's machine with
-  # scripts/deploy-sites.sh and a wrangler login, so this repository holds no
-  # Cloudflare token. npm, scoped to each directory, because both sit outside the
+  # The two public sites. Build-only here: sites.yml deploys them on merge to main
+  # with scripts/deploy-sites.sh and the organisation's Cloudflare token. npm, scoped to each directory, because both sit outside the
   # Go module and have their own lockfiles.
   landing:
     needs: [changes]
