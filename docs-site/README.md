@@ -52,8 +52,8 @@ projects), named `superwitness-docs`, configured by
 scripts/deploy-sites.sh docs   # builds, then wrangler deploy --config docs-site/wrangler.jsonc
 ```
 
-The custom domain is declared in the config, so a deploy also attaches it. It runs with the
-operator's own `wrangler login`; there is no API token, in CI or anywhere else.
+The custom domain is declared in the config, so a deploy also attaches it. CI runs this on merge to main
+(`.github/workflows/sites.yml`) with the organisation's Cloudflare token; by hand it uses your `wrangler login`.
 
 The site is static and has no runtime, so the deploy either served the built tree or it did not.
 `curl -sI https://docs.superwitness.dev/install/` is the whole smoke test.

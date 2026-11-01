@@ -18,8 +18,8 @@ projects), named `superwitness-site`, configured by
 scripts/deploy-sites.sh landing   # builds, then wrangler deploy --config landing/wrangler.jsonc
 ```
 
-The custom domains (the apex and `www`) are declared in the config, so a deploy also attaches them. It runs with the
-operator's own `wrangler login`; there is no API token, in CI or anywhere else.
+The custom domains (the apex and `www`) are declared in the config, so a deploy also attaches them. CI runs this on merge to main
+(`.github/workflows/sites.yml`) with the organisation's Cloudflare token; by hand it uses your `wrangler login`.
 
 The Worker sets `assets.not_found_handling: "404-page"`, which serves `dist/404.html` with a real
 404 status for any path that has no file. That is why `src/pages/404.astro` exists: without it a
