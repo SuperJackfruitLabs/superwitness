@@ -288,11 +288,11 @@ func (v *Verifier) fetchInto(c *call) {
 func (v *Verifier) fetch() (*keySet, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, v.jwksURL, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, v.jwksURL, nil) //nolint:gosec // G704: the JWKS URL is the operator's configuration
 	if err != nil {
 		return nil, err
 	}
-	resp, err := v.hc.Do(req)
+	resp, err := v.hc.Do(req) //nolint:gosec // G704: the JWKS URL is the operator's configuration
 	if err != nil {
 		return nil, err
 	}

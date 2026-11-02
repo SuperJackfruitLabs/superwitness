@@ -109,7 +109,7 @@ func runCmd(ctx context.Context, args []string, getenv func(string) string, stdo
 	}
 	if *out != "" {
 		b, _ := json.MarshalIndent(r, "", "  ")
-		if err := os.WriteFile(*out, append(b, '\n'), 0o640); err != nil {
+		if err := os.WriteFile(*out, append(b, '\n'), 0o640); err != nil { //nolint:gosec // G306: the result is meant for the operator's group, as the tracker is
 			fmt.Fprintf(stderr, "canary: writing %s: %v\n", *out, err)
 		}
 	}

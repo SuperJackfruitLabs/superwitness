@@ -17,7 +17,7 @@ func AppendResult(path string, r Result) error {
 	if err != nil {
 		return err
 	}
-	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o640)
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o640) //nolint:gosec // G302: the tracker is meant for the operator's group
 	if err != nil {
 		return err
 	}

@@ -310,7 +310,7 @@ func writeRaw(w http.ResponseWriter, body []byte) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "no-store")
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(body)
+	_, _ = w.Write(body) //nolint:gosec // G705: a JSON body served as application/json, never as HTML
 }
 
 func (s *Server) getTranscript(w http.ResponseWriter, r *http.Request) {
