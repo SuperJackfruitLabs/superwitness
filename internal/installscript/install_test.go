@@ -46,9 +46,15 @@ func tarball(t *testing.T, name, body string) []byte {
 	if err := tw.WriteHeader(&tar.Header{Name: dir + "/superwitness", Mode: 0o755, Size: int64(len(body))}); err != nil {
 		t.Fatal(err)
 	}
-	tw.Write([]byte(body))
-	tw.Close()
-	gz.Close()
+	if _, err := tw.Write([]byte(body)); err != nil {
+		t.Fatal(err)
+	}
+	if err := tw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := gz.Close(); err != nil {
+		t.Fatal(err)
+	}
 	return []byte(sb.String())
 }
 
@@ -75,7 +81,11 @@ func (r *release) serve(t *testing.T) string {
 	mux.HandleFunc("/latest", func(w http.ResponseWriter, q *http.Request) {
 		http.Redirect(w, q, "/tag/"+r.tag, http.StatusFound)
 	})
-	mux.HandleFunc("/tag/", func(w http.ResponseWriter, q *http.Request) { w.Write([]byte("release page")) })
+	mux.HandleFunc("/tag/", func(w http.ResponseWriter, q *http.Request) {
+		if _, err := w.Write([]byte("release page")); err != nil {
+			t.Error(err)
+		}
+	})
 	mux.HandleFunc("/download/"+r.tag+"/", func(w http.ResponseWriter, q *http.Request) {
 		f := filepath.Base(q.URL.Path)
 		if f == "SHA256SUMS" {
@@ -91,7 +101,9 @@ func (r *release) serve(t *testing.T) string {
 				}
 				fmt.Fprintf(&sb, "%s  %s\n", sum, n)
 			}
-			w.Write([]byte(sb.String()))
+			if _, err := w.Write([]byte(sb.String())); err != nil {
+				t.Error(err)
+			}
 			return
 		}
 		b, ok := r.files[f]
@@ -99,7 +111,9 @@ func (r *release) serve(t *testing.T) string {
 			http.NotFound(w, q)
 			return
 		}
-		w.Write(b)
+		if _, err := w.Write(b); err != nil {
+			t.Error(err)
+		}
 	})
 	s := httptest.NewServer(mux)
 	t.Cleanup(s.Close)
@@ -206,7 +220,9 @@ func TestStrangerInTheWayRefuses(t *testing.T) {
 	for _, name := range []string{"superwitness", "suwi"} {
 		dir := t.TempDir()
 		stranger := filepath.Join(dir, name)
-		os.WriteFile(stranger, []byte("#!/bin/sh\necho mine\n"), 0o755)
+		if err := os.WriteFile(stranger, []byte("#!/bin/sh\necho mine\n"), 0o755); err != nil { //nolint:gosec // G306: the planted file must be executable
+			t.Fatal(err)
+		}
 		out, err := run(t, base, dir)
 		if err == nil || !strings.Contains(out, "refusing to overwrite") {
 			t.Fatalf("%s: want refusal, got err=%v\n%s", name, err, out)
@@ -224,7 +240,9 @@ func TestStrangerInTheWayRefuses(t *testing.T) {
 func TestStrangerSymlinkAtSuwiRefuses(t *testing.T) {
 	base := newRelease(t, tag).serve(t)
 	dir := t.TempDir()
-	os.Symlink("/bin/ls", filepath.Join(dir, "suwi"))
+	if err := os.Symlink("/bin/ls", filepath.Join(dir, "suwi")); err != nil {
+		t.Fatal(err)
+	}
 	out, err := run(t, base, dir)
 	if err == nil || !strings.Contains(out, "refusing to overwrite") {
 		t.Fatalf("want refusal, got err=%v\n%s", err, out)

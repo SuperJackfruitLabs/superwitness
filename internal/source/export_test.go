@@ -22,7 +22,9 @@ func TestMetadataExportReceiptStrictness(t *testing.T) {
 		func(m map[string]any) { delete(m, "principal_id") },
 	} {
 		var m map[string]any
-		json.Unmarshal(b, &m)
+		if err := json.Unmarshal(b, &m); err != nil {
+			t.Fatal(err)
+		}
 		mutate(m)
 		bad, _ := json.Marshal(m)
 		if json.Unmarshal(bad, &receipt) == nil {
@@ -78,7 +80,9 @@ func TestArtifactBundleReceiptRejectsFalseFileProof(t *testing.T) {
 	var corpus struct {
 		Success []struct{ Value json.RawMessage }
 	}
-	json.Unmarshal(b, &corpus)
+	if err := json.Unmarshal(b, &corpus); err != nil {
+		t.Fatal(err)
+	}
 	valid := corpus.Success[1].Value
 	for _, mutate := range []func(map[string]any){
 		func(m map[string]any) { delete(m, "artifact_files") },
@@ -100,7 +104,9 @@ func TestArtifactBundleReceiptRejectsFalseFileProof(t *testing.T) {
 		func(m map[string]any) { m["library"].(map[string]any)["bytes"] = m["manifest_bytes"] },
 	} {
 		var m map[string]any
-		json.Unmarshal(valid, &m)
+		if err := json.Unmarshal(valid, &m); err != nil {
+			t.Fatal(err)
+		}
 		mutate(m)
 		raw, _ := json.Marshal(m)
 		var receipt ExecutionExportReceipt

@@ -34,7 +34,9 @@ func TestVersionedWorkEvidence(t *testing.T) {
 		},
 	} {
 		var m map[string]any
-		json.Unmarshal(b, &m)
+		if err := json.Unmarshal(b, &m); err != nil {
+			t.Fatal(err)
+		}
 		mutate(m)
 		raw, _ := json.Marshal(m)
 		if json.Unmarshal(raw, &work) == nil {

@@ -1,6 +1,5 @@
 {
   "bodyclose": 107,
-  "errcheck": 21,
   "errorlint": 8,
   "gosec": 36,
   "nilerr": 1,
