@@ -57,7 +57,7 @@ func skillCmd(args []string, getenv func(string) string, stdout, stderr io.Write
 // directory and a rename, so a reader never sees half a file. It touches only that one file.
 func installSkill(dir string) (string, error) {
 	dest := filepath.Join(dir, "superwitness-ops")
-	if err := os.MkdirAll(dest, 0o755); err != nil {
+	if err := os.MkdirAll(dest, 0o755); err != nil { //nolint:gosec // G301: the skills directory is read by the agent harnesses
 		return "", err
 	}
 	f, err := os.CreateTemp(dest, ".SKILL.md.incoming.*")
@@ -71,7 +71,7 @@ func installSkill(dir string) (string, error) {
 		werr = cerr
 	}
 	if werr == nil {
-		werr = os.Chmod(staged, 0o644)
+		werr = os.Chmod(staged, 0o644) //nolint:gosec // G302: a skill file is read by the agent harnesses, like the rest of the skills directory
 	}
 	if werr == nil {
 		werr = os.Rename(staged, filepath.Join(dest, "SKILL.md"))

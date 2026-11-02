@@ -225,14 +225,20 @@ func TestNegotiatedExecutionEvidence(t *testing.T) {
 			if r.URL.Query().Get("schema_version") != source.ExecutionSchemaV1 {
 				t.Error("missing explicit schema negotiation")
 			}
-			json.NewEncoder(w).Encode(envelope)
+			if err := json.NewEncoder(w).Encode(envelope); err != nil {
+				t.Error(err)
+			}
 			return
 		}
 		// Use the legacy fixture; its card binding is the authority checked below.
 		var ledger source.LedgerFragment
-		json.Unmarshal(contracts.HubEvidenceRun, &ledger)
+		if err := json.Unmarshal(contracts.HubEvidenceRun, &ledger); err != nil {
+			t.Error(err)
+		}
 		ledger.CardID = &card
-		json.NewEncoder(w).Encode(ledger)
+		if err := json.NewEncoder(w).Encode(ledger); err != nil {
+			t.Error(err)
+		}
 	}))
 	defer srv.Close()
 	adapter := New(srv.URL, &auth.StaticTokenSource{Value: "test"}, srv.Client())
@@ -267,7 +273,9 @@ func TestFetchCommittedExportReceipt(t *testing.T) {
 		if r.URL.Path != "/api/evidence/exports/"+receipt.ExportID || r.URL.Query().Get("schema_version") != source.ExecutionExportSchemaV1 || r.Header.Get("Authorization") != "Bearer test" {
 			t.Error("unscoped export receipt request")
 		}
-		json.NewEncoder(w).Encode(receipt)
+		if err := json.NewEncoder(w).Encode(receipt); err != nil {
+			t.Error(err)
+		}
 	}))
 	defer srv.Close()
 	a := New(srv.URL, &auth.StaticTokenSource{Value: "test"}, srv.Client())

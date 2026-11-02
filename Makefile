@@ -39,13 +39,21 @@ test-integration:
 
 web:
 	rm -rf internal/web/dist
-	cd web && npm ci && npm run check && npm test && npm run build
+	cd web && npm ci && npm run check && npm run lint && npm test && npm run build
 
 web-check: web
 	test -z "$$(git status --porcelain -- internal/web/dist)"
 
+# golangci-lint is pinned (scripts/lint-go.mjs refuses any other version) and installed into the
+# ignored .bin/ on first use. Its findings are held by the ratchet in scripts/lint-go-baseline.json.
+GOLANGCI_LINT_VERSION = 2.15.0
+GOLANGCI_LINT = $(CURDIR)/.bin/golangci-lint
+
 lint:
 	$(GO) vet -tags integration $(PKGS)
+	@test "$$($(GOLANGCI_LINT) version --short 2>/dev/null)" = "$(GOLANGCI_LINT_VERSION)" || \
+	  GOBIN=$(CURDIR)/.bin $(GO) install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v$(GOLANGCI_LINT_VERSION)
+	GOLANGCI_LINT=$(GOLANGCI_LINT) node scripts/lint-go.mjs
 
 # github.com/segmentio/asm (pulled in by the MCP SDK) is MIT-0 (MIT No Attribution), hand-reviewed:
 # permissive, but go-licenses does not classify it. The allowlist is unchanged.

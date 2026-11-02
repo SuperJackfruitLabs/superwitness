@@ -24,11 +24,13 @@ func (c Cookies) SessionName() string { return c.name("sw_session") }
 func (c Cookies) LoginName() string   { return c.name("sw_login") }
 
 func (c Cookies) Set(w http.ResponseWriter, name, value string, maxAge time.Duration) {
+	//nolint:gosec // G124: Secure is the operator's setting, off only for plain-HTTP local use; HttpOnly and SameSite are set
 	http.SetCookie(w, &http.Cookie{Name: name, Value: value, Path: "/", MaxAge: int(maxAge / time.Second),
 		HttpOnly: true, Secure: c.Secure, SameSite: http.SameSiteLaxMode})
 }
 
 func (c Cookies) Clear(w http.ResponseWriter, name string) {
+	//nolint:gosec // G124: Secure is the operator's setting, off only for plain-HTTP local use; HttpOnly and SameSite are set
 	http.SetCookie(w, &http.Cookie{Name: name, Value: "", Path: "/", MaxAge: -1,
 		HttpOnly: true, Secure: c.Secure, SameSite: http.SameSiteLaxMode})
 }

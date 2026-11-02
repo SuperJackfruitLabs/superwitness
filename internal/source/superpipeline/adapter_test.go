@@ -141,10 +141,14 @@ func TestVersionedWorkEvidenceFetch(t *testing.T) {
 	}
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasSuffix(r.URL.Path, "evidence-v1") {
-			json.NewEncoder(w).Encode(work)
+			if err := json.NewEncoder(w).Encode(work); err != nil {
+				t.Error(err)
+			}
 			return
 		}
-		json.NewEncoder(w).Encode(work.Pipeline)
+		if err := json.NewEncoder(w).Encode(work.Pipeline); err != nil {
+			t.Error(err)
+		}
 	}))
 	defer srv.Close()
 	a := New(srv.URL, &auth.StaticTokenSource{Value: "test"}, srv.Client())

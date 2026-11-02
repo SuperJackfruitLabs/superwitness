@@ -289,7 +289,7 @@ func scalarField(raw json.RawMessage, typ, field string) error {
 	}
 	var v string
 	if json.Unmarshal(raw, &v) != nil {
-		return nil
+		return nil //nolint:nilerr // only strings have a pattern here; strictShape, called next, rejects a value of the wrong type
 	}
 	bad := false
 	switch {

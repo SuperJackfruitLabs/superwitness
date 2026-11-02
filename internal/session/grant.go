@@ -117,12 +117,12 @@ func (g *PlaneGrants) revocationEndpoint(ctx context.Context) (string, error) {
 	}
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, g.Endpoints.URL+"/.well-known/oauth-authorization-server", nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, g.Endpoints.URL+"/.well-known/oauth-authorization-server", nil) //nolint:gosec // G704: the configured plane's own discovery document
 	if err != nil {
 		return "", err
 	}
 	req.Header.Set("Accept", "application/json")
-	resp, err := g.client().Do(req)
+	resp, err := g.client().Do(req) //nolint:gosec // G704: the configured plane's own discovery document
 	if err != nil {
 		return "", fmt.Errorf("discovery: %w", err)
 	}
@@ -149,13 +149,13 @@ func (g *PlaneGrants) revocationEndpoint(ctx context.Context) (string, error) {
 func postForm(ctx context.Context, hc *http.Client, u string, form url.Values) (int, []byte, error) {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u, strings.NewReader(form.Encode()))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u, strings.NewReader(form.Encode())) //nolint:gosec // G704: u is the configured plane's token endpoint or its same-origin revocation endpoint
 	if err != nil {
 		return 0, nil, err
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Accept", "application/json")
-	resp, err := hc.Do(req)
+	resp, err := hc.Do(req) //nolint:gosec // G704: u is the configured plane's token endpoint or its same-origin revocation endpoint
 	if err != nil {
 		return 0, nil, fmt.Errorf("%w: %v", errIssuerUnavailable, err)
 	}

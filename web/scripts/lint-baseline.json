@@ -1,0 +1,20 @@
+{
+  "eslint(no-unused-vars)": 1,
+  "import(no-named-as-default)": 1,
+  "import(no-unassigned-import)": 2,
+  "promise(always-return)": 4,
+  "typescript(consistent-return)": 5,
+  "typescript(consistent-type-imports)": 9,
+  "typescript(no-base-to-string)": 1,
+  "typescript(no-misused-promises)": 2,
+  "typescript(no-non-null-assertion)": 120,
+  "typescript(no-unnecessary-boolean-literal-compare)": 1,
+  "typescript(no-unnecessary-type-assertion)": 6,
+  "typescript(no-unnecessary-type-conversion)": 1,
+  "typescript(no-unsafe-type-assertion)": 44,
+  "typescript(restrict-template-expressions)": 3,
+  "unicorn(consistent-function-scoping)": 20,
+  "unicorn(no-array-sort)": 3,
+  "unicorn(require-module-specifiers)": 1,
+  "vitest(require-mock-type-parameters)": 34
+}

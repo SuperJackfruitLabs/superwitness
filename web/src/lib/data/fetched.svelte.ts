@@ -1,4 +1,5 @@
-import { ApiError, getJSON } from "../api";
+import type { ApiError } from "../api";
+import { getJSON } from "../api";
 
 export interface Fetched<T> {
   readonly data: T | null;

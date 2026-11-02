@@ -1,0 +1,49 @@
+# golangci-lint v2, pinned in the Makefile and in scripts/lint-go.mjs (see docs/code-quality.md).
+# Findings that exist today are counted per linter in scripts/lint-go-baseline.json; a count may
+# fall, never rise.
+version: "2"
+
+run:
+  tests: true
+  # Every file under test/ and some under internal/ are integration tests; lint them too.
+  build-tags:
+    - integration
+
+linters:
+  default: none
+  enable:
+    - bodyclose
+    - copyloopvar
+    - errcheck
+    - errorlint
+    - gosec
+    - govet
+    - ineffassign
+    - misspell
+    - nilerr
+    - noctx
+    - nolintlint
+    - staticcheck
+    - unconvert
+    - unused
+  # revive and gocritic were measured (2026-11-03: 371 and 3 findings) and left off: the revive
+  # findings are style (exported-symbol comments, unused parameters), and gocritic's three are
+  # off-by-one hints in tests that check the index first.
+  settings:
+    gosec:
+      excludes:
+        # Unchecked errors are errcheck's, which applies the exclusion presets below; G104 would
+        # count every one of them a second time.
+        - G104
+    nolintlint:
+      # A //nolint names the linter it silences and says why.
+      require-specific: true
+      require-explanation: true
+  exclusions:
+    presets:
+      - std-error-handling
+      - common-false-positives
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0

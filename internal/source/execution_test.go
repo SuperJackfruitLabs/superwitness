@@ -73,7 +73,9 @@ func TestExecutionRejectsJoinAndMissingFields(t *testing.T) {
 		func(x map[string]any) { x["binding"].(map[string]any)["run"].(map[string]any)["id"] = "run_other" },
 	} {
 		var x map[string]any
-		json.Unmarshal(executionFixture(t), &x)
+		if err := json.Unmarshal(executionFixture(t), &x); err != nil {
+			t.Fatal(err)
+		}
 		mutate(x)
 		b, _ := json.Marshal(x)
 		var e ExecutionEnvelope
@@ -121,13 +123,17 @@ func TestExecutionContributorClosureAndScopedReferences(t *testing.T) {
 
 func TestReadinessFingerprintRemainsSourcePinnedEvidence(t *testing.T) {
 	var evidence map[string]any
-	json.Unmarshal(executionFixture(t), &evidence)
+	if err := json.Unmarshal(executionFixture(t), &evidence); err != nil {
+		t.Fatal(err)
+	}
 	hash := strings.Repeat("a", 64)
 	evidence["fingerprints"] = []any{map[string]any{"session_id": evidence["task"].(map[string]any)["session_id"], "worker_epoch": 1, "version": 1, "harness": "salaam", "harness_version": "dev", "pi_version": "dev", "bundle_digest": hash, "policy_digest": hash, "provider": "provider", "model": "model", "context_digest": hash, "context_admission_digest": nil, "verification": "pinned-readiness-handshake", "digest": hash}}
 	fpMap := evidence["fingerprints"].([]any)[0].(map[string]any)
 	fpRaw, _ := json.Marshal(fpMap)
 	var fp ExecutionFingerprint
-	json.Unmarshal(fpRaw, &fp)
+	if err := json.Unmarshal(fpRaw, &fp); err != nil {
+		t.Fatal(err)
+	}
 	fpMap["digest"] = readinessDigest(fp)
 	b, _ := json.Marshal(evidence)
 	var decoded ExecutionEnvelope
@@ -150,7 +156,9 @@ func TestReadinessDigestBindsSessionAndWorkerEpoch(t *testing.T) {
 	}
 	fp.Digest = readinessDigest(fp)
 	var raw map[string]any
-	json.Unmarshal(executionFixture(t), &raw)
+	if err := json.Unmarshal(executionFixture(t), &raw); err != nil {
+		t.Fatal(err)
+	}
 	raw["fingerprints"] = []ExecutionFingerprint{fp}
 	b, _ := json.Marshal(raw)
 	var e ExecutionEnvelope
@@ -199,7 +207,9 @@ func TestOperatorAttestationDoesNotReplaceNativeReceipt(t *testing.T) {
 	var corpus struct {
 		Success []struct{ Value json.RawMessage }
 	}
-	json.Unmarshal(b, &corpus)
+	if err := json.Unmarshal(b, &corpus); err != nil {
+		t.Fatal(err)
+	}
 	var e ExecutionEnvelope
 	if err := json.Unmarshal(wrapExecution(corpus.Success[2].Value), &e); err != nil {
 		t.Fatal(err)

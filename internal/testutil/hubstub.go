@@ -90,7 +90,7 @@ func (h *HubStub) authorize(w http.ResponseWriter, r *http.Request) {
 	v.Set("code", code)
 	v.Set("state", q.Get("state"))
 	back.RawQuery = v.Encode()
-	http.Redirect(w, r, back.String(), http.StatusFound)
+	http.Redirect(w, r, back.String(), http.StatusFound) //nolint:gosec // G710: a test stand-in for the hub sends the browser back where the test asked
 }
 
 func (h *HubStub) exchange(w http.ResponseWriter, r *http.Request) {
