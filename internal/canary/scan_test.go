@@ -74,15 +74,15 @@ const leakyTrace = `{"data":[{"traceID":"t2","spans":[
 
 func fakeJaeger(t *testing.T, perService map[string]string) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch {
-		case r.URL.Path == "/select/jaeger/api/services":
+		switch r.URL.Path {
+		case "/select/jaeger/api/services":
 			var names []string
 			for k := range perService {
 				names = append(names, k)
 			}
 			sort.Strings(names)
 			_ = json.NewEncoder(w).Encode(map[string]any{"data": names})
-		case r.URL.Path == "/select/jaeger/api/traces":
+		case "/select/jaeger/api/traces":
 			qs := r.URL.Query()
 			if tags := qs.Get("tags"); tags != "" {
 				if tags != `{"run.id":"run_1"}` || qs.Get("service") != "superpipeline-api" {
@@ -99,7 +99,7 @@ func fakeJaeger(t *testing.T, perService map[string]string) *httptest.Server {
 				body = `{"data":[]}`
 			}
 			fmt.Fprint(w, body)
-		case r.URL.Path == "/select/jaeger/api/traces/t1":
+		case "/select/jaeger/api/traces/t1":
 			fmt.Fprint(w, hubTrace)
 		default:
 			fmt.Fprint(w, `{"data":[]}`)

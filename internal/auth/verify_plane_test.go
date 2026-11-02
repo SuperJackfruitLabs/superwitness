@@ -210,7 +210,7 @@ func TestPlaneVerifyAcceptsTheContractFixture(t *testing.T) {
 			continue
 		}
 		if p.ID != c.Want.ID || string(p.Kind) != c.Want.Kind || p.Tenant != c.Want.Org || p.Email != c.Want.Email ||
-			p.Actor != c.Want.Actor || !slices.Equal(p.Scopes, c.Want.Scopes) && !(len(p.Scopes) == 0 && len(c.Want.Scopes) == 0) {
+			p.Actor != c.Want.Actor || !slices.Equal(p.Scopes, c.Want.Scopes) && (len(p.Scopes) != 0 || len(c.Want.Scopes) != 0) {
 			t.Errorf("%s: got %+v", c.Name, p)
 		}
 	}

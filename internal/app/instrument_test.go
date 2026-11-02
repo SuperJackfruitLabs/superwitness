@@ -60,12 +60,12 @@ func TestHostHeaderIsNotAMetricLabel(t *testing.T) {
 			}
 			for _, set := range sets {
 				for _, kv := range set.ToSlice() {
-					if v := kv.Value.Emit(); strings.Contains(v, "attacker-chosen") || strings.Contains(v, "31337") {
+					if v := kv.Value.String(); strings.Contains(v, "attacker-chosen") || strings.Contains(v, "31337") {
 						t.Errorf("metric attribute %s = %q came from the Host header", kv.Key, v)
 					}
 				}
 				if v, ok := set.Value("server.address"); !ok || v.AsString() != tc.wantAddr {
-					t.Errorf("server.address = %v (present %v), want %s", v.Emit(), ok, tc.wantAddr)
+					t.Errorf("server.address = %v (present %v), want %s", v.String(), ok, tc.wantAddr)
 				}
 			}
 		})
