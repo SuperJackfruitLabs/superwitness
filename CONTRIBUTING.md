@@ -11,9 +11,9 @@ review. Each check is a job in `.github/workflows/ci.yml`:
 
 | Check | What it runs |
 |---|---|
-| `go` | `go vet`, unit tests, the licence check, and the docs-claims and internal-reference guards |
+| `go` | `go vet` and the golangci-lint ratchet, unit tests (the architecture test among them), the licence check, and the docs-claims and internal-reference guards |
 | `integration` | tests against real Postgres, VictoriaTraces and VictoriaLogs containers |
-| `web` | the embedded SvelteKit app's type check, tests and build, and a check that the committed bundle is current |
+| `web` | the embedded SvelteKit app's type check, lint ratchet, tests and build, and a check that the committed bundle is current |
 | `landing` | the superwitness.dev build |
 | `docs` | the docs.superwitness.dev build |
 | `e2e` | the app in Chromium against fake mode, a stand-in hub and Postgres |
@@ -29,7 +29,7 @@ tests.
 
 ```sh
 make build              # bin/superwitness
-make lint test          # vet and unit tests, including the guards
+make lint test          # vet, the lint ratchet, and unit tests, including the guards
 make test-integration   # needs Docker
 make web                # rebuilds the SvelteKit app into internal/web/dist
 make web-check          # the same, then fails if the committed bundle changed
@@ -49,7 +49,7 @@ cd landing && npm ci && npm run dev      # http://localhost:4327
 cd docs-site && npm ci && npm run dev    # http://localhost:4328
 ```
 
-## Two guards that will stop your change
+## Guards that will stop your change
 
 - **Docs claims** (`internal/docsclaims`). A docs or site page that names a
   `SW_*` variable, a `/v1` route or an MCP tool the code doesn't define fails
@@ -60,6 +60,11 @@ cd docs-site && npm ci && npm run dev    # http://localhost:4328
   repository, such as private host names, private-network addresses and
   real-looking principal or board ids. Test fixtures use obviously fake values
   such as `prn_human01` and `brd_01`.
+- **Code quality** (`make lint`, `make web`, `internal/archtest`). Lint
+  findings are held per linter by a ratchet that may fall but never rise,
+  shipped code stays clean of the linters it is clean of now, files and
+  packages have size limits, and imports point down the package layers. See
+  [docs/code-quality.md](docs/code-quality.md).
 
 ## Dependencies
 

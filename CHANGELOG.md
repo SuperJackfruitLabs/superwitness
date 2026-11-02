@@ -3,6 +3,15 @@
 All notable changes to superwitness are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Unreleased
+
+### Changed
+
+- Code-quality checks for contributors, with no change to what superwitness does:
+  golangci-lint (pinned) in `make lint` and type-aware oxlint (pinned) for the web app, each with a
+  per-rule ratchet, and an architecture test that holds file and package size limits and the
+  direction of imports between packages. See `docs/code-quality.md`.
+
 ## 0.0.8 — 2026-10-19
 
 ### Changed
