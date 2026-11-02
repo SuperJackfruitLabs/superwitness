@@ -49,9 +49,13 @@ const where = (f) => {
 const isSource = (file) => file.startsWith('src/') && !file.includes('.test.');
 // Rules shipped source must stay clean of, whatever the baseline allows elsewhere (tests, scripts).
 const SRC_CLEAN = new Set([
+  'eslint(no-empty)',
   'eslint(no-unused-vars)',
+  'import(no-self-import)',
   'typescript(await-thenable)',
+  'typescript(consistent-type-imports)',
   'typescript(no-explicit-any)',
+  'typescript(no-floating-promises)',
   'typescript(no-misused-promises)',
   'typescript(no-non-null-assertion)',
   'typescript(no-unnecessary-type-assertion)',

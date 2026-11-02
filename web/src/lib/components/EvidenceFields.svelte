@@ -1,4 +1,5 @@
 <script lang="ts">
+  // oxlint-disable-next-line import/no-self-import -- a nested value renders through this same component
   import EvidenceFields from "./EvidenceFields.svelte";
   let { value }: { value: unknown } = $props();
   const label = (key: string) => key.replaceAll("_", " ");

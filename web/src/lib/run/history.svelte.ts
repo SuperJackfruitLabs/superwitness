@@ -36,7 +36,8 @@ export function history(doc: () => Doc | null): History {
     let live = true;
     loading = true;
     const subjects = [["run", ref], ...attempts.map((a) => ["attempt", a])];
-    Promise.all(
+    // Every request settles to a value (failures become a Failure), so nothing is left to await.
+    void Promise.all(
       subjects.map(([k, r]) =>
         getJSON<{ verdicts: HistoryVerdict[] }>(`/v1/verdicts?subject_kind=${k}&subject_ref=${encodeURIComponent(r)}`).then(
           (p) => ({ ok: list<HistoryVerdict>(p.verdicts) }),

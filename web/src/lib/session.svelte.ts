@@ -31,14 +31,18 @@ const local = (): Store | null => {
 export function markSignedOut(store = local()) {
   try {
     store?.setItem(SIGNED_OUT, "1");
-  } catch {}
+  } catch {
+    // Storage is unavailable (a private window, blocked site data): there is nothing to record.
+  }
 }
 
 // clearSignedOut runs when the person clicks Sign in: from then on, automatic sign-in is back.
 export function clearSignedOut(store = local()) {
   try {
     store?.removeItem(SIGNED_OUT);
-  } catch {}
+  } catch {
+    // Storage is unavailable: there is no mark to clear.
+  }
 }
 
 // autoSignIn answers whether to go to sign-in now, and records the attempt when it does.
