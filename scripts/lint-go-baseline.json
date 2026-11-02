@@ -2,6 +2,5 @@
   "bodyclose": 107,
   "errorlint": 8,
   "gosec": 36,
-  "nilerr": 1,
   "noctx": 47
 }
