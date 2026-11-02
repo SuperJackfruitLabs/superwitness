@@ -39,7 +39,7 @@ test-integration:
 
 web:
 	rm -rf internal/web/dist
-	cd web && npm ci && npm run check && npm test && npm run build
+	cd web && npm ci && npm run check && npm run lint && npm test && npm run build
 
 web-check: web
 	test -z "$$(git status --porcelain -- internal/web/dist)"
