@@ -5,6 +5,9 @@
 // rise, a linter missing from the baseline must be clean, and an improvement must be locked in
 // with `node scripts/lint-go.mjs --update`, which refuses to raise a count.
 //
+// SHIPPED_CLEAN linters must have no findings in shipped code (not a _test.go file, not under
+// test/), whatever the baseline allows in tests.
+//
 // The linter is pinned. `make lint` installs that exact version into the ignored .bin/; by hand:
 //   GOBIN="$PWD/.bin" go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.15.0
 // The script uses $GOLANGCI_LINT, then .bin/golangci-lint, then golangci-lint on PATH, and
@@ -60,6 +63,16 @@ const findings = report.Issues ?? [];
 const counts = {};
 for (const f of findings) counts[f.FromLinter] = (counts[f.FromLinter] ?? 0) + 1;
 const baseline = JSON.parse(readFileSync(baselinePath, 'utf8'));
+
+// Shipped code: neither a test file nor under test/ (every file there is an integration test).
+const isShipped = (file) => !file.endsWith('_test.go') && !file.startsWith('test/');
+const SHIPPED_CLEAN = new Set(['bodyclose', 'errcheck', 'gosec', 'nilerr', 'noctx', 'nolintlint', 'staticcheck']);
+const unclean = findings.filter((f) => SHIPPED_CLEAN.has(f.FromLinter) && isShipped(f.Pos.Filename));
+if (unclean.length) {
+  for (const f of unclean.slice(0, 40)) console.error(`${f.FromLinter}: ${f.Pos.Filename}:${f.Pos.Line}  ${f.Text}`);
+  console.error(`lint-go: ${unclean.length} findings in shipped code for linters it must keep clean`);
+  process.exit(1);
+}
 
 const raised = Object.entries(counts).filter(([linter, n]) => n > (baseline[linter] ?? 0));
 if (raised.length) {
