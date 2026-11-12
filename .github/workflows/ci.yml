@@ -6,8 +6,8 @@ on:
 jobs:
   # Which parts changed. A pull request or push that only touches landing/ or docs-site/ runs
   # just their builds; anything else, the workflows themselves, or any other trigger runs it all.
-  # A skipped go/web/integration on main is safe for release.yml's production check: the app is
-  # then the code its parent tested, and the check accepts "skipped" only when this job passed.
+  # A skipped go/web/integration on main is safe for a release, which requires this workflow's run
+  # on main to have passed: the app is then the code its parent tested.
   changes:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -109,7 +109,7 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
   # Every push to main deploys that commit to the staging plane (workbench), where it signs in
-  # against staging-accounts. Production is unchanged: a v* tag (release.yml). The key can only run
+  # against staging-accounts. Production is unchanged: a v* tag (release.yml, the suite's shared release workflow). The key can only run
   # /usr/local/sbin/staging-deploy (`<product> <sha>`), and the deploy ends with
   # deploy/staging/smoke.sh.
   deploy-staging:
