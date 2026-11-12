@@ -73,10 +73,35 @@ func TestRunJSON(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, want := range []string{`"ref":"superpipeline:brd_01/run_01"`, `"scope":null`, `"title":null`,
+		`"stage_key":null`, `"card_id":null`,
 		`"executor":{"id":null,"name":"drafter"}`, `"started_at":null`, `"latest_verdict":null`,
 		`"first_seen_at":"2026-10-06T10:00:00Z"`} {
 		if !strings.Contains(string(b), want) {
 			t.Errorf("%s lacks %s", b, want)
+		}
+	}
+}
+
+func TestParseStageAndCard(t *testing.T) {
+	got, _, err := ParseBody([]byte(report(map[string]any{"stage_key": "review", "card_id": "crd_01"})), t0)
+	if err != nil || got[0].StageKey == nil || *got[0].StageKey != "review" || got[0].CardID == nil || *got[0].CardID != "crd_01" {
+		t.Fatalf("%+v %v", got, err)
+	}
+	b, err := json.Marshal(got[0])
+	if err != nil || !strings.Contains(string(b), `"stage_key":"review","card_id":"crd_01"`) {
+		t.Errorf("%s %v", b, err)
+	}
+	none, _, err := ParseBody([]byte(report(nil)), t0)
+	if err != nil || none[0].StageKey != nil || none[0].CardID != nil {
+		t.Errorf("absent: %+v %v", none, err)
+	}
+	var ve *ValidationError
+	for field, body := range map[string]string{
+		"stage_key": report(map[string]any{"stage_key": strings.Repeat("s", 129)}),
+		"card_id":   report(map[string]any{"card_id": ""}),
+	} {
+		if _, _, err := ParseBody([]byte(body), t0); !errors.As(err, &ve) || ve.Field != field {
+			t.Errorf("%s: %v", field, err)
 		}
 	}
 }

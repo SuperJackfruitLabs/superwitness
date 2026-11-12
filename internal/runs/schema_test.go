@@ -62,6 +62,9 @@ var fixtures = []struct {
 	{"scope without a name", report(map[string]any{"scope": map[string]any{"id": "brd_01"}}), true},
 	{"executor without an id", report(map[string]any{"executor": map[string]any{"name": "drafter"}}), true},
 	{"title of 200 two-byte characters", report(map[string]any{"title": strings.Repeat("é", 200)}), true},
+	{"stage_key and card_id", report(map[string]any{"stage_key": "review", "card_id": "crd_01"}), true},
+	{"stage_key and card_id of 128 two-byte characters", report(map[string]any{"stage_key": strings.Repeat("é", 128), "card_id": strings.Repeat("é", 128)}), true},
+	{"stage_key of one", report(map[string]any{"stage_key": "s"}), true},
 	{"external_ref of 256", report(map[string]any{"external_ref": strings.Repeat("r", 256)}), true},
 	{"source of one letter", report(map[string]any{"source": "a"}), true},
 	{"source of 32", report(map[string]any{"source": "a" + strings.Repeat("b", 31)}), true},
@@ -76,6 +79,16 @@ var fixtures = []struct {
 	{"no reported_at", report(map[string]any{"reported_at": nil}), false},
 	{"null status", report(map[string]any{"status": null{}}), false},
 	{"null title", report(map[string]any{"title": null{}}), false},
+	{"null stage_key", report(map[string]any{"stage_key": null{}}), false},
+	{"null card_id", report(map[string]any{"card_id": null{}}), false},
+	{"empty stage_key", report(map[string]any{"stage_key": ""}), false},
+	{"empty card_id", report(map[string]any{"card_id": ""}), false},
+	{"stage_key of 129", report(map[string]any{"stage_key": strings.Repeat("s", 129)}), false},
+	{"card_id of 129", report(map[string]any{"card_id": strings.Repeat("c", 129)}), false},
+	{"stage_key as a number", report(map[string]any{"stage_key": 7}), false},
+	{"card_id as an object", report(map[string]any{"card_id": map[string]any{"id": "crd_01"}}), false},
+	{"stage_key in another case", report(map[string]any{"Stage_Key": "review"}), false},
+	{"stage key nested in scope", report(map[string]any{"scope": map[string]any{"id": "brd_01", "stage_key": "review"}}), false},
 	{"null scope", report(map[string]any{"scope": null{}}), false},
 	{"null executor", report(map[string]any{"executor": null{}}), false},
 	{"null reported_at", report(map[string]any{"reported_at": null{}}), false},
@@ -174,6 +187,8 @@ func TestRulesOutsideTheSchema(t *testing.T) {
 	for name, body := range map[string]string{
 		"reported_at 6 minutes ahead":     report(map[string]any{"reported_at": "2026-10-06T10:06:00Z"}),
 		"a title holding NUL":             report(map[string]any{"title": "a\u0000b"}),
+		"a stage_key holding NUL":         report(map[string]any{"stage_key": "a\u0000b"}),
+		"a card_id holding NUL":           report(map[string]any{"card_id": "a\u0000b"}),
 		"a leap second":                   report(map[string]any{"ended_at": "2016-12-31T23:59:60Z"}),
 		"a year outside 0 to 9999 in UTC": report(map[string]any{"started_at": "9999-12-31T23:59:59-23:59"}),
 	} {
@@ -189,7 +204,7 @@ func TestRulesOutsideTheSchema(t *testing.T) {
 // The schema is shared byte for byte with the sources that vendor it; a change is a contract change.
 func TestSchemaIsTheSharedCopy(t *testing.T) {
 	sum := sha256.Sum256(contracts.RunReportSchema)
-	if got := hex.EncodeToString(sum[:]); got != "9b3bebd3c5fc2b827169af29f245e0d4d9ddeedba756b05354dbe24de7d82516" {
+	if got := hex.EncodeToString(sum[:]); got != "b2444841f2d0a31ca6abc38aad13aedb99b9a653eec182344974f827a7c042fa" {
 		t.Errorf("run-report.schema.json sha256 = %s; a changed schema must be agreed with every source that vendors it", got)
 	}
 }

@@ -88,7 +88,7 @@ func (s *Server) reportRuns(r *http.Request, caller auth.Principal) ([]ReportRes
 func (s *Server) getRuns(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	query := RunQuery{Source: q.Get("source"), Scope: q.Get("scope"), Status: q["status"], Executor: q.Get("executor"),
-		Since: q.Get("since"), Until: q.Get("until"), Cursor: q.Get("cursor")}
+		StageKey: q.Get("stage_key"), Since: q.Get("since"), Until: q.Get("until"), Cursor: q.Get("cursor")}
 	switch q.Get("needs_verdict") {
 	case "", "false":
 	case "true":

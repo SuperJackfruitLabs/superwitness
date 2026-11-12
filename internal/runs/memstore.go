@@ -91,6 +91,7 @@ func matchesBase(r Run, f Filter, vs []verdicts.Verdict) bool {
 	case f.Source != "" && r.Source != f.Source,
 		f.ScopeID != "" && (r.ScopeID == nil || *r.ScopeID != f.ScopeID),
 		f.Executor != "" && (r.Executor == nil || *r.Executor != f.Executor),
+		f.StageKey != "" && (r.StageKey == nil || *r.StageKey != f.StageKey),
 		f.Since != nil && at.Before(*f.Since),
 		f.Until != nil && !at.Before(*f.Until):
 		return false

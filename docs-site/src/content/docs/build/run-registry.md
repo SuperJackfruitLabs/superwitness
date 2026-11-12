@@ -15,6 +15,7 @@ reported a run leaves it out of the list, but the run's own page still works by 
 ```json
 { "source": "superpipeline", "external_ref": "brd_01/run_01",
   "scope": {"id": "brd_01", "name": "Press"}, "title": "Draft the release note",
+  "stage_key": "draft", "card_id": "crd_01",
   "executor": {"id": "prn_…", "name": "drafter"},
   "status": "running", "source_status": "in_progress",
   "started_at": "2026-10-06T09:00:00Z", "ended_at": null, "reported_at": "2026-10-06T09:00:01Z" }
@@ -30,6 +31,8 @@ reported a run leaves it out of the list, but the run's own page still works by 
 | `external_ref` | yes | the source's own reference for the run, 1 to 256 characters |
 | `scope` | no | `{"id", "name"}`: where the run belongs, such as a board. `id` is required, 1 to 128 characters; `name`, 1 to 200, may be left out. Leave `scope` out rather than send `null` |
 | `title` | no | 1 to 200 characters. Leave it out rather than send `null` or `""` |
+| `stage_key` | no | the source's stage the run belongs to, such as a board stage's key, 1 to 128 characters. Leave it out rather than send `null` or `""` |
+| `card_id` | no | the source's work item the run is for, such as a board card's id, 1 to 128 characters. Leave it out rather than send `null` or `""` |
 | `executor` | no | `{"id", "name"}`: who ran it. `name` is required, 1 to 200 characters; `id`, when known, is a hub principal id (`prn_` and 20 lowercase hex digits). Leave `executor` out rather than send `null` |
 | `status` | yes | `queued`, `running`, `waiting`, `succeeded`, `failed` or `cancelled` |
 | `source_status` | yes | the source's own word for the state, 1 to 64 characters |
@@ -103,6 +106,7 @@ the run when it has not started, then by `source` and `external_ref`.
 | `scope` | only runs in this scope id |
 | `status` | only runs with this status; repeat it for several |
 | `executor` | only runs this principal executed |
+| `stage_key` | only runs reported with this `stage_key`; with `scope`, one stage's history on one board |
 | `since`, `until` | RFC 3339; runs whose start (or first sighting) is at or after `since` and before `until` |
 | `needs_verdict` | `true`: finished runs (`succeeded`, `failed`, `cancelled`) that no verdict names yet |
 | `cursor` | `next_cursor` from the previous page |
@@ -113,6 +117,7 @@ the run when it has not started, then by `source` and `external_ref`.
   "runs": [
     { "source": "superpipeline", "external_ref": "brd_01/run_01", "ref": "superpipeline:brd_01/run_01",
       "scope": {"id": "brd_01", "name": "Press"}, "title": "Draft the release note",
+      "stage_key": "draft", "card_id": "crd_01",
       "executor": {"id": "prn_…", "name": "drafter"}, "status": "succeeded", "source_status": "done",
       "started_at": "2026-10-06T09:00:00Z", "ended_at": "2026-10-06T09:05:00Z",
       "reported_at": "2026-10-06T09:05:01Z", "first_seen_at": "2026-10-06T09:00:02Z", "updated_at": "2026-10-06T09:05:02Z",
@@ -126,6 +131,7 @@ the run when it has not started, then by `source` and `external_ref`.
 
 - `ref` is the run as a verdict names it, `<source>:<external_ref>`: record a verdict with
   `"subject_kind": "run"` and this as `subject_ref`.
+- `stage_key` and `card_id` are as last reported, or `null` when the newest report left them out.
 - `latest_verdict` is the newest verdict on the run that no other verdict supersedes, or `null`.
   Verdicts on the run's attempts do not count.
 - `counts` totals every status for the same filter without `status`, so a view can show its tabs.

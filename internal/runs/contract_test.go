@@ -95,9 +95,51 @@ func storeContract(t *testing.T, s Store, addVerdict func(verdicts.Verdict)) {
 		t.Errorf("same run twice in one batch: %v", a)
 	}
 
+	// stage_key and card_id: stored, kept against a stale report, and replaced or cleared by a
+	// newer one, like every other field
+	byRef := func(ref string) Run {
+		t.Helper()
+		for _, r := range list(t, s, Filter{}).Runs {
+			if r.ExternalRef == ref {
+				return r
+			}
+		}
+		t.Fatalf("%s not listed", ref)
+		return Run{}
+	}
+	stageOf := func(r Run) string {
+		v := func(p *string) string {
+			if p == nil {
+				return "<nil>"
+			}
+			return *p
+		}
+		return v(r.StageKey) + "/" + v(r.CardID)
+	}
+	staged := mk("brd_01/run_01", "succeeded", 0, t0.Add(2*time.Second))
+	staged.StageKey, staged.CardID = ptr("review"), ptr("crd_01")
+	if a := upsert(t, s, now.Add(2*time.Minute), staged); !a[0] {
+		t.Error("a newer report with stage_key was not applied")
+	}
+	stale := staged
+	stale.StageKey, stale.CardID, stale.ReportedAt = ptr("draft"), ptr("crd_99"), t0
+	upsert(t, s, now.Add(2*time.Minute), stale)
+	if got := stageOf(byRef("brd_01/run_01")); got != "review/crd_01" {
+		t.Errorf("after a stale report: %s, want review/crd_01", got)
+	}
+	moved := mk("brd_01/run_02", "running", 5, t0.Add(2*time.Second))
+	moved.StageKey, moved.CardID = ptr("draft"), ptr("crd_02")
+	upsert(t, s, now.Add(2*time.Minute), moved)
+	moved.StageKey, moved.CardID, moved.ReportedAt = ptr("publish"), nil, t0.Add(3*time.Second)
+	upsert(t, s, now.Add(2*time.Minute), moved)
+	if got := stageOf(byRef("brd_01/run_02")); got != "publish/<nil>" {
+		t.Errorf("after a newer report: %s, want publish/<nil>", got)
+	}
+
 	// more runs, for order, filters and counts
 	other := mk("brd_02/run_01", "failed", 10, t0)
 	other.ScopeID, other.ScopeName, other.Executor = ptr("brd_02"), ptr("Ops"), ptr("prn_agent02")
+	other.StageKey, other.CardID = ptr("review"), ptr("crd_02")
 	canary := mk("x/1", "waiting", 10, t0)
 	canary.Source, canary.ScopeID, canary.ScopeName = "canary", nil, nil
 	upsert(t, s, now, other, canary, mk("brd_01/run_03", "cancelled", 20, t0))
@@ -114,12 +156,16 @@ func storeContract(t *testing.T, s Store, addVerdict func(verdicts.Verdict)) {
 		f    Filter
 		want []string
 	}{
-		"source":   {Filter{Source: "canary"}, []string{"x/1"}},
-		"scope":    {Filter{ScopeID: "brd_02"}, []string{"brd_02/run_01"}},
-		"executor": {Filter{Executor: "prn_agent02"}, []string{"brd_02/run_01"}},
-		"statuses": {Filter{Statuses: []string{"failed", "cancelled"}}, []string{"brd_01/run_03", "brd_02/run_01"}},
-		"since":    {Filter{Since: ptr(t0.Add(10 * time.Minute))}, []string{"brd_01/run_03", "x/1", "brd_02/run_01"}},
-		"until":    {Filter{Until: ptr(t0.Add(10 * time.Minute))}, []string{"brd_01/run_02", "brd_01/run_01"}},
+		"source":          {Filter{Source: "canary"}, []string{"x/1"}},
+		"scope":           {Filter{ScopeID: "brd_02"}, []string{"brd_02/run_01"}},
+		"executor":        {Filter{Executor: "prn_agent02"}, []string{"brd_02/run_01"}},
+		"stage":           {Filter{StageKey: "review"}, []string{"brd_02/run_01", "brd_01/run_01"}},
+		"stage and scope": {Filter{StageKey: "review", ScopeID: "brd_01"}, []string{"brd_01/run_01"}},
+		"no such stage":   {Filter{StageKey: "draft"}, []string{}},
+		"replaced stage":  {Filter{StageKey: "publish"}, []string{"brd_01/run_02"}},
+		"statuses":        {Filter{Statuses: []string{"failed", "cancelled"}}, []string{"brd_01/run_03", "brd_02/run_01"}},
+		"since":           {Filter{Since: ptr(t0.Add(10 * time.Minute))}, []string{"brd_01/run_03", "x/1", "brd_02/run_01"}},
+		"until":           {Filter{Until: ptr(t0.Add(10 * time.Minute))}, []string{"brd_01/run_02", "brd_01/run_01"}},
 	} {
 		if p := list(t, s, c.f); !eq(refs(p.Runs), c.want) {
 			t.Errorf("%s: %v, want %v", name, refs(p.Runs), c.want)

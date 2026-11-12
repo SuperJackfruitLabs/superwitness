@@ -25,6 +25,7 @@ type Filter struct {
 	ScopeID      string
 	Statuses     []string
 	Executor     string
+	StageKey     string
 	Since, Until *time.Time // on the sort key: Since inclusive, Until exclusive
 	NeedsVerdict bool       // terminal, and no verdict names the run
 	After        *Cursor

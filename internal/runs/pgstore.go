@@ -22,10 +22,11 @@ type PGStore struct {
 }
 
 const upsertSQL = `INSERT INTO runs AS r (source, external_ref, scope_id, scope_name, title, executor, executor_name,
-	status, source_status, started_at, ended_at, reported_at, first_seen_at, updated_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $13)
+	status, source_status, started_at, ended_at, reported_at, first_seen_at, updated_at, stage_key, card_id)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $13, $14, $15)
 ON CONFLICT (source, external_ref) DO UPDATE SET
 	scope_id = EXCLUDED.scope_id, scope_name = EXCLUDED.scope_name, title = EXCLUDED.title,
+	stage_key = EXCLUDED.stage_key, card_id = EXCLUDED.card_id,
 	executor = EXCLUDED.executor, executor_name = EXCLUDED.executor_name, status = EXCLUDED.status,
 	source_status = EXCLUDED.source_status, started_at = EXCLUDED.started_at, ended_at = EXCLUDED.ended_at,
 	reported_at = EXCLUDED.reported_at, updated_at = EXCLUDED.updated_at
@@ -33,7 +34,8 @@ WHERE r.reported_at < EXCLUDED.reported_at
 RETURNING 1`
 
 const runCols = `r.source, r.external_ref, r.scope_id, r.scope_name, r.title, r.executor, r.executor_name,
-	r.status, r.source_status, r.started_at, r.ended_at, r.reported_at, r.first_seen_at, r.updated_at`
+	r.status, r.source_status, r.started_at, r.ended_at, r.reported_at, r.first_seen_at, r.updated_at,
+	r.stage_key, r.card_id`
 
 // The newest verdict on the run that no other verdict supersedes.
 const latestJoin = `LEFT JOIN LATERAL (
@@ -77,7 +79,7 @@ func (s *PGStore) Upsert(ctx context.Context, batch []Run, now time.Time) ([]boo
 	for i, r := range batch {
 		var one int
 		err := tx.QueryRow(ctx, upsertSQL, r.Source, r.ExternalRef, r.ScopeID, r.ScopeName, r.Title, r.Executor,
-			r.ExecutorName, r.Status, r.SourceStatus, r.StartedAt, r.EndedAt, r.ReportedAt, now).Scan(&one)
+			r.ExecutorName, r.Status, r.SourceStatus, r.StartedAt, r.EndedAt, r.ReportedAt, now, r.StageKey, r.CardID).Scan(&one)
 		switch {
 		case err == nil:
 			applied[i] = true
@@ -114,6 +116,9 @@ func (s *PGStore) List(ctx context.Context, f Filter) (Page, error) {
 	}
 	if f.Executor != "" {
 		where = append(where, "r.executor = "+arg(f.Executor))
+	}
+	if f.StageKey != "" {
+		where = append(where, "r.stage_key = "+arg(f.StageKey))
 	}
 	if f.Since != nil {
 		where = append(where, "r.sort_at >= "+arg(*f.Since))
@@ -183,7 +188,7 @@ func scanRun(rows pgx.Rows) (Run, error) {
 	var vAt *time.Time
 	if err := rows.Scan(&r.Source, &r.ExternalRef, &r.ScopeID, &r.ScopeName, &r.Title, &r.Executor, &r.ExecutorName,
 		&r.Status, &r.SourceStatus, &r.StartedAt, &r.EndedAt, &r.ReportedAt, &r.FirstSeenAt, &r.UpdatedAt,
-		&vID, &vJudge, &vJudgeKind, &vStandard, &vValue, &vAt); err != nil {
+		&r.StageKey, &r.CardID, &vID, &vJudge, &vJudgeKind, &vStandard, &vValue, &vAt); err != nil {
 		return Run{}, err
 	}
 	utc := func(t *time.Time) *time.Time {

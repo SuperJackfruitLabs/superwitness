@@ -92,13 +92,12 @@ func TestRuntimeRoleMigrationPass(t *testing.T) {
 	if err := Migrate(ctx, roles.AppDSN); err != nil {
 		t.Errorf("runtime role, nothing pending: %v", err)
 	}
-	// Make the newest migration pending again (its columns gone, its version row removed); the
-	// runtime role cannot apply it, because altering sessions needs the owner.
-	if _, err := owner.Exec(ctx, `ALTER TABLE sessions DROP COLUMN refresh_sealed, DROP COLUMN access_expires_at,
-		DROP COLUMN unreachable_since`); err != nil {
+	// Make the newest migration pending again (its columns and index gone, its version row
+	// removed); the runtime role cannot apply it, because altering runs needs the owner.
+	if _, err := owner.Exec(ctx, `ALTER TABLE runs DROP COLUMN stage_key, DROP COLUMN card_id`); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := owner.Exec(ctx, `DELETE FROM goose_db_version WHERE version_id = 4`); err != nil {
+	if _, err := owner.Exec(ctx, `DELETE FROM goose_db_version WHERE version_id = 5`); err != nil {
 		t.Fatal(err)
 	}
 	if err := Migrate(ctx, roles.AppDSN); err == nil {
@@ -125,6 +124,12 @@ func TestRuntimeRoleMigrationPass(t *testing.T) {
 	for priv, want := range map[string]bool{"SELECT": true, "INSERT": true, "UPDATE": true, "DELETE": false} {
 		if err := owner.QueryRow(ctx, `SELECT has_table_privilege('superwitness_app', 'runs', $1)`, priv).Scan(&can); err != nil || can != want {
 			t.Errorf("runtime role %s on runs = %v %v; want %v", priv, can, err, want)
+		}
+	}
+	// The table grant reaches the columns the migration added.
+	for _, col := range []string{"stage_key", "card_id"} {
+		if err := owner.QueryRow(ctx, `SELECT has_column_privilege('superwitness_app', 'runs', $1, 'UPDATE')`, col).Scan(&can); err != nil || !can {
+			t.Errorf("runtime role UPDATE on runs.%s = %v %v; want granted", col, can, err)
 		}
 	}
 }

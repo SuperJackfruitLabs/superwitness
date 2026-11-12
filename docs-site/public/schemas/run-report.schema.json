@@ -47,6 +47,16 @@
           "minLength": 1,
           "maxLength": 200
         },
+        "stage_key": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "card_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
         "executor": {
           "type": "object",
           "additionalProperties": false,

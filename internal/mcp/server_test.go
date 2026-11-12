@@ -55,10 +55,10 @@ func mcpServer(t *testing.T) *httptest.Server {
 	}
 	rs := runs.NewMemStore(store)
 	started := time.Date(2026, 10, 6, 9, 0, 0, 0, time.UTC)
-	scope, name := "brd_01", "Press"
+	scope, name, stage := "brd_01", "Press", "review"
 	if _, err := rs.Upsert(context.Background(), []runs.Run{
 		{Source: "superpipeline", ExternalRef: "brd_01/run_01", ScopeID: &scope, ScopeName: &name, Status: "succeeded",
-			SourceStatus: "done", StartedAt: &started, ReportedAt: started},
+			SourceStatus: "done", StartedAt: &started, ReportedAt: started, StageKey: &stage},
 		{Source: "superpipeline", ExternalRef: "brd_01/run_02", Status: "running", SourceStatus: "in_progress", ReportedAt: started},
 	}, started); err != nil {
 		t.Fatal(err)
@@ -210,6 +210,11 @@ func TestListRunsTool(t *testing.T) {
 	_ = json.Unmarshal([]byte(text), &page)
 	if isErr || len(page.Runs) != 1 || page.Runs[0].ExternalRef != "brd_01/run_01" || page.Counts["running"] != 0 {
 		t.Errorf("list_runs: %s", text)
+	}
+	text, _ = call(t, cs, "list_runs", map[string]any{"stage_key": "review"})
+	_ = json.Unmarshal([]byte(text), &page)
+	if len(page.Runs) != 1 || page.Runs[0].ExternalRef != "brd_01/run_01" || !strings.Contains(text, `"stage_key":"review"`) {
+		t.Errorf("list_runs stage_key: %s", text)
 	}
 	text, isErr = call(t, cs, "list_runs", map[string]any{"status": []string{"done"}})
 	if !isErr || !strings.Contains(text, "invalid_status") {

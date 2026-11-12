@@ -80,6 +80,7 @@ verdict. The same as `GET /v1/runs` ([Run registry API](/build/run-registry/#lis
 | `scope` | no | only runs in this scope id |
 | `status` | no | a list of statuses |
 | `executor` | no | only runs this principal executed |
+| `stage_key` | no | only runs reported with this `stage_key` |
 | `since`, `until` | no | RFC 3339 bounds on the run's start, or first sighting |
 | `needs_verdict` | no | `true` for finished runs no verdict names yet |
 | `cursor` | no | `next_cursor` from the previous page |
