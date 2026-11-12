@@ -1,7 +1,9 @@
 # Changelog
 
 All notable changes to superwitness are recorded here. The format follows
-[Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Entries go under `## Unreleased`; a
+release-prep PR stamps them `## vX.Y.Z — YYYY-MM-DD` (`sh .github/release/prep-release.sh vX.Y.Z`),
+and the release notes quote that section.
 
 ## Unreleased
 
@@ -12,7 +14,7 @@ All notable changes to superwitness are recorded here. The format follows
   per-rule ratchet, and an architecture test that holds file and package size limits and the
   direction of imports between packages. See `docs/code-quality.md`.
 
-## 0.0.8 — 2026-10-19
+## v0.0.8 — 2026-10-19
 
 ### Changed
 
@@ -34,7 +36,7 @@ All notable changes to superwitness are recorded here. The format follows
 - Times show as readable local time, with the exact ISO time on hover.
 - A missing rubric says "Rubric not found" with a link back, not "Something went wrong".
 
-## 0.0.7 — 2026-10-15
+## v0.0.7 — 2026-10-15
 
 ### Added
 
@@ -45,7 +47,7 @@ All notable changes to superwitness are recorded here. The format follows
   atomically to `~/.claude/skills`; the installer does so when `SKILL_DIR` is set.
 - Release tarballs for macOS (`darwin_arm64`, `darwin_amd64`).
 
-## 0.0.6 — 2026-10-07
+## v0.0.6 — 2026-10-07
 
 ### Changed
 
@@ -71,7 +73,7 @@ All notable changes to superwitness are recorded here. The format follows
 - On wide screens a run card is one line, its facts on the right; the sidebar's theme and sign-out
   controls line up with the rest of the menu.
 
-## 0.0.5 — 2026-10-07
+## v0.0.5 — 2026-10-07
 
 ### Added
 
@@ -96,7 +98,7 @@ All notable changes to superwitness are recorded here. The format follows
 - The 401 message for a missing token reads `a bearer token is required`.
 - The app's sign-in link reads "Sign in".
 
-## 0.0.4 — 2026-10-06
+## v0.0.4 — 2026-10-06
 
 Transcripts: what an agent was asked, what it sent to each tool and what came back, read live
 from AgentPod for one attempt, redacted there, and never stored, logged or cached here.
@@ -125,7 +127,7 @@ from AgentPod for one attempt, redacted there, and never stored, logged or cache
 - An AgentPod hub without the transcript routes answers 503 `source_unavailable` for them.
 - No migration and no new setting.
 
-## 0.0.3 — 2026-10-05
+## v0.0.3 — 2026-10-05
 
 superwitness has a web app. People on an allowlist sign in with AgentPod, browse the runs
 sources report, read a run and record verdicts against rubrics.
@@ -174,7 +176,7 @@ sources report, read a run and record verdicts against rubrics.
 - The app is off until `SW_ALLOWED_PRINCIPALS` names someone; it then needs an https
   `SW_PUBLIC_URL`, `SW_APP_CLIENT_ID` and `SW_SESSION_SECRET_FILE`.
 
-## 0.0.2 — 2026-10-05
+## v0.0.2 — 2026-10-05
 
 superwitness keeps its own list of runs. Sources report runs to a published contract, and
 people and agents list them with filters, counts and each run's latest verdict.
@@ -200,7 +202,7 @@ people and agents list them with filters, counts and each run's latest verdict.
   the run registry answers 503 `store_unavailable`; verdicts are unaffected.
 - Set `SW_RUN_SOURCES` for each reporter. Unset, nobody may report.
 
-## 0.0.1 — 2026-10-05
+## v0.0.1 — 2026-10-05
 
 First public release. superwitness builds run documents that join superpipeline runs with AgentPod
 attempts, traces and logs, and keeps grader and eval verdicts in its own database.

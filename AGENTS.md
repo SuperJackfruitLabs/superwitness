@@ -10,7 +10,7 @@ Start with [`CONTRIBUTING.md`](CONTRIBUTING.md) (checks, building, testing) and 
 - **No skipped tests.** Never `.skip`, `.only` or delete a red test to get green; fix it, or say in the PR why it is red.
 - **Characterization test first.** Before a refactor that touches behaviour, commit a test against the old code and prove it can fail (revert the code, watch it go red).
 - **Check the PR is still open before pushing to its branch.** PRs are often merged within minutes, and a push to a merged branch strands the work.
-- **A `v*` tag deploys production** (`release.yml`), and the release first checks that the built binary's `--version` reports the tag. Only the operator tags.
+- **A `v*` tag deploys production** through the suite's shared release workflow (`.github/workflows/release.yml` and `.github/release/`, synced byte-identical from the suite's release kit: change them there, never here; settings in `.github/release-config.json`, scripts in `deploy/release/`). The build first checks that the binary's `--version` reports the tag. Only the operator tags.
 - **The `internal/docsclaims` tests check the docs against the code:** every `SW_*` variable, `/v1` route and MCP tool a page names must exist, and the tracked tree must not name private infrastructure. Change the docs with the code.
 - **Integration and e2e tests need Docker** (`make test-integration`, `make e2e`). Without it they have not run, which is not a pass.
 - **The Claude CI files are synced copies.** `.github/claude/claude-ci.mjs` and the `claude-review`/`claude-triage` workflows come from the suite's shared kit; change them there, not here. The advisory PR review follows [`REVIEW.md`](REVIEW.md).
