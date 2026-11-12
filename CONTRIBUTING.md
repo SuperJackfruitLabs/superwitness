@@ -76,12 +76,15 @@ requests weekly.
 
 ## Releases
 
-Maintainers only. Tagging `v*` on `main` triggers
-`.github/workflows/release.yml`. It builds the linux/amd64 and linux/arm64
-tarballs and `SHA256SUMS`, checks that the binary reports the tag, and
-publishes a GitHub release. Update `CHANGELOG.md` and the version in the docs
-and install snippets in the same change; the docs-claims test keeps them
-consistent.
+Maintainers only. Tagging `v*` on `main` runs the suite's shared release workflow,
+`.github/workflows/release.yml` (synced from the suite's release kit; settings in
+`.github/release-config.json`). It refuses a tag whose commit is not on `main` or whose `main`
+CI run did not pass, builds the linux and darwin (amd64, arm64) tarballs at the tag
+(`deploy/release/build.sh`, which checks that the binary reports the tag), writes `SHA256SUMS`
+and a provenance attestation, deploys production and publishes the GitHub release, its notes
+quoting this version's `CHANGELOG.md` section. Before the tag, a release-prep PR runs
+`sh .github/release/prep-release.sh vX.Y.Z` and updates the version in the docs and install
+snippets; the docs-claims test keeps them consistent.
 
 The two sites deploy on every merge to main that touches them:
 `.github/workflows/sites.yml` runs `scripts/deploy-sites.sh` with the organisation's
