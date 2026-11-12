@@ -65,6 +65,7 @@ type RunQuery struct {
 	Scope        string
 	Status       []string
 	Executor     string
+	StageKey     string
 	Since, Until string
 	NeedsVerdict bool
 	Cursor       string
@@ -78,7 +79,7 @@ type RunPage struct {
 }
 
 func (o *Ops) ListRuns(ctx context.Context, q RunQuery) (RunPage, error) {
-	f := runs.Filter{Source: q.Source, ScopeID: q.Scope, Executor: q.Executor, NeedsVerdict: q.NeedsVerdict}
+	f := runs.Filter{Source: q.Source, ScopeID: q.Scope, Executor: q.Executor, StageKey: q.StageKey, NeedsVerdict: q.NeedsVerdict}
 	if q.Source != "" && !sourceFilter.MatchString(q.Source) {
 		return RunPage{}, badRequest("invalid_source", "source is lowercase letters, digits and -, starting with a letter")
 	}

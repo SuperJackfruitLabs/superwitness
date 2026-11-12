@@ -36,6 +36,7 @@ type ListRunsArgs struct {
 	Scope        string   `json:"scope,omitempty" jsonschema:"only runs in this scope, e.g. a board id"`
 	Status       []string `json:"status,omitempty" jsonschema:"any of queued, running, waiting, succeeded, failed, cancelled"`
 	Executor     string   `json:"executor,omitempty" jsonschema:"only runs this principal executed (prn_…)"`
+	StageKey     string   `json:"stage_key,omitempty" jsonschema:"only runs reported with this stage_key, e.g. a board stage's key"`
 	Since        string   `json:"since,omitempty" jsonschema:"RFC 3339: runs that started, or were first seen, at or after this"`
 	Until        string   `json:"until,omitempty" jsonschema:"RFC 3339: runs that started, or were first seen, before this"`
 	NeedsVerdict bool     `json:"needs_verdict,omitempty" jsonschema:"only finished runs that no verdict names yet"`
@@ -127,10 +128,10 @@ func NewServer(ops *api.Ops, caller auth.Principal, version string) *sdk.Server 
 		})
 
 	sdk.AddTool(s, &sdk.Tool{Name: "list_runs",
-		Description: "Runs reported to superwitness's run registry, newest first, with per-status counts and each run's latest verdict. Filter by source, scope, status, executor, time, or needs_verdict."},
+		Description: "Runs reported to superwitness's run registry, newest first, with per-status counts and each run's latest verdict. Filter by source, scope, status, executor, stage_key, time, or needs_verdict."},
 		func(ctx context.Context, _ *sdk.CallToolRequest, in ListRunsArgs) (*sdk.CallToolResult, any, error) {
 			page, err := ops.ListRuns(ctx, api.RunQuery{Source: in.Source, Scope: in.Scope, Status: in.Status,
-				Executor: in.Executor, Since: in.Since, Until: in.Until, NeedsVerdict: in.NeedsVerdict,
+				Executor: in.Executor, StageKey: in.StageKey, Since: in.Since, Until: in.Until, NeedsVerdict: in.NeedsVerdict,
 				Cursor: in.Cursor, Limit: in.Limit})
 			if err != nil {
 				return toolError(err), nil, nil

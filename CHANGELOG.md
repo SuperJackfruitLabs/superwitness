@@ -5,6 +5,16 @@ All notable changes to superwitness are recorded here. The format follows
 
 ## Unreleased
 
+### Added
+
+- A run report may carry two optional fields, `stage_key` and `card_id` (1 to 128 characters
+  each): the source's stage the run belongs to and the work item it is for. Both are stored, follow
+  the run's newest report, appear on every listed run (`null` when absent), and `GET /v1/runs` and
+  `list_runs` take a `stage_key` filter, so one stage's history can be listed. The published run
+  report schema gains both fields; a source that vendors it should take the new copy. Migration
+  `00005_run_stage_and_card` adds the two columns and an index; the existing grant on `runs`
+  covers them.
+
 ### Changed
 
 - Code-quality checks for contributors, with no change to what superwitness does:

@@ -182,6 +182,8 @@ type listed struct {
 		ExternalRef   string          `json:"external_ref"`
 		Ref           string          `json:"ref"`
 		Status        string          `json:"status"`
+		StageKey      *string         `json:"stage_key"`
+		CardID        *string         `json:"card_id"`
 		LatestVerdict json.RawMessage `json:"latest_verdict"`
 	} `json:"runs"`
 	NextCursor *string        `json:"next_cursor"`
@@ -197,9 +199,16 @@ func seedRuns(t *testing.T, r *registry) {
 		rep = strings.Replace(rep, "09:00:00Z", fmt.Sprintf("09:0%d:00Z", i), 1)
 		items = append(items, rep)
 	}
-	if resp, b := do(t, r.srv, "POST", "/v1/runs", reporterTok, `{"runs":[`+strings.Join(items, ",")+`]}`); resp.StatusCode != 200 {
-		t.Fatalf("seed: %d %s", resp.StatusCode, b)
+	if code, b := postReports(t, r, `{"runs":[`+strings.Join(items, ",")+`]}`); code != 200 {
+		t.Fatalf("seed: %d %s", code, b)
 	}
+}
+
+// postReports sends body to POST /v1/runs as the reporter and answers the status and body.
+func postReports(t *testing.T, r *registry, body string) (int, []byte) {
+	t.Helper()
+	resp, b := do(t, r.srv, "POST", "/v1/runs", reporterTok, body)
+	return resp.StatusCode, b
 }
 
 func getList(t *testing.T, r *registry, query string) listed {
@@ -250,6 +259,40 @@ func TestListRuns(t *testing.T) {
 	// An agent token reads too: the audience is the grant.
 	if resp, b := do(t, r.srv, "GET", "/v1/runs", "dev:prn_agent01:agent", ""); resp.StatusCode != 200 {
 		t.Errorf("agent read: %d %s", resp.StatusCode, b)
+	}
+}
+
+// stage_key and card_id are reported, listed back, and stage_key filters the list: one stage's history.
+func TestListRunsByStage(t *testing.T) {
+	r := newRegistryServer(t)
+	var items []string
+	for i, stage := range []string{"review", "draft", "review", ""} {
+		rep := strings.Replace(runReport, "run_01", fmt.Sprintf("run_%02d", i+1), 1)
+		rep = strings.Replace(rep, "09:00:00Z", fmt.Sprintf("09:0%d:00Z", i), 1)
+		if stage != "" {
+			rep = strings.Replace(rep, `"status":`, fmt.Sprintf(`"stage_key":%q,"card_id":"crd_%02d","status":`, stage, i+1), 1)
+		}
+		items = append(items, rep)
+	}
+	if code, b := postReports(t, r, `{"runs":[`+strings.Join(items, ",")+`]}`); code != 200 {
+		t.Fatalf("report: %d %s", code, b)
+	}
+	l := getList(t, r, "?stage_key=review")
+	if len(l.Runs) != 2 || l.Runs[0].ExternalRef != "brd_01/run_03" || l.Runs[1].ExternalRef != "brd_01/run_01" ||
+		*l.Runs[0].StageKey != "review" || *l.Runs[0].CardID != "crd_03" || l.Counts["running"] != 2 {
+		t.Errorf("stage_key=review = %+v", l)
+	}
+	l = getList(t, r, "?stage_key=review&scope=brd_02")
+	if len(l.Runs) != 0 {
+		t.Errorf("stage_key with another scope = %+v", l)
+	}
+	l = getList(t, r, "")
+	if len(l.Runs) != 4 || l.Runs[0].ExternalRef != "brd_01/run_04" || l.Runs[0].StageKey != nil || l.Runs[0].CardID != nil {
+		t.Errorf("unfiltered = %+v", l)
+	}
+	code, b := postReports(t, r, strings.Replace(runReport, `"status":`, `"stage_key":"","status":`, 1))
+	if code != 422 || errCode(t, b) != "invalid_report" || !strings.Contains(string(b), "stage_key") {
+		t.Errorf("empty stage_key: %d %s", code, b)
 	}
 }
 

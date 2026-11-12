@@ -142,7 +142,7 @@ light and dark, at 1440 and 390 px wide (the file's header lists its options).
 | Attempt → run | `GET /v1/runs/by-attempt/{attempt}` (302) |
 | Record a verdict | `POST /v1/verdicts` |
 | Report runs (service principals with `runs:write`) | `POST /v1/runs` |
-| List runs | `GET /v1/runs?source=&scope=&status=&executor=&since=&until=&needs_verdict=&cursor=&limit=` |
+| List runs | `GET /v1/runs?source=&scope=&status=&executor=&stage_key=&since=&until=&needs_verdict=&cursor=&limit=` |
 | Rubrics | `GET /v1/rubrics`, `GET /v1/rubrics/{id}/{version}` |
 | MCP (streamable HTTP) | `/mcp`: `get_run`, `list_run_spans`, `list_run_logs`, `list_runs`, `record_verdict` |
 | The app (sign in with AgentPod) | `/`, `/runs/superpipeline/{board}/{run}`, `/rubrics` |

@@ -31,7 +31,7 @@ func ValidStatus(s string) bool { return slices.Contains(Statuses, s) }
 var (
 	sourceName = regexp.MustCompile(config.SourceNamePattern)
 	executorID = regexp.MustCompile(`^prn_[0-9a-f]{20}$`)
-	reportKeys = []string{"source", "external_ref", "scope", "title", "executor", "status", "source_status", "started_at", "ended_at", "reported_at"}
+	reportKeys = []string{"source", "external_ref", "scope", "title", "executor", "status", "source_status", "started_at", "ended_at", "reported_at", "stage_key", "card_id"}
 	namedKeys  = []string{"id", "name"}
 	// instantShape is RFC 3339 date-time as the published schema asserts it. Go's parser also
 	// takes a comma before the fraction and offsets such as +24:00, which the schema refuses.
@@ -46,6 +46,8 @@ type Run struct {
 	ScopeID       *string
 	ScopeName     *string
 	Title         *string
+	StageKey      *string // the source's stage the run belongs to, such as a board stage's key
+	CardID        *string // the source's work item the run is for, such as a board card's id
 	Executor      *string // the executor's hub principal id, when the source knows it
 	ExecutorName  *string
 	Status        string
@@ -87,6 +89,8 @@ func (r Run) MarshalJSON() ([]byte, error) {
 		Ref           string          `json:"ref"`
 		Scope         *named          `json:"scope"`
 		Title         *string         `json:"title"`
+		StageKey      *string         `json:"stage_key"`
+		CardID        *string         `json:"card_id"`
 		Executor      *named          `json:"executor"`
 		Status        string          `json:"status"`
 		SourceStatus  string          `json:"source_status"`
@@ -96,7 +100,7 @@ func (r Run) MarshalJSON() ([]byte, error) {
 		FirstSeenAt   time.Time       `json:"first_seen_at"`
 		UpdatedAt     time.Time       `json:"updated_at"`
 		LatestVerdict *VerdictSummary `json:"latest_verdict"`
-	}{r.Source, r.ExternalRef, r.SubjectRef(), scope, r.Title, executor, r.Status, r.SourceStatus,
+	}{r.Source, r.ExternalRef, r.SubjectRef(), scope, r.Title, r.StageKey, r.CardID, executor, r.Status, r.SourceStatus,
 		r.StartedAt, r.EndedAt, r.ReportedAt, r.FirstSeenAt, r.UpdatedAt, r.LatestVerdict})
 }
 
@@ -200,6 +204,12 @@ func parseReport(raw json.RawMessage, now time.Time) (Run, *ValidationError) {
 		}
 	}
 	if r.Title, verr = o.text("title", false, 1, 200); verr != nil {
+		return Run{}, verr
+	}
+	if r.StageKey, verr = o.text("stage_key", false, 1, 128); verr != nil {
+		return Run{}, verr
+	}
+	if r.CardID, verr = o.text("card_id", false, 1, 128); verr != nil {
 		return Run{}, verr
 	}
 	if raw, ok := o.m["executor"]; ok {
