@@ -39,6 +39,14 @@ reported a run leaves it out of the list, but the run's own page still works by 
 | `started_at`, `ended_at` | no | RFC 3339 timestamps, or `null` when not yet known |
 | `reported_at` | yes | RFC 3339: when the source produced this report |
 
+:::caution[On main, not yet released]
+`stage_key` and `card_id`, and the `stage_key` filter on [listing runs](#listing-runs), are on
+`main` and not in v0.0.12, the latest release. A v0.0.12 server refuses a report that carries
+either field (422 `invalid_report`, unknown field) and ignores a `stage_key` query. Leave both
+fields out when reporting to a release older than the one that ships them. SuperPipeline sends
+them only when its `SUPERWITNESS_REPORT_STAGE` is set.
+:::
+
 Unknown fields are refused, and field names are matched exactly. Timestamps are RFC 3339
 `date-time` strings of at most 64 characters, kept to the microsecond. The format is strict: the fraction separator is a dot, not a comma, and an offset hour is at most 23. The body may be at most
 256 KiB.
@@ -106,7 +114,7 @@ the run when it has not started, then by `source` and `external_ref`.
 | `scope` | only runs in this scope id |
 | `status` | only runs with this status; repeat it for several |
 | `executor` | only runs this principal executed |
-| `stage_key` | only runs reported with this `stage_key`; with `scope`, one stage's history on one board |
+| `stage_key` | only runs reported with this `stage_key`; with `scope`, one stage's history on one board. On `main`, not yet released |
 | `since`, `until` | RFC 3339; runs whose start (or first sighting) is at or after `since` and before `until` |
 | `needs_verdict` | `true`: finished runs (`succeeded`, `failed`, `cancelled`) that no verdict names yet |
 | `cursor` | `next_cursor` from the previous page |
@@ -135,6 +143,7 @@ the run when it has not started, then by `source` and `external_ref`.
 - `latest_verdict` is the newest verdict on the run that no other verdict supersedes, or `null`.
   Verdicts on the run's attempts do not count.
 - `counts` totals every status for the same filter without `status`, so a view can show its tabs.
+  On `main`, not yet released: v0.0.12 answers neither.
 - `next_cursor` is `null` on the last page. A cursor stays valid while new runs arrive: the next
   page continues where the last one ended.
 
