@@ -3,7 +3,7 @@ title: Configuration
 description: Every environment variable SuperWitness reads, with its default.
 ---
 
-SuperWitness reads its settings from environment variables; four of them name files to read
+SuperWitness reads its settings from environment variables; five of them name files to read
 secrets from. Under systemd they come from `/etc/superwitness/env` ([Install](/install/#configure)). Leading and trailing spaces
 are trimmed from every value.
 
@@ -74,10 +74,12 @@ finds:
 - **`SW_TRUSTED_PROXIES`** must be IP addresses or CIDR prefixes.
 - **Fake mode** refuses a `SW_LISTEN` that is not loopback.
 
-Secret files are checked as `serve` starts. `SW_HUB_CLIENT_SECRET_FILE`, `SW_TRACES_TOKEN_FILE`,
-`SW_LOGS_TOKEN_FILE` and `SW_SESSION_SECRET_FILE` must each hold a non-empty value (surrounding
-whitespace is trimmed; the session secret must hold at least 32 bytes) and must not be readable by
-group or others; otherwise `serve` exits 1 naming the file.
+Secret files are checked as `serve` starts. `SW_HUB_CLIENT_SECRET_FILE` (or, under the plane,
+`SW_ORG_PLANE_SERVICE_CREDENTIAL_FILE`), `SW_TRACES_TOKEN_FILE`, `SW_LOGS_TOKEN_FILE` and
+`SW_SESSION_SECRET_FILE` must each hold a non-empty value (surrounding whitespace is trimmed; the
+session secret must hold at least 32 bytes, and the plane credential must be one line of the form
+`svc_<id>:<secret>`) and must not be readable by group or others; otherwise `serve` exits 1
+naming the file.
 
 ## Other commands
 
@@ -85,3 +87,5 @@ group or others; otherwise `serve` exits 1 naming the file.
   2 if neither is set.
 - `superwitness rubric-add` needs `SW_DATABASE_URL`, and migrates first over
   `SW_MIGRATE_DATABASE_URL` when that is set.
+- `superwitness canary` reads its own settings: the canary-only `SWC_*` names and a few `SW_*`
+  ones it shares with the service ([The canary](/use/canary/#settings)).
