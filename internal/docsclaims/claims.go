@@ -5,7 +5,9 @@
 // wrong and nothing fails. The tests here read the pages and fail when they name an
 // SW_* variable internal/config does not read, a /v1 route the API does not register,
 // or an MCP tool the server does not register, or when a docs page lacks a title or
-// description.
+// description. The other direction is completeness.go: every route, setting, command, flag,
+// MCP tool and log event the code defines must be named on a docs page, or be listed in
+// docs/undocumented-baseline.json, which can only shrink.
 package docsclaims
 
 import (

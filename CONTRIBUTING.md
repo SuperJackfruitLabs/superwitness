@@ -16,6 +16,7 @@ review. Each check is a job in `.github/workflows/ci.yml`:
 | `web` | the embedded SvelteKit app's type check, lint ratchet, tests and build, and a check that the committed bundle is current |
 | `landing` | the superwitness.dev build |
 | `docs` | the docs.superwitness.dev build |
+| `docs-claims` | the `internal/docsclaims` tests, on a docs- or landing-only pull request, where `go` is skipped |
 | `e2e` | the app in Chromium against fake mode, a stand-in hub and Postgres |
 
 Branch protection requires all six to pass and the branch to be up to date
@@ -55,6 +56,18 @@ cd docs-site && npm ci && npm run dev    # http://localhost:4328
   `SW_*` variable, a `/v1` route or an MCP tool the code doesn't define fails
   the build, as does a page missing a title or description. Fix the page or
   the code; don't silence the check.
+- **Docs completeness** (`internal/docsclaims`, `TestDocsCompleteness`). The
+  other direction: every HTTP route, setting (`SW_*`, `SWC_*`, the installer's),
+  CLI command and flag, MCP tool and log event the code defines must be named
+  on a docs-site page. The few that are not yet are listed in
+  `docs/undocumented-baseline.json`, which can only shrink: a new item needs
+  its docs, and an item you document must leave the list.
+  `DOCSCLAIMS_WRITE_BASELINE=1 go test -run TestDocsCompleteness -v ./internal/docsclaims/`
+  prints what the list should hold.
+- **Docs touched** (`.github/workflows/docs-touched.yml`). A pull request that
+  changes a public-surface file (`scripts/docs-touched.sh` lists them) without
+  changing `docs-site/`, `docs/` or `README.md` fails, unless it carries the
+  `no-docs-needed` label.
 - **Internal references** (`internal/docsclaims`, the internal-refs test).
   Every tracked file is scanned for identifiers that don't belong in a public
   repository, such as private host names, private-network addresses and

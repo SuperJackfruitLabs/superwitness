@@ -1,0 +1,10 @@
+{
+  "http_routes": [],
+  "env_vars": [
+    "SUPERWITNESS_RELEASE_BASE"
+  ],
+  "cli_commands": [],
+  "cli_flags": [],
+  "mcp_tools": [],
+  "log_events": []
+}
