@@ -13,7 +13,11 @@ lives in the engines, and everything it reads from AgentPod and SuperPipeline st
 | `superwitness serve` | runs the service; also what runs with no command |
 | `superwitness migrate` | runs pending migrations once and exits |
 | `superwitness rubric-add` | records a rubric version ([Verdicts](/use/verdicts/#rubrics)) |
+| `superwitness canary` | the live acceptance test: `canary run`, `canary record-alert` and `canary status` ([The canary](/use/canary/)) |
+| `superwitness skill` | prints the operations skill for agents; `superwitness skill install` writes it to `~/.claude/skills/superwitness-ops/SKILL.md`, or under `--dir <dir>` instead |
 | `superwitness version` | prints the version; `--version` and `-version` do the same |
+
+`suwi` is the same binary under a short name, so `suwi skill install` is `superwitness skill install`.
 
 `serve` exits 2 when its settings are missing or invalid: missing settings are all named in one
 message, and any other invalid setting stops it at the first one found

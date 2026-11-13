@@ -80,6 +80,7 @@ export default defineConfig({
             { label: 'With AgentPod and SuperPipeline', slug: 'use/with-agentpod-and-superpipeline' },
             { label: 'Operations', slug: 'use/operations' },
             { label: 'Configuration', slug: 'use/configuration' },
+            { label: 'The canary', slug: 'use/canary' },
           ],
         },
         {
