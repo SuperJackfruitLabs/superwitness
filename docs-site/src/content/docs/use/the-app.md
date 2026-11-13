@@ -43,7 +43,8 @@ principal behind it. It then checks that the principal is a person, is not suspe
 `SW_ALLOWED_PRINCIPALS`. Anyone else, including other valid AgentPod accounts, agents and
 services, sees **Not authorised**. Each refusal is logged as `auth.signin_refused` with a reason,
 for example `not_allowlisted`, `login_missing` (the sign-in cookie was absent) or `no_code` (the
-callback carried no code); the log never holds a token or a cookie.
+callback carried no code). A sign-in that succeeds is logged as `auth.signin` with the
+principal. The log never holds a token or a cookie.
 
 With `SW_ORG_PLANE_ISSUER` set, the app signs people in through the organization plane as the
 OAuth client named by `SW_APP_CLIENT_ID` (the plane registers it with the redirect
