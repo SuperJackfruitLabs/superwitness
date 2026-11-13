@@ -1,5 +1,5 @@
 #!/bin/sh
-# The release's build (`build_command` in .github/release-config.json), run at the tag: the
+# The release's build (the .github/release/build.sh hook), run at the tag: the
 # release tarballs for linux and darwin, amd64 and arm64, with the tag stamped in. The tag is
 # the version, so the tarballs cannot come from main's CI. The web app is the committed
 # internal/web/dist, which main's CI (`make web-check`) proved matches web/.

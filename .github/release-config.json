@@ -1,10 +1,16 @@
 {
   "product": "SuperWitness",
   "ci_workflow": "ci.yml",
-  "build_at_tag": true,
-  "build_command": "sh deploy/release/build.sh",
-  "assets": ["dist/superwitness_*.tar.gz", "scripts/install.sh"],
+  "assets": [
+    "dist/superwitness_*.tar.gz",
+    "scripts/install.sh"
+  ],
   "deploy_from_release": true,
-  "deploy": { "ssh_command": "superwitness" },
-  "smoke": { "script": "deploy/release/smoke.sh", "retries": 6, "delay_s": 10 }
+  "deploy": {
+    "ssh_command": "superwitness"
+  },
+  "smoke": {
+    "retries": 6,
+    "delay_s": 10
+  }
 }
