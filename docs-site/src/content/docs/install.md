@@ -48,7 +48,7 @@ tar xzf superwitness_0.0.8_linux_amd64.tar.gz
 ```
 
 On arm64, replace `amd64` with `arm64`. The tarball holds the binary, `LICENSE`, `NOTICE`, `licenses/`
-(the bundled fonts' licences), `deploy/superwitness.service` and `deploy/env.example`. Install the binary:
+(the licences of the eight bundled fonts), `deploy/superwitness.service` and `deploy/env.example`. Install the binary:
 
 ```sh
 sudo install -m 0755 superwitness_0.0.8_linux_amd64/superwitness /usr/local/bin/
