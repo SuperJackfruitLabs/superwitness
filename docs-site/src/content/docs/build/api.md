@@ -10,8 +10,9 @@ reads, the transcript step route (`GET /v1/runs/superpipeline/{board}/{run}/tran
 
 ## Authentication
 
-Every `/v1` route takes a bearer token issued by the AgentPod hub, with SuperWitness's
-`SW_PUBLIC_URL` as its audience:
+Every `/v1` route takes a bearer token with SuperWitness's `SW_PUBLIC_URL` as its audience,
+issued by the AgentPod hub or, when `SW_ORG_PLANE_ISSUER` is set, by the organization plane
+(hub tokens are then refused):
 
 ```
 Authorization: Bearer <token>

@@ -90,8 +90,9 @@ that is not deployed, is `unavailable`, so a missing route never reads as a miss
 
 ## Tokens callers present
 
-Every `/v1` route and `/mcp` take a bearer token issued by the same AgentPod hub. SuperWitness
-verifies it offline, against the keys from `{SW_HUB_URL}/api/auth/jwks`, and accepts it only
+Every `/v1` route and `/mcp` take a bearer token from one issuer: the AgentPod hub, or, when
+`SW_ORG_PLANE_ISSUER` is set, the organization plane, and then hub tokens are refused. With the
+hub as issuer, SuperWitness verifies a token offline, against the keys from `{SW_HUB_URL}/api/auth/jwks`, and accepts it only
 when:
 
 - it is an EdDSA (Ed25519) JWT whose key id is among the hub's published keys;
