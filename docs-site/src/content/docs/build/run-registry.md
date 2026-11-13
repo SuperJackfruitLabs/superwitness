@@ -137,13 +137,16 @@ the run when it has not started, then by `source` and `external_ref`.
 }
 ```
 
-- `ref` is the run as a verdict names it, `<source>:<external_ref>`: record a verdict with
-  `"subject_kind": "run"` and this as `subject_ref`.
+- `ref` is the run as `<source>:<external_ref>`. A verdict's run subject is accepted only as
+  `superpipeline:<board>/<run>`, so for a SuperPipeline run record a verdict with
+  `"subject_kind": "run"` and this as `subject_ref`. A run from any other source, or with an
+  `external_ref` that is not `<board>/<run>`, cannot be a verdict's subject yet: it is refused
+  400 `invalid_subject`.
 - `stage_key` and `card_id` are as last reported, or `null` when the newest report left them out.
+  On `main`, not yet released: v0.0.12 answers neither.
 - `latest_verdict` is the newest verdict on the run that no other verdict supersedes, or `null`.
   Verdicts on the run's attempts do not count.
 - `counts` totals every status for the same filter without `status`, so a view can show its tabs.
-  On `main`, not yet released: v0.0.12 answers neither.
 - `next_cursor` is `null` on the last page. A cursor stays valid while new runs arrive: the next
   page continues where the last one ended.
 
