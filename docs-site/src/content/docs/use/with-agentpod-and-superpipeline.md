@@ -21,8 +21,13 @@ SuperWitness authenticates to both products with one AgentPod service credential
 | `SW_HUB_CLIENT_SECRET_FILE` | a file holding the credential's secret alone, readable by its owner only |
 
 Create the credential at the hub as a service principal for SuperWitness with the
-`evidence:read` scope. SuperWitness refuses to start if the secret file is empty, or readable by
-group or others.
+`evidence:read` and `transcripts:read` scopes. With `evidence:read` alone everything works except
+[transcripts](/use/transcripts/#who-may-read-content), which answer 502 `hub_refused`.
+SuperWitness refuses to start if the secret file is empty, or readable by group or others.
+
+Under the organization plane (`SW_ORG_PLANE_ISSUER` set), SuperWitness signs in with the plane
+service credential in `SW_ORG_PLANE_SERVICE_CREDENTIAL_FILE` instead, and `SW_HUB_CLIENT_ID` and
+`SW_HUB_CLIENT_SECRET_FILE` are not used ([Configuration](/use/configuration/#settings)).
 
 To read, SuperWitness exchanges the credential for a short-lived token:
 
@@ -99,10 +104,11 @@ when:
 
 Both URLs are compared as configured, less any trailing `/`.
 
-If the token has a `scope` claim, SuperWitness reads it as a space-separated list. Only
-`POST /v1/runs` needs a scope today: `runs:write`, from a service principal
-([Run registry API](/build/run-registry/#who-may-report)). A `scope` claim that is not a string
-makes the token invalid.
+If the token has a `scope` claim, SuperWitness reads it as a space-separated list. Two things need
+a scope today: `POST /v1/runs` needs `runs:write`, from a service principal
+([Run registry API](/build/run-registry/#who-may-report)), and reading transcripts with a token
+needs `transcripts:read` ([Transcripts](/use/transcripts/#who-may-read-content)). A `scope`
+claim that is not a string makes the token invalid.
 
 Under the organization plane (`SW_ORG_PLANE_ISSUER` set), the issuer is that exact value, the
 keys come from `SW_ORG_PLANE_JWKS_URL`, `sub` must be a `prn_` id, and `org` and `ent` must be
