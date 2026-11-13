@@ -92,6 +92,9 @@ invalid, nothing is written, and the error names its position with `index`. A si
 A reporter should retry 5xx answers and network errors with backoff, and set any other 4xx
 aside: sending it again will get the same answer.
 
+Each report refused after its token is accepted is logged as `runs.report_rejected`, with the caller's `principal`, the
+error `code` and, for a batch, the `index`.
+
 ### The schema
 
 The body is described by a JSON Schema (draft 2020-12), published at

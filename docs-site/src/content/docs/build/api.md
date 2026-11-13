@@ -123,7 +123,7 @@ has the shape.
 | `GET /health` | No token. 200 whenever the process is alive, with each source's status in the body ([Operations](/use/operations/#health)). |
 | `/mcp` | The MCP server, with the same bearer token ([MCP tools](/build/mcp/)). A request that arrives through the public edge (from a `SW_TRUSTED_PROXIES` address, carrying `CF-Connecting-IP`) is answered 404 before authentication. |
 | `GET /auth/login`, `GET /auth/callback`, `POST /auth/logout` | Signing in to and out of the app ([The app](/use/the-app/)). 404 "Sign-in is off" when no one is allowed to sign in. Logout answers 204, or 503 `store_unavailable` with the cookie cleared. |
-| `GET /runs/superpipeline/{board}/{run}`, `GET /rubrics` | Pages of the app, built into the binary. |
+| `GET /` (the runs list), `GET /runs/superpipeline/{board}/{run}`, `GET /rubrics`, `GET /rubrics/{id}/{version}` | Pages of the app, built into the binary ([The app](/use/the-app/)). |
 
 Any other `GET` or `HEAD` outside `/v1` and `/mcp` is served by the app: one of its files,
 or the page itself for a path without a file extension. Other methods on unknown paths are 404

@@ -85,7 +85,10 @@ never an AgentPod token. Over plain http (fake mode only) the cookies are `sw_lo
   through the plane's discovery document, and used only on the plane's own origin); a revocation
   that fails is logged as `auth.revoke_failed` and the session ends all the same. If the
   database cannot be reached the answer is 503 `store_unavailable`, with the cookie cleared
-  all the same, and the session expires on its own;
+  all the same, and the session expires on its own. A sign-out is logged as `auth.signout` with
+  the principal, and one the database refused as `auth.signout_failed`. Signing in again from a
+  browser that still holds a session ends the old one first, logged the same way with reason
+  `signed_in_again`;
 - sessions do not need AgentPod: if AgentPod is down, open sessions keep working and only new
   sign-ins wait.
 
