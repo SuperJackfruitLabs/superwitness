@@ -66,7 +66,9 @@ SuperWitness uses two Postgres roles, set up in [Install](/install/#postgres-rol
 - **`superwitness_owner`** owns the database and the tables, and is used only for migrations,
   through `SW_MIGRATE_DATABASE_URL`.
 - **`superwitness_app`** is the runtime role, through `SW_DATABASE_URL`, with `SELECT` and
-  `INSERT` on `verdicts` and `rubrics` and nothing else.
+  `INSERT` on `verdicts` and `rubrics`, `SELECT`, `INSERT` and `UPDATE` on `runs` (the run
+  registry), and `SELECT`, `INSERT`, `UPDATE` and `DELETE` on `sessions` (app sign-ins), and
+  nothing else ([the grants](/install/#migrate)).
 
 The split keeps the running service from rewriting verdicts through SQL: it does not own the
 tables, so it cannot disable or drop the triggers that refuse `UPDATE`, `DELETE` and `TRUNCATE`.
@@ -107,7 +109,7 @@ through `ALTER DEFAULT PRIVILEGES`.
 ## Backups
 
 SuperWitness's only state is plain Postgres: the `superwitness` database, with its `verdicts`
-and `rubrics` tables. Back it up with the usual tools, for example as the owner role or the
+and `rubrics` tables, the run registry in `runs`, and app sign-ins in `sessions`. Back it up with the usual tools, for example as the owner role or the
 Postgres superuser:
 
 ```sh

@@ -64,7 +64,8 @@ not own the tables. SuperWitness therefore uses two roles:
 - **`superwitness_owner`** owns the database and the tables. SuperWitness connects as it, through
   `SW_MIGRATE_DATABASE_URL`, only to run migrations.
 - **`superwitness_app`** is the runtime role, through `SW_DATABASE_URL`. It can insert and read
-  verdicts and rubrics and nothing else.
+  verdicts and rubrics, insert, read and update registry runs, and keep app sign-in sessions:
+  the [runtime grants](#migrate) below, and nothing else.
 
 Run this as the Postgres superuser (for example `sudo -u postgres psql`) before the first start.
 Passwords, or peer or certificate authentication, are yours to choose; set them now, for example
@@ -146,7 +147,7 @@ addresses filled in:
 ```sh
 SW_LISTEN=127.0.0.1:8790
 SW_PUBLIC_URL=https://superwitness.example.internal
-# Runtime role: SELECT and INSERT on verdicts and rubrics only, never the table owner.
+# Runtime role: the runtime grants below (verdicts, rubrics, runs, sessions); never the table owner.
 SW_DATABASE_URL=postgres://superwitness_app:<password>@127.0.0.1:5432/superwitness?sslmode=disable
 # Owner role, used only for migrations (serve's background migrations and `superwitness migrate`).
 SW_MIGRATE_DATABASE_URL=postgres://superwitness_owner:<password>@127.0.0.1:5432/superwitness?sslmode=disable
