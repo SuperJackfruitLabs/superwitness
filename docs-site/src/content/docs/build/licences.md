@@ -14,7 +14,7 @@ A release tarball holds:
 - `licenses/fonts/`, the fonts' licences;
 - `deploy/superwitness.service` and `deploy/env.example`.
 
-The binary links Go modules and embeds a web app built with React, with three bundled fonts. Each keeps its own licence,
+The binary links Go modules and embeds a web app built with Svelte and SvelteKit, with eight bundled fonts. Each keeps its own licence,
 and the [`NOTICE`](https://github.com/SuperJackfruitLabs/superwitness/blob/main/NOTICE) file in
 every release credits them. In summary:
 
@@ -26,8 +26,9 @@ every release credits them. In summary:
 | sethvargo/go-retry, go-logr/logr and stdr, the OpenTelemetry Go API, SDK, exporters, otelhttp instrumentation and OTLP protobufs, gRPC and genproto | Apache-2.0 |
 | portions of the OpenTelemetry Go modules and otelhttp, from the Go Authors | BSD-3-Clause |
 | yosida95/uritemplate, google/uuid, grpc-gateway, Go protobuf, and golang.org/x sync, net, oauth2, sys, text and time | BSD-3-Clause |
-| react, react-dom and scheduler, in the embedded app | MIT |
-| Fraunces, IBM Plex Sans and IBM Plex Mono, bundled in the app (from the `@fontsource` packages, also OFL-1.1) | SIL Open Font License 1.1 |
+| svelte and the SvelteKit client runtime, in the embedded app | MIT |
+| `@superjackfruit/vibekit`, the suite's shared design kit, vendored in `web/vendor/` | by the same authors; its package declares no open-source licence (`UNLICENSED`) |
+| Archivo, Atkinson Hyperlegible Next, Azeret Mono, Bricolage Grotesque, Figtree, Geist, Martian Mono and Newsreader, bundled in the app through vibekit (from the `@fontsource` packages) | SIL Open Font License 1.1 |
 
 The list covers what the binary links, not test-only modules. Build and test tools are not bundled: the
 app's development dependencies, including caniuse-lite (CC-BY-4.0, used by the browser-list

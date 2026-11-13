@@ -41,17 +41,17 @@ The script and the macOS builds are published from v0.0.7 on; v0.0.6 and earlier
 Each release has a tarball per architecture and a `SHA256SUMS` file covering them:
 
 ```sh
-curl -LO https://github.com/SuperJackfruitLabs/superwitness/releases/download/v0.0.8/superwitness_0.0.8_linux_amd64.tar.gz
-curl -LO https://github.com/SuperJackfruitLabs/superwitness/releases/download/v0.0.8/SHA256SUMS
+curl -LO https://github.com/SuperJackfruitLabs/superwitness/releases/download/v0.0.12/superwitness_0.0.12_linux_amd64.tar.gz
+curl -LO https://github.com/SuperJackfruitLabs/superwitness/releases/download/v0.0.12/SHA256SUMS
 sha256sum --ignore-missing -c SHA256SUMS
-tar xzf superwitness_0.0.8_linux_amd64.tar.gz
+tar xzf superwitness_0.0.12_linux_amd64.tar.gz
 ```
 
 On arm64, replace `amd64` with `arm64`. The tarball holds the binary, `LICENSE`, `NOTICE`, `licenses/`
-(the bundled fonts' licences), `deploy/superwitness.service` and `deploy/env.example`. Install the binary:
+(the licences of the eight bundled fonts), `deploy/superwitness.service` and `deploy/env.example`. Install the binary:
 
 ```sh
-sudo install -m 0755 superwitness_0.0.8_linux_amd64/superwitness /usr/local/bin/
+sudo install -m 0755 superwitness_0.0.12_linux_amd64/superwitness /usr/local/bin/
 superwitness version
 ```
 
@@ -64,7 +64,8 @@ not own the tables. SuperWitness therefore uses two roles:
 - **`superwitness_owner`** owns the database and the tables. SuperWitness connects as it, through
   `SW_MIGRATE_DATABASE_URL`, only to run migrations.
 - **`superwitness_app`** is the runtime role, through `SW_DATABASE_URL`. It can insert and read
-  verdicts and rubrics and nothing else.
+  verdicts and rubrics, insert, read and update registry runs, and keep app sign-in sessions:
+  the [runtime grants](#migrate) below, and nothing else.
 
 Run this as the Postgres superuser (for example `sudo -u postgres psql`) before the first start.
 Passwords, or peer or certificate authentication, are yours to choose; set them now, for example
@@ -137,7 +138,7 @@ Create the service user and its settings file. The file is readable by root and 
 ```sh
 sudo useradd -r -s /usr/sbin/nologin superwitness
 sudo install -d -m 0750 -o root -g superwitness /etc/superwitness
-sudo install -m 0640 -o root -g superwitness superwitness_0.0.8_linux_amd64/deploy/env.example /etc/superwitness/env
+sudo install -m 0640 -o root -g superwitness superwitness_0.0.12_linux_amd64/deploy/env.example /etc/superwitness/env
 ```
 
 Edit `/etc/superwitness/env`. These are the settings `deploy/env.example` holds, with this guide's
@@ -146,7 +147,7 @@ addresses filled in:
 ```sh
 SW_LISTEN=127.0.0.1:8790
 SW_PUBLIC_URL=https://superwitness.example.internal
-# Runtime role: SELECT and INSERT on verdicts and rubrics only, never the table owner.
+# Runtime role: the runtime grants below (verdicts, rubrics, runs, sessions); never the table owner.
 SW_DATABASE_URL=postgres://superwitness_app:<password>@127.0.0.1:5432/superwitness?sslmode=disable
 # Owner role, used only for migrations (serve's background migrations and `superwitness migrate`).
 SW_MIGRATE_DATABASE_URL=postgres://superwitness_owner:<password>@127.0.0.1:5432/superwitness?sslmode=disable
@@ -231,7 +232,7 @@ background migration pass as the runtime role, which succeeds when nothing is pe
 ## Start
 
 ```sh
-sudo install -m 0644 superwitness_0.0.8_linux_amd64/deploy/superwitness.service /etc/systemd/system/
+sudo install -m 0644 superwitness_0.0.12_linux_amd64/deploy/superwitness.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now superwitness
 curl -s localhost:8790/health
@@ -242,7 +243,7 @@ The unit runs `superwitness serve` as the `superwitness` user with its settings 
 whenever the process is alive; each source's state is in the body:
 
 ```json
-{"sources":{"agentpod":"ok","logs":"ok","superpipeline":"ok","traces":"ok","verdicts":"ok"},"status":"ok","version":"v0.0.8"}
+{"sources":{"agentpod":"ok","logs":"ok","superpipeline":"ok","traces":"ok","verdicts":"ok"},"status":"ok","version":"v0.0.12"}
 ```
 
 A source that cannot be reached shows `unavailable` or `timeout` there, and `/health` stays 200.

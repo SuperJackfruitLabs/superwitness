@@ -136,7 +136,11 @@ func TestDocsClaims(t *testing.T) {
 		t.Fatalf("found %d docs pages; the walk is broken or pages are missing", len(docs))
 	}
 	for _, p := range docs {
-		for _, v := range Check(p.rel, p.text, reg, true) {
+		r := reg
+		if p.rel == filepath.Join("use", "canary.md") {
+			r.Route = collectorRoutes(reg.Route) // it names the collector's default OTLP/HTTP logs URL
+		}
+		for _, v := range Check(p.rel, p.text, r, true) {
 			t.Error(v)
 		}
 	}
@@ -162,8 +166,7 @@ func TestDocsClaims(t *testing.T) {
 		}
 		r := reg
 		if rel == "deploy/canary/canary.env.example" {
-			// SWC_OTLP_LOGS_URL points at the collector's OTLP/HTTP port, not at superwitness.
-			r.Route = func(p string) bool { return p == "/v1/logs" || p == "/v1/traces" || reg.Route(p) }
+			r.Route = collectorRoutes(reg.Route)
 		}
 		for _, v := range Check(rel, string(b), r, false) {
 			t.Error(v)
@@ -187,4 +190,10 @@ func TestInstallSQLMatchesREADME(t *testing.T) {
 			t.Errorf("install.md sql:%s differs from README.md (or is missing)", name)
 		}
 	}
+}
+
+// collectorRoutes also accepts the collector's OTLP/HTTP paths: SWC_OTLP_LOGS_URL points at the
+// collector, not at superwitness.
+func collectorRoutes(route func(string) bool) func(string) bool {
+	return func(p string) bool { return p == "/v1/logs" || p == "/v1/traces" || route(p) }
 }

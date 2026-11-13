@@ -19,8 +19,9 @@ Point an MCP client at it with the token as a header, for example:
 
 The server names itself `superwitness`, with the running release as its version. It has six
 tools, thin layers over the HTTP operations for runs, spans, logs, transcripts, the run registry
-and verdicts. Five routes are HTTP-only and have no tool: `GET /v1/runs/by-attempt/{attempt}`,
-`POST /v1/runs`, the two rubric reads and the transcript step route.
+and verdicts. Eight routes are HTTP-only and have no tool: `GET /v1/runs/by-attempt/{attempt}`,
+`POST /v1/runs`, the two rubric reads, the transcript step route, `GET /v1/me`, verdict history
+(`GET /v1/verdicts`) and `GET /v1/scopes`.
 
 ## The tools
 
@@ -80,7 +81,7 @@ verdict. The same as `GET /v1/runs` ([Run registry API](/build/run-registry/#lis
 | `scope` | no | only runs in this scope id |
 | `status` | no | a list of statuses |
 | `executor` | no | only runs this principal executed |
-| `stage_key` | no | only runs reported with this `stage_key` |
+| `stage_key` | no | only runs reported with this `stage_key`. On `main`, not yet released: v0.0.12's tool has no such argument |
 | `since`, `until` | no | RFC 3339 bounds on the run's start, or first sighting |
 | `needs_verdict` | no | `true` for finished runs no verdict names yet |
 | `cursor` | no | `next_cursor` from the previous page |

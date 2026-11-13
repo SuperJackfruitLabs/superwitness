@@ -13,7 +13,11 @@ lives in the engines, and everything it reads from AgentPod and SuperPipeline st
 | `superwitness serve` | runs the service; also what runs with no command |
 | `superwitness migrate` | runs pending migrations once and exits |
 | `superwitness rubric-add` | records a rubric version ([Verdicts](/use/verdicts/#rubrics)) |
+| `superwitness canary` | the live acceptance test: `canary run`, `canary record-alert` and `canary status` ([The canary](/use/canary/)) |
+| `superwitness skill` | prints the operations skill for agents; `superwitness skill install` writes it to `~/.claude/skills/superwitness-ops/SKILL.md`, or under `--dir <dir>` instead |
 | `superwitness version` | prints the version; `--version` and `-version` do the same |
+
+`suwi` is the same binary under a short name, so `suwi skill install` is `superwitness skill install`.
 
 `serve` exits 2 when its settings are missing or invalid: missing settings are all named in one
 message, and any other invalid setting stops it at the first one found
@@ -28,7 +32,7 @@ monitor can tell "SuperWitness is down" from "a source is down". Each source's s
 body:
 
 ```json
-{"sources":{"agentpod":"ok","logs":"ok","superpipeline":"ok","traces":"ok","verdicts":"ok"},"status":"ok","version":"v0.0.8"}
+{"sources":{"agentpod":"ok","logs":"ok","superpipeline":"ok","traces":"ok","verdicts":"ok"},"status":"ok","version":"v0.0.12"}
 ```
 
 - `status` is always `ok`, and `version` is the running release.
@@ -62,7 +66,9 @@ SuperWitness uses two Postgres roles, set up in [Install](/install/#postgres-rol
 - **`superwitness_owner`** owns the database and the tables, and is used only for migrations,
   through `SW_MIGRATE_DATABASE_URL`.
 - **`superwitness_app`** is the runtime role, through `SW_DATABASE_URL`, with `SELECT` and
-  `INSERT` on `verdicts` and `rubrics` and nothing else.
+  `INSERT` on `verdicts` and `rubrics`, `SELECT`, `INSERT` and `UPDATE` on `runs` (the run
+  registry), and `SELECT`, `INSERT`, `UPDATE` and `DELETE` on `sessions` (app sign-ins), and
+  nothing else ([the grants](/install/#migrate)).
 
 The split keeps the running service from rewriting verdicts through SQL: it does not own the
 tables, so it cannot disable or drop the triggers that refuse `UPDATE`, `DELETE` and `TRUNCATE`.
@@ -103,7 +109,7 @@ through `ALTER DEFAULT PRIVILEGES`.
 ## Backups
 
 SuperWitness's only state is plain Postgres: the `superwitness` database, with its `verdicts`
-and `rubrics` tables. Back it up with the usual tools, for example as the owner role or the
+and `rubrics` tables, the run registry in `runs`, and app sign-ins in `sessions`. Back it up with the usual tools, for example as the owner role or the
 Postgres superuser:
 
 ```sh
