@@ -3,8 +3,10 @@ title: HTTP API
 description: The HTTP routes SuperWitness serves, their parameters and their errors.
 ---
 
-SuperWitness serves a small JSON API under `/v1`. The [MCP tools](/build/mcp/) are a thin layer
-over the same operations. Eight routes have no tool: `GET /v1/runs/by-attempt/{attempt}`, `POST /v1/runs`, the two rubric
+SuperWitness serves a small JSON API under `/v1`. If you are building a client, we can keep the
+map simple: the [MCP tools](/build/mcp/) are thin layers over the same operations, and this page is
+the literal route, parameter and error reference. Eight routes have no tool:
+`GET /v1/runs/by-attempt/{attempt}`, `POST /v1/runs`, the two rubric
 reads, the transcript step route (`GET /v1/runs/superpipeline/{board}/{run}/transcript/items/{seq_from}`),
 `GET /v1/me`, `GET /v1/verdicts` and `GET /v1/scopes`. (`GET /v1/runs` is the `list_runs` tool.)
 
@@ -218,4 +220,6 @@ Every error from `/v1` is one JSON object:
 never fails for a source; it reports the source's status instead.
 
 The 401 comes from the authentication layer and carries `WWW-Authenticate:
-Bearer realm="superwitness"`; its body has `code` and `message` only.
+Bearer realm="superwitness"`; its body has `code` and `message` only. Match on `code`, honor
+`retryable` and `Retry-After`, and your client can explain a failure without teaching itself to
+parse prose that is allowed to change.

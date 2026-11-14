@@ -4,9 +4,11 @@ description: The MCP server for agents, with tools for runs, spans, logs, transc
 ---
 
 SuperWitness serves an MCP server at `/mcp` on its own address, over MCP's streamable HTTP
-transport. It is stateless: every request stands alone, with no session to open or keep. It
-takes the same bearer token as the [HTTP API](/build/api/#authentication), and every tool acts
-as the principal that token names.
+transport. Point an agent at it and the agent gets the same run, span, log, transcript, registry
+and verdict operations as the HTTP client, without a second model to learn. The server is
+stateless: every request stands alone, with no session to open or keep. It takes the same bearer
+token as the [HTTP API](/build/api/#authentication), and every tool acts as the principal that
+token names.
 
 Point an MCP client at it with the token as a header, for example:
 
@@ -16,6 +18,9 @@ Point an MCP client at it with the token as a header, for example:
   "headers": { "Authorization": "Bearer <token>" }
 }
 ```
+
+With that endpoint and header in place, the client can discover all six tool schemas from the
+server. There is no MCP session to provision, renew or wonder about later.
 
 The server names itself `superwitness`, with the running release as its version. It has six
 tools, thin layers over the HTTP operations for runs, spans, logs, transcripts, the run registry
@@ -142,4 +147,6 @@ There is one code the HTTP API has no use for: `invalid_source`, when `source` i
 
 Each tool's input schema is published with it, with the descriptions above. Arguments are checked
 against it before the tool runs: a missing required argument, or one the schema does not list, is
-also an error result, whose text is a plain validation message rather than an error object.
+also an error result, whose text is a plain validation message rather than an error object. Your
+agent therefore gets the same data contract and stable error codes as an HTTP client, with input
+mistakes stopped before they reach the operation.

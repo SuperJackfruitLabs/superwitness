@@ -3,7 +3,10 @@ title: Licences
 description: The licences of SuperWitness and of everything it links or runs beside.
 ---
 
-SuperWitness is released under the [MIT licence](https://github.com/SuperJackfruitLabs/superwitness/blob/main/LICENSE).
+SuperWitness is released under the
+[MIT licence](https://github.com/SuperJackfruitLabs/superwitness/blob/main/LICENSE). The short
+answer is permissive; the useful answer is knowing what ships in the tarball, what merely helped
+build it, and what runs beside it. We separate those three below.
 
 ## What ships
 
@@ -67,4 +70,5 @@ is under its own licence:
 
 SuperWitness is designed to sit beside [VictoriaMetrics](https://github.com/VictoriaMetrics/VictoriaMetrics)
 and [Perses](https://github.com/perses/perses) (both Apache-2.0) the same way, but this release
-does not use them.
+does not use them. That boundary keeps the release inventory honest: a nearby service is not a
+linked dependency simply because the two happen to share a host.
