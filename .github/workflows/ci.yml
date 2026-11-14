@@ -8,6 +8,11 @@ jobs:
   # just their builds; anything else, the workflows themselves, or any other trigger runs it all.
   # A skipped go/web/integration on main is safe for a release, which requires this workflow's run
   # on main to have passed: the app is then the code its parent tested.
+  #
+  # A pull request whose every changed path is a root README / README.* or under docs/ or
+  # docs-site/ (less the few the product reads, scripts/ci-plan.mjs) is docs-only: it runs docs
+  # and docs-claims and nothing else. Any other path, any doubt (empty diff, missing merge base,
+  # failed diff, classifier error) and every other event keep the plan below unchanged.
   changes:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -18,8 +23,26 @@ jobs:
       app: ${{ steps.plan.outputs.app }}
       landing: ${{ steps.plan.outputs.landing }}
       docs: ${{ steps.plan.outputs.docs }}
+      docs_only: ${{ steps.plan.outputs.docs_only }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The merge base has to be in the clone for the docs-only diff. Trees only: the diff
+          # reads names, never contents.
+          fetch-depth: 0
+          filter: blob:none
+          persist-credentials: false
+      # Whether this pull request is docs-only, from the git clone rather than the API, so the
+      # path set cannot be truncated. If this step fails at all, docs_only is not 'true' and the
+      # plan below is the one it always was.
+      - name: Docs-only?
+        id: docs
+        continue-on-error: true
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node scripts/ci-plan.mjs plan
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         id: filter
         with:
@@ -42,14 +65,21 @@ jobs:
           WORKFLOWS: ${{ steps.filter.outputs.workflows }}
           LANDING: ${{ steps.filter.outputs.landing }}
           DOCS: ${{ steps.filter.outputs.docs }}
+          DOCS_ONLY: ${{ steps.docs.outputs.docs_only }}
         run: |
           app=false
           case "$EVENT" in push|pull_request) ;; *) app=true ;; esac
           if [ "$APP" = true ] || [ "$WORKFLOWS" = true ]; then app=true; fi
           landing=$LANDING; docs=$DOCS
           if [ "$app" = true ]; then landing=true; docs=true; fi
-          { echo "app=$app"; echo "landing=$landing"; echo "docs=$docs"; } >> "$GITHUB_OUTPUT"
-          echo "app=$app landing=$landing docs=$docs"
+          # A docs-only pull request runs the docs lane and nothing else. Only the exact string
+          # 'true' on a pull_request counts; anything else leaves the plan above as it is.
+          docs_only=false
+          if [ "$EVENT" = pull_request ] && [ "$DOCS_ONLY" = true ]; then
+            docs_only=true; app=false; landing=false; docs=true
+          fi
+          { echo "app=$app"; echo "landing=$landing"; echo "docs=$docs"; echo "docs_only=$docs_only"; } >> "$GITHUB_OUTPUT"
+          echo "app=$app landing=$landing docs=$docs docs_only=$docs_only"
   go:
     needs: [changes]
     if: needs.changes.outputs.app == 'true'
@@ -63,6 +93,9 @@ jobs:
         with: { node-version: 22 }
       - run: make lint
       - run: make test
+      # The docs-only plan and the `check` verdict (scripts/ci-plan.mjs). A change to either is
+      # not docs-only, so this runs whenever they change.
+      - run: node --test scripts/ci-plan.test.mjs
       - run: make licenses
       - run: sudo useradd -r superwitness && sudo install -m 0755 /bin/true /usr/local/bin/superwitness && systemd-analyze verify deploy/superwitness.service
       - run: bash deploy/release.test.sh
@@ -168,3 +201,24 @@ jobs:
         working-directory: docs-site
       - run: npm run build
         working-directory: docs-site
+  # The run's verdict (scripts/ci-plan.mjs aggregate): passes only when `changes` succeeded and
+  # every job below ended the way its plan selected it, success if selected and skipped if not.
+  # A failed, cancelled, missing or unplanned job fails it. Not a required check; the required
+  # checks are still the jobs themselves.
+  check:
+    needs: [changes, go, web, integration, e2e, landing, docs-claims, docs]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts
+          persist-credentials: false
+      - name: Aggregate
+        env:
+          EVENT: ${{ github.event_name }}
+          NEEDS: ${{ toJSON(needs) }}
+        run: node scripts/ci-plan.mjs aggregate
