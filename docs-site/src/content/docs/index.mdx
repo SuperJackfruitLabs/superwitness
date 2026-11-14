@@ -2,43 +2,68 @@
 title: SuperWitness
 description: Observability and evaluation for agent fleets. What your agents did, how your products behaved while they did it, and whether the work was any good, joined on one run.
 template: splash
-hero:
-  title: Every run, on the record.
-  tagline: What your agents did, how your products behaved while they did it, and whether the work was any good, joined on one run.
-  actions:
-    - text: What it is
-      link: /what-it-is/
-      icon: right-arrow
-    - text: Install
-      link: /install/
-      variant: secondary
-    - text: Source
-      link: https://github.com/SuperJackfruitLabs/superwitness
-      icon: external
-      variant: minimal
+status: half-lit
 ---
 
-import { Card, CardGrid } from '@astrojs/starlight/components';
+import BentoHome from '@superjackfruit/docs-theme/components/BentoHome.astro';
+import FlowSteps from '@superjackfruit/docs-theme/components/FlowSteps.astro';
+import HeadsUp from '@superjackfruit/docs-theme/components/HeadsUp.astro';
+import JackAside from '@superjackfruit/docs-theme/components/JackAside.astro';
+
+<BentoHome
+  claim="Every run, on the record."
+  sub="For one run of agent work, SuperWitness joins what the agent did, how your products behaved while it did it, and whether the work was any good. A source that does not answer shows as unknown, never as a polite 0. Verdicts are append-only, and an agent may not judge a run it executed, however good it thinks the work was."
+  actions={[
+    { text: 'What it is', link: '/what-it-is/' },
+    { text: 'Install', link: '/install/', variant: 'secondary' },
+  ]}
+  quickstart={{
+    command: 'git clone https://github.com/SuperJackfruitLabs/superwitness && cd superwitness && go test -v ./internal/join/ ./internal/verdicts/',
+    label: 'Quick start: join a run and judge it, with the suite faked',
+    note: "Needs Go (go.mod asks for 1.26) and nothing else: no Postgres, no SuperPipeline, no AgentPod. The run, its attempts, spans and logs are the repository's in-memory fakes, and verdicts go to an in-memory store. 55 tests, from a slow source showing as timeout with its counts unknown, to an agent refused when it judges its own run. To read a real run document over HTTP, the install guide's fake mode needs only a Postgres.",
+  }}
+  agent={{ task: "Then explain how SuperWitness would join my agents' runs, and list what I need before I can record a verdict on one." }}
+  ask={{ examples: ['Why does my run say span_count is unknown?', 'Can an agent grade its own work?', 'How do I correct a verdict I already recorded?', 'Can I try it without SuperPipeline?'] }}
+  flowTitle="How a run is recorded, judged against a rubric, and read back (step through it; it waits for you)"
+>
+  <FlowSteps
+    label="Run step"
+    steps={[
+      { label: 'Recorded', body: 'Your products send plain OTLP to the OpenTelemetry Collector, which writes it to VictoriaTraces and VictoriaLogs; SuperWitness only queries them, and nothing waits on it. A source reports its runs to POST /v1/runs as they start, change and finish, so the run registry can list them.', items: [{ text: 'spans and logs', card: true }, { text: 'run reported', card: true }] },
+      { label: 'Rubric', body: 'A rubric is recorded once, with the binary: superwitness rubric-add -id press -version 1 … prints rubric:press@1 recorded. A version can never be changed or recorded again; to change a rubric, record version 2.', items: [{ text: 'rubric:press@1', card: true }] },
+      { label: 'Judged', body: 'A judge posts a verdict to POST /v1/verdicts, or calls the record_verdict MCP tool, naming the standard rubric:press@1. A rubric version that does not exist is 422 unknown_rubric. A non-human judge on a run it executed is 403 self_judgement; a human may judge any run.', items: [{ text: 'the agent that ran it', out: true }, { text: 'a reviewer', win: true }] },
+      { label: 'Corrected', body: "Database triggers refuse UPDATE, DELETE and TRUNCATE on verdicts and rubrics. A change of mind is a new verdict that names the old one in supersedes, and only the old verdict's judge may write it.", items: [{ text: 'edit in place', out: true }, { text: 'supersedes vrd_…', win: true }] },
+      { label: 'Read back', body: 'The app, GET /v1/runs/superpipeline/{board}/{run} and the get_run MCP tool all return one run document, assembled at read time. Each source has 2 s by default (SW_SOURCE_TIMEOUT); one that does not answer shows as timeout or unavailable, and its numbers as unknown, never 0. Only the latest verdict in each chain is shown.', items: [{ text: 'traces: timeout', out: true }, { text: 'span_count: "unknown"', win: true }] },
+    ]}
+  />
+</BentoHome>
 
 ## Three questions, one run
 
-<CardGrid>
-  <Card title="What did it do?">
-    The attempts that executed the run, the agent configuration behind each, and the spans
-    they left. In the run document: `attempts` and `trace`.
-  </Card>
-  <Card title="How did the products run?">
-    The logs and errors that share the run's id or its trace. In the run document:
-    `log_count` and `errors`.
-  </Card>
-  <Card title="Was it any good?">
-    Gate decisions read from SuperPipeline, and the verdicts recorded in SuperWitness. In the
-    run document: `verdicts`.
-  </Card>
-</CardGrid>
+**What did it do?** The attempts that executed the run, the agent configuration behind each, and
+the spans they left. In the run document: `attempts` and `trace`.
+
+**How did the products run?** The logs and errors that share the run's id or its trace. In the
+run document: `log_count` and `errors`.
+
+**Was it any good?** Gate decisions read from SuperPipeline, and the verdicts recorded in
+SuperWitness. In the run document: `verdicts`.
 
 SuperWitness is a single Go binary and a Postgres database, self-hosted and MIT licensed. Start
 with [what it is](/what-it-is/), then [install it](/install/).
+
+<HeadsUp>
+  v0.0.12 is the release in production. SuperWitness is meant to stand alone, and this release is
+  not there yet: it reads runs from SuperPipeline and attempts from AgentPod, and without them it
+  runs only in fake mode, which serves one development run on loopback
+  ([Try it without the other products](/install/#try-it-without-the-other-products)). Pages say
+  where a feature is on `main` and not yet released.
+</HeadsUp>
+
+<JackAside>
+  I read these docs so you don't have to read all of them at once. Ask me in the box up top, and if
+  the answer isn't in here I'll say so rather than make one up.
+</JackAside>
 
 For agents, the same docs are published as plain text: [`/llms.txt`](/llms.txt) indexes them, and
 [`/llms-full.txt`](/llms-full.txt) is every page in one file.
