@@ -3,10 +3,10 @@ title: The app
 description: Signing in with AgentPod, browsing runs, reading a run and recording verdicts in the browser.
 ---
 
-SuperWitness serves a web app from the same binary and address as its API. People on an
-allowlist sign in with their AgentPod account and can browse the runs sources have reported,
-read any run, record verdicts against rubrics and revise them. Agents and scripts keep using
-the [HTTP API](/build/api/) and the [MCP tools](/build/mcp/) with bearer tokens.
+The API is not the only way in. SuperWitness serves a web app from the same binary and address, so
+you can browse reported runs, open one, record a verdict against a rubric and revise it without
+building a client first. People on an allowlist sign in with their AgentPod account; agents and
+scripts keep using the [HTTP API](/build/api/) and the [MCP tools](/build/mcp/) with bearer tokens.
 
 ## Turning it on
 
@@ -28,6 +28,9 @@ the secret with, for example:
 head -c 48 /dev/urandom | base64 | sudo tee /etc/superwitness/session-secret >/dev/null
 sudo chmod 0600 /etc/superwitness/session-secret && sudo chown superwitness /etc/superwitness/session-secret
 ```
+
+The cookie key is now private to the service. Once the OAuth client has the callback and audience
+below, an allowlisted person can complete sign-in instead of meeting a very secure dead end.
 
 At AgentPod, the OAuth client named by `SW_APP_CLIENT_ID` must list `{SW_PUBLIC_URL}/auth/callback`
 as a redirect URI and `SW_PUBLIC_URL` as an audience. SuperWitness also needs its own service
@@ -139,6 +142,9 @@ The drawer makes its idempotency key when it opens, so a double click or a retry
 verdict. **Revise** appears on your own latest verdicts: it opens the drawer with the same subject
 and rubric and records a verdict that supersedes the old one. The app explains refusals in plain
 words, for example "You've already revised this verdict" when someone revised it first.
+
+After you save, the verdict appears on the run and in the registry's latest-verdict view. A revision
+keeps the old record visible in history, so correcting a judgement does not airbrush the first one.
 
 ## Rate limits
 

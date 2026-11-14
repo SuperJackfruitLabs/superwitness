@@ -3,9 +3,11 @@ title: With AgentPod and SuperPipeline
 description: What SuperWitness reads from AgentPod and SuperPipeline, how it authenticates to them, and the tokens its own callers present.
 ---
 
-In this release a run document is for a SuperPipeline run, with its attempts read from the
-AgentPod hub. SuperWitness reads both products over their APIs, as a service principal of the
-AgentPod hub, and owns none of what it reads.
+In this release, we build a run document from two product views: the run comes from SuperPipeline
+and its attempts come from the AgentPod hub. SuperWitness reads both over their APIs, as a service
+principal of the AgentPod hub, and owns none of what it reads. This page follows the credential,
+the routes and the status mapping so you can see every trust boundary rather than taking “the
+integration” as a mysterious third product.
 
 Neither product requires SuperWitness. They send plain OTLP to the collector and never wait on
 SuperWitness, and SuperWitness only ever reads from them.
@@ -137,4 +139,6 @@ With no token at all, the message is `a bearer token is required`.
 
 In fake mode (`SW_FAKE_SOURCES=1`) none of this applies: SuperWitness reads no product and
 accepts development tokens of the form `dev:<principal>:<human|agent|service>` instead
-([Install](/install/#try-it-without-the-other-products)).
+([Install](/install/#try-it-without-the-other-products)). That gives you a clean local path for
+learning the document; switching to real sources then means replacing the fixtures with the exact
+reads and token checks above, not changing what a run means.
