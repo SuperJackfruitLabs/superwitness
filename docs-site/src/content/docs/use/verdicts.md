@@ -4,8 +4,10 @@ description: Recording a verdict, the standards it names, and why verdicts are a
 ---
 
 A verdict is a judgement about a run, an attempt or an eval case run, against a named standard.
-SuperWitness stores verdicts in its own Postgres and never changes one once it is written.
-[Concepts](/concepts/#verdict) introduces them; this page is how to record them.
+We will record one, name the rubric or stage it belongs to, and correct it without changing the
+original. SuperWitness stores verdicts in its own Postgres and never edits one once it is written;
+the paper trail is the feature, not paperwork escaping from a drawer.
+[Concepts](/concepts/#verdict) introduces the model; this page puts it to work.
 
 ## Record a verdict
 
@@ -67,6 +69,9 @@ A new verdict answers 201 with the stored verdict:
 `comment` is `""` and `evidence_refs` is `[]` when none were given. Recorded verdicts on the run
 and its attempts appear in the run document's `verdicts`, after the run's gates.
 
+That response is your receipt: the judgement has a stable id, the caller is the judge, and the run
+document can now show it beside the gate evidence it was meant to complement.
+
 ## Values
 
 `value` is an object with exactly one key:
@@ -110,6 +115,9 @@ All six flags are required: `-id`, `-version` (1 or more), `-name`, `-scale` (va
 `SW_MIGRATE_DATABASE_URL` when that is set, then inserts the rubric over `SW_DATABASE_URL` and
 prints `rubric:press@1 recorded`. Give rubrics ids that a standard can name: letters, digits,
 `_`, `.` and `-`, up to 64.
+
+The printed standard is the exact value you can use in the next verdict. Version 1 is now fixed;
+when the rubric changes, version 2 gets its own record rather than borrowing version 1's name.
 
 Rubrics are append-only, like verdicts. A version, once recorded, cannot be changed or
 recorded again; `rubric-add` fails with `rubric version already exists`. To change a rubric,
@@ -180,6 +188,9 @@ A change of mind is a new verdict that names the old one in `supersedes`:
   instead.
 
 The run document shows only the latest verdict in each chain.
+
+The correction is now the visible judgement, while the superseded record remains available in
+history. You can change your mind without changing what happened.
 
 ## Retries and idempotency
 

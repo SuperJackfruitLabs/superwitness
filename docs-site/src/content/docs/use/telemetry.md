@@ -3,10 +3,11 @@ title: Sending telemetry
 description: Which spans and log lines SuperWitness finds for a run, the trace conventions it relies on, and the telemetry it sends about itself.
 ---
 
-SuperWitness does not receive telemetry. Products send OTLP to the OpenTelemetry Collector,
-which writes spans to VictoriaTraces and logs to VictoriaLogs ([Install](/install/#the-telemetry-engines)
-has a minimal configuration). When a run is read, SuperWitness queries both engines through their
-published query APIs and keeps nothing. This page is what it looks for, so you know what to send.
+SuperWitness does not receive your telemetry, and that boundary is worth keeping visible. Your
+products send OTLP to the OpenTelemetry Collector, which writes spans to VictoriaTraces and logs
+to VictoriaLogs ([Install](/install/#the-telemetry-engines) has a minimal configuration). When you
+read a run, SuperWitness queries both engines through their published APIs and keeps nothing. We
+will trace exactly what it looks for, so you can send enough context without sending content.
 
 Both engines are searched over the last 7 days, and older telemetry is not found. A run whose
 spans are not found has trace status `none`, which is not an error.
@@ -136,4 +137,6 @@ when the request carries `traceparent`. Its exporters drop data rather than bloc
 queue holds 2048 spans. Left unset, `SW_OTLP_ENDPOINT` sends nothing.
 
 SuperWitness also writes JSON logs to standard output: startup, migration retries, and a warning
-naming any source that refused its credential.
+naming any source that refused its credential. With those signals in place, you can observe the
+observer without turning run ids, attempts or fingerprints into metric labels. That is a sentence
+we only need because telemetry systems have a talent for becoming their own weather.
