@@ -28,12 +28,18 @@ about the product is checked against the product.
 
 ## What is deliberate about it
 
-**It wears the landing page's identity.** `src/styles/theme.css` maps the landing page's tokens
-onto Starlight's gray ramp and accent, with the measured contrast of every accent pairing in a
-comment at the top. `src/components/SiteTitle.astro` puts the mark beside the name, as the
-landing page does. `public/favicon.svg`, `src/assets/mark.svg` and `public/og.png` are copies of
-`landing/public/favicon.svg` and `landing/public/og.png`; change them there and copy them here
-(`go test ./internal/web` checks the two mark copies, and the app's).
+**It wears the suite's docs theme**, `@superjackfruit/docs-theme` (vendored under `vendor/` with
+the frontdoor and vibekit tarballs it needs, as the landing page vendors its own). The whole design
+config is `sjlDocs({ product: 'superwitness', status: 'half-lit' })` in `astro.config.mjs`:
+vibekit's jade, the suite's faces (self-hosted), the street, status badges, Copy Markdown, the
+suite footer, the 404, the edit link and llms.txt. The home is the theme's `BentoHome`.
+`public/favicon.svg`, `src/assets/mark.svg` and `public/og.png` are copies of
+`landing/public/favicon.svg` and `landing/public/og.png`; change them there and copy them here.
+The site no longer draws `src/assets/mark.svg` (the theme brings the mark), but it stays:
+`go test ./internal/web` checks the two mark copies, and the app's.
+
+**The sidebar uses the suite's groups**: Start, Use it, Build on it, Run it, Reference. The theme warns
+at build time when a top-level group is anything else.
 
 **The install commands match the landing page's.** The download-and-verify block in
 `src/content/docs/install.md` is the `install` array in `landing/src/pages/index.astro`, line for
