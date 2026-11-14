@@ -5,9 +5,9 @@ description: Install SuperWitness on one Linux host with systemd, next to Postgr
 
 We are going to put the whole stack on one Linux host: the SuperWitness binary as a systemd
 service, its Postgres database, the two telemetry engines it queries, and the collector that feeds
-them. Everything, SuperWitness included, listens on loopback. You will finish with a working local
-service, not an accidental public one; nothing is reachable from outside the host until you
-[choose to expose it](#configure).
+them. Every network address we set below is on loopback. You will finish with a working local
+service, not an accidental public one; nothing configured here is reachable from outside the host
+until you [choose to expose it](#configure).
 
 To look around first without the other products, skip to
 [Try it without the other products](#try-it-without-the-other-products).
@@ -22,7 +22,8 @@ To look around first without the other products, skip to
 - **The OpenTelemetry Collector**, which receives OTLP from your products and writes it to both
   engines.
 
-SuperWitness itself needs no disk: it reads over HTTP and writes only to its Postgres.
+The long-running server needs no data directory: it reads over HTTP and writes only to Postgres.
+The optional canary is separate and writes its tracker to the path you pass with `--results`.
 
 ## Quick install of the binary
 
@@ -59,7 +60,8 @@ sudo install -m 0755 superwitness_0.0.12_linux_amd64/superwitness /usr/local/bin
 superwitness version
 ```
 
-The version output confirms that the binary you verified is the one your shell will run.
+The version output tells you what your shell will run, so a `PATH` that still points at another
+installation cannot slip past unnoticed.
 
 ## Postgres roles
 
@@ -86,8 +88,8 @@ REVOKE ALL ON DATABASE superwitness FROM PUBLIC;
 GRANT CONNECT ON DATABASE superwitness TO superwitness_app;
 ```
 
-The database now has a separate owner and runtime identity, so the service can use its tables
-without gaining the power to rewrite their protections.
+The database now has separate owner and runtime identities. The runtime role still has only
+`CONNECT`; it receives the table and schema grants after the owner runs the migrations.
 
 ### Postgres 14 or older
 

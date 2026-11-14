@@ -3,10 +3,11 @@ title: Operations
 description: Health, backups, upgrades, the database roles, the listen address and the commands, for running SuperWitness day to day.
 ---
 
-Day to day, we have only two things to operate: one binary and one Postgres database. SuperWitness
-keeps no state on disk; telemetry lives in the engines, and everything it reads from AgentPod and
-SuperPipeline stays there. That small footprint is useful, but we will still be precise about what
-to health-check, migrate, back up and restart.
+Day to day, the server has only two things to operate: one binary and one Postgres database. The
+server keeps no state on disk; telemetry lives in the engines, and everything it reads from
+AgentPod and SuperPipeline stays there. The optional canary does write a tracker to the path passed
+with `--results`. That small footprint is useful, but we will still be precise about what to
+health-check, migrate, back up and restart.
 
 ## The commands
 
@@ -126,8 +127,8 @@ Postgres superuser:
 pg_dump -Fc -f superwitness.dump 'postgres://superwitness_owner@127.0.0.1:5432/superwitness'
 ```
 
-That dump contains every piece of state SuperWitness owns. You can restore the evidence store
-without pretending the short-lived telemetry engines belong in the same backup.
+That dump contains the server's database state. If you run the canary, back up its `--results`
+tracker separately. The short-lived telemetry engines do not belong in either backup.
 
 Use the owner or the superuser: the runtime role cannot read the migration bookkeeping table
 unless you granted it above.

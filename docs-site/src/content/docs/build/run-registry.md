@@ -162,6 +162,5 @@ or `invalid_needs_verdict`, and 503 `store_unavailable`. Any principal whose tok
 SuperWitness's audience may list runs, as with every other read.
 
 The MCP tool `list_runs` takes the same filters as arguments (`status` as a list) and answers the
-same body ([MCP tools](/build/mcp/)). Follow `next_cursor` and you get a stable walk through the
-matching history, while `counts` keeps the status tabs honest across every page rather than just
-the slice in front of you.
+same body ([MCP tools](/build/mcp/)). Follow `next_cursor` and you can walk the matching history in its documented order, while `counts`
+keeps the status tabs honest across every page rather than just the slice in front of you.
