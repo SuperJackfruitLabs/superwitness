@@ -100,3 +100,4 @@ to make an import fit.
 - **Revert-proof every guard.** A new check is seen to fail: plant the regression it is meant to
   catch, watch it go red, then remove the plant.
 - **Move, then fix.** A split moves code verbatim; behaviour changes go in their own change.
+
