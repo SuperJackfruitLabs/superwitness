@@ -3,10 +3,11 @@ title: Run registry API
 description: How a source reports its runs to SuperWitness, and how runs are listed back.
 ---
 
-SuperWitness keeps its own list of runs. Each product that runs work, a **source**, reports its
-runs to SuperWitness as they start, change and finish, the same way it sends telemetry to an
-OTLP endpoint. SuperWitness never asks a product to list its runs. A source that has not
-reported a run leaves it out of the list, but the run's own page still works by its link.
+SuperWitness keeps its own list of runs so you can browse work without asking every source for a
+fresh inventory. Each product that runs work, a **source**, reports its runs as they start, change
+and finish, much as it sends telemetry to an OTLP endpoint. SuperWitness never asks a product to
+list its runs. If a source has not reported a run, the list cannot invent it—but the run's own page
+still works when you have its link.
 
 ## Reporting runs
 
@@ -95,6 +96,9 @@ aside: sending it again will get the same answer.
 Each report refused after its token is accepted is logged as `runs.report_rejected`, with the caller's `principal`, the
 error `code` and, for a batch, the `index`.
 
+An `applied: true` result means the registry now reflects that report. An older retry returns
+`applied: false`, which is still a successful receipt: the registry kept the newer truth.
+
 ### The schema
 
 The body is described by a JSON Schema (draft 2020-12), published at
@@ -158,4 +162,5 @@ or `invalid_needs_verdict`, and 503 `store_unavailable`. Any principal whose tok
 SuperWitness's audience may list runs, as with every other read.
 
 The MCP tool `list_runs` takes the same filters as arguments (`status` as a list) and answers the
-same body ([MCP tools](/build/mcp/)).
+same body ([MCP tools](/build/mcp/)). Follow `next_cursor` and you can walk the matching history in its documented order, while `counts`
+keeps the status tabs honest across every page rather than just the slice in front of you.

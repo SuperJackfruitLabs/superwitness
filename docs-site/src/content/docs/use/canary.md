@@ -1,12 +1,13 @@
 ---
 title: The canary
-description: superwitness canary, the live acceptance test that proves ten flows on a real run, with its subcommands, flags and SWC_* settings.
+description: superwitness canary, the live acceptance test that proves nine flows on real runs and the alert path with a forced failure.
 ---
 
-`superwitness canary` is SuperWitness's live acceptance test. It creates one card on a
-SuperPipeline board, waits for an agent to run it, and then checks, as a black-box client of
-every product involved, that the run can be observed end to end. Each check is one **flow**;
-the canary is accepted once each of the ten flows has been proven on a real run.
+`superwitness canary` is the live acceptance test we run when “the services are up” is not a
+convincing ending. It creates one card on a SuperPipeline board, waits for an agent to run it, and
+then checks, as a black-box client of every product involved, that you can observe the run end to
+end. The canary is accepted once the first nine **flows** have been proven on real runs and flow 10
+has been proven by a forced failure that reaches the alert channel.
 
 It is meant to run on the SuperWitness host, nightly from a timer and by hand when needed. It
 keeps its history in a JSON-lines file, the **tracker**, which it appends one result to per
@@ -49,6 +50,9 @@ It prints one line, `canary PASS …` or `canary FAIL …`, and exits 0 on a pas
 failure, and 2 when its flags are wrong or the tracker cannot be read. A result that cannot be
 appended to the tracker counts as a failure. The whole run is bounded at 70 minutes.
 
+The line tells you whether this run passed; the tracker preserves which flows it proved. One run
+need not perform a tiny miracle and prove all ten if earlier runs already supplied valid evidence.
+
 ### `canary record-alert`
 
 ```sh
@@ -59,6 +63,9 @@ Your alerting wrapper calls this after the alert channel (ntfy) has accepted and
 message for a forced failure. It records flow 10's proof. All three flags are required, and the
 last result in the tracker must be a forced failure; otherwise it records nothing and exits 2.
 
+Once recorded, the next status read can distinguish “we emitted an alert” from “the alert channel
+actually kept it.” That distinction is the entire reason flow 10 exists.
+
 ### `canary status`
 
 ```sh
@@ -67,6 +74,9 @@ superwitness canary status --results /var/lib/superwitness/canary.jsonl
 
 Prints which flows have been proven, when, and on which run, with the last run's result. With
 `--json` it prints the same summary as one JSON object.
+
+You now have a compact acceptance ledger: the latest result, each proven flow, and the run that
+earned it, rather than ten green boxes with no memory.
 
 Flags may be written with one dash or two, as with every Go flag set.
 

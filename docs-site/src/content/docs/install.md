@@ -3,10 +3,11 @@ title: Install
 description: Install SuperWitness on one Linux host with systemd, next to Postgres, VictoriaTraces, VictoriaLogs and the OpenTelemetry Collector.
 ---
 
-This guide puts everything on one Linux host: the SuperWitness binary as a systemd service, its
-Postgres database, the two telemetry engines it queries, and the collector that feeds them.
-Everything in it, SuperWitness included, listens on loopback, so nothing here is reachable from
-outside the host until you [choose to expose it](#configure).
+We are going to put the whole stack on one Linux host: the SuperWitness binary as a systemd
+service, its Postgres database, the two telemetry engines it queries, and the collector that feeds
+them. Every network address we set below is on loopback. You will finish with a working local
+service, not an accidental public one; nothing configured here is reachable from outside the host
+until you [choose to expose it](#configure).
 
 To look around first without the other products, skip to
 [Try it without the other products](#try-it-without-the-other-products).
@@ -21,7 +22,8 @@ To look around first without the other products, skip to
 - **The OpenTelemetry Collector**, which receives OTLP from your products and writes it to both
   engines.
 
-SuperWitness itself needs no disk: it reads over HTTP and writes only to its Postgres.
+The long-running server needs no data directory: it reads over HTTP and writes only to Postgres.
+The optional canary is separate and writes its tracker to the path you pass with `--results`.
 
 ## Quick install of the binary
 
@@ -33,6 +35,9 @@ This verifies the download against `SHA256SUMS` and installs `superwitness` and 
 `~/.local/bin` (`BIN_DIR=` changes it, `VERSION=` pins a release). It installs no service and starts
 nothing; the steps below still set up the server.
 `superwitness skill` prints an operations skill for agents (what each command does and which ones change data); `suwi skill install` writes it to `~/.claude/skills`, and `SKILL_DIR=<dir>` on the installer does the same. Needs v0.0.7 or later.
+
+You now have the binary and its checksum verified. The server is still off, which is exactly where
+we want it while we prepare its database and sources.
 
 The script and the macOS builds are published from v0.0.7 on; v0.0.6 and earlier have neither.
 
@@ -54,6 +59,9 @@ On arm64, replace `amd64` with `arm64`. The tarball holds the binary, `LICENSE`,
 sudo install -m 0755 superwitness_0.0.12_linux_amd64/superwitness /usr/local/bin/
 superwitness version
 ```
+
+The version output tells you what your shell will run, so a `PATH` that still points at another
+installation cannot slip past unnoticed.
 
 ## Postgres roles
 
@@ -79,6 +87,9 @@ CREATE DATABASE superwitness OWNER superwitness_owner;
 REVOKE ALL ON DATABASE superwitness FROM PUBLIC;
 GRANT CONNECT ON DATABASE superwitness TO superwitness_app;
 ```
+
+The database now has separate owner and runtime identities. The runtime role still has only
+`CONNECT`; it receives the table and schema grants after the owner runs the migrations.
 
 ### Postgres 14 or older
 
@@ -129,6 +140,9 @@ service:
 
 Your products send OTLP over HTTP to `127.0.0.1:4318`. Which spans and log lines SuperWitness
 finds for a run is covered in [Sending telemetry](/use/telemetry/).
+
+At this point the collector has one local door in and two local paths out: traces to
+VictoriaTraces, logs to VictoriaLogs. SuperWitness will read both without becoming the warehouse.
 
 ## Configure
 
@@ -187,6 +201,9 @@ sudo install -m 0600 -o superwitness -g superwitness /dev/null /etc/superwitness
 sudoedit /etc/superwitness/hub-client-secret
 ```
 
+The secret now sits in its own owner-readable file, ready for the service without becoming part of
+the settings file or a shell command.
+
 ## Migrate
 
 Create the schema as the owner role. `superwitness migrate` reads only `SW_MIGRATE_DATABASE_URL`
@@ -207,6 +224,9 @@ GRANT SELECT, INSERT ON TABLE verdicts, rubrics TO superwitness_app;
 GRANT SELECT, INSERT, UPDATE ON TABLE runs TO superwitness_app;
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE sessions TO superwitness_app;
 ```
+
+The schema is current and the runtime role has exactly the listed table and schema grants the service needs.
+That is the database boundary in place; later migrations that add a table must earn a new grant.
 
 That is the whole runtime grant set. The runtime role cannot update, delete, truncate, alter or
 drop `verdicts` and `rubrics` or their triggers, can update registry rows in `runs` but never
@@ -250,6 +270,10 @@ A source that cannot be reached shows `unavailable` or `timeout` there, and `/he
 `serve` starts answering at once and runs its migrations in the background, retrying while
 Postgres is unreachable; until they succeed, `verdicts` reads `unavailable`.
 
+You now have a service that starts with the host and a health document that distinguishes the
+process from each dependency. A green process can still tell you, plainly, which source needs
+attention.
+
 ## Try it without the other products
 
 With `SW_FAKE_SOURCES=1`, SuperWitness serves one development run, `brd_01/run_01`, from built-in
@@ -265,4 +289,5 @@ curl -H 'Authorization: Bearer dev:prn_human01:human' localhost:8790/v1/runs/sup
 Without `SW_MIGRATE_DATABASE_URL`, migrations run over `SW_DATABASE_URL`, which must then own the
 database. That suits a scratch database for development, not the install above.
 
-Next: [Concepts](/concepts/) explains what is in the document that comes back.
+The response is a complete development run document, so you can learn the shape before asking any
+other product to cooperate. Next, [Concepts](/concepts/) explains what every part of it means.

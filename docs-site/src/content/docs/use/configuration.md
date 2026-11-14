@@ -3,9 +3,11 @@ title: Configuration
 description: Every environment variable SuperWitness reads, with its default.
 ---
 
-SuperWitness reads its settings from environment variables; five of them name files to read
-secrets from. Under systemd they come from `/etc/superwitness/env` ([Install](/install/#configure)). Leading and trailing spaces
-are trimmed from every value.
+SuperWitness reads its settings from environment variables; five of them point to secret files
+instead of putting secrets in the environment itself. Under systemd they come from
+`/etc/superwitness/env` ([Install](/install/#configure)). We keep the full table here so you can
+answer “what does this process actually depend on?” in one place. Leading and trailing spaces are
+trimmed from every value.
 
 ## Settings
 
@@ -89,3 +91,6 @@ naming the file.
   `SW_MIGRATE_DATABASE_URL` when that is set.
 - `superwitness canary` reads its own settings: the canary-only `SWC_*` names and a few `SW_*`
   ones it shares with the service ([The canary](/use/canary/#settings)).
+
+That separation lets you audit the long-running service, one-off migrations, rubric changes and the
+live canary without assuming that one command quietly reads another command's credentials.

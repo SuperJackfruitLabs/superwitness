@@ -3,14 +3,14 @@ title: What SuperWitness is
 description: Observability and evaluation for agent fleets. Three questions answered on one run, and why telemetry and evidence are kept apart.
 ---
 
-SuperWitness is observability and evaluation for agent fleets. For one run of work it shows what
-an agent did, how the products it ran on behaved, and whether the work was any good, joined into
-one record.
+SuperWitness is observability and evaluation for agent fleets. Give us one run of work and we bring
+three views together for you: what the agent did, how the products around it behaved, and whether
+the result was any good.
 
-Generic observability tools stop at a trace. SuperWitness goes one step further: from a trace to
-the run it belongs to, the attempts that executed it, the agent configuration that ran it, and
-the verdicts that judged it. That is what turns "did this configuration get better?" into a
-question you can answer.
+Generic observability tools stop at a trace. We follow that trace to the run it belongs to, the
+attempts that executed it, the agent configuration behind them, and the verdicts that judged it.
+That is how “did this configuration get better?” becomes a question you can answer instead of a
+hunch with a dashboard.
 
 ## Three questions, one run
 
@@ -67,7 +67,8 @@ owner.
 ## What this release reads
 
 Run documents in this release are for SuperPipeline runs, addressed as
-`superpipeline:<board>/<run>`, with attempts read from the AgentPod hub. Started for real,
-SuperWitness asks for both products' URLs and an AgentPod service credential; to try it without
-either, run it with `SW_FAKE_SOURCES=1`, which serves one development run on loopback. The
-[install guide](/install/#try-it-without-the-other-products) shows both.
+`superpipeline:<board>/<run>`, with attempts read from the AgentPod hub. Start SuperWitness against
+real sources and it asks you for both products' URLs and an AgentPod service credential. If you
+want to explore without either one, use `SW_FAKE_SOURCES=1`; you will get one development run on
+loopback and can inspect the shape before wiring the real sources. The
+[install guide](/install/#try-it-without-the-other-products) shows both paths.

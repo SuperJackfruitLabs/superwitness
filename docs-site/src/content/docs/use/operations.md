@@ -3,8 +3,11 @@ title: Operations
 description: Health, backups, upgrades, the database roles, the listen address and the commands, for running SuperWitness day to day.
 ---
 
-SuperWitness is one binary and one Postgres database. It keeps no state on disk; telemetry
-lives in the engines, and everything it reads from AgentPod and SuperPipeline stays there.
+Day to day, the server has only two things to operate: one binary and one Postgres database. The
+server keeps no state on disk; telemetry lives in the engines, and everything it reads from
+AgentPod and SuperPipeline stays there. The optional canary does write a tracker to the path passed
+with `--results`. That small footprint is useful, but we will still be precise about what to
+health-check, migrate, back up and restart.
 
 ## The commands
 
@@ -89,6 +92,10 @@ succeeds when nothing is pending; without it, the pass always fails. When a migr
 pending it fails either way, and verdicts stay unavailable until you run `superwitness migrate`
 as the owner.
 
+The owner password is now outside the long-running process, while startup can still prove that the
+schema is already current. A pending migration fails closed for verdicts rather than quietly
+running with the wrong role.
+
 ## Upgrades
 
 1. Download and verify the new release as in [Install](/install/#download-and-verify).
@@ -103,6 +110,10 @@ as the owner.
    after 60 seconds if Postgres does not answer.
 3. Install the binary and restart: `sudo systemctl restart superwitness`.
 
+Once the restart succeeds, the new binary is running against its matching schema. Check
+[`/health`](#health) before you call the upgrade finished; it keeps a source problem separate from
+a process that did not come back.
+
 A migration that adds a table needs a grant of its own for the runtime role: nothing is granted
 through `ALTER DEFAULT PRIVILEGES`.
 
@@ -115,6 +126,9 @@ Postgres superuser:
 ```sh
 pg_dump -Fc -f superwitness.dump 'postgres://superwitness_owner@127.0.0.1:5432/superwitness'
 ```
+
+That dump contains the server's database state. If you run the canary, back up its `--results`
+tracker separately. The short-lived telemetry engines do not belong in either backup.
 
 Use the owner or the superuser: the runtime role cannot read the migration bookkeeping table
 unless you granted it above.

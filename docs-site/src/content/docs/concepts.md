@@ -3,8 +3,10 @@ title: Concepts
 description: Runs, attempts, configuration fingerprints, verdicts, sources and their statuses, and why SuperWitness says unknown rather than 0.
 ---
 
-The words below are the field names and values SuperWitness returns. The run document,
-`GET /v1/runs/superpipeline/{board}/{run}`, uses all of them.
+The run document has a small vocabulary, but each word carries a boundary. We will walk through the
+field names and values SuperWitness returns, then finish with the distinction that matters most:
+`unknown` is not 0. You will see all of them in
+`GET /v1/runs/superpipeline/{board}/{run}`.
 
 ## Run
 
@@ -143,4 +145,5 @@ answer.
 | `unknown` | the traces source did not answer |
 
 `none` is not an error. Telemetry is sampled and short-lived, so missing spans are not missing
-evidence: attempts, gates and verdicts still stand.
+evidence: attempts, gates and verdicts still stand. Once you keep that boundary in view, a sparse
+run document stays honest instead of merely looking tidy.

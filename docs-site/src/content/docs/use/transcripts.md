@@ -3,10 +3,10 @@ title: Transcripts
 description: What an agent was asked, what it sent to each tool and what came back, read live from AgentPod, redacted, and never kept by SuperWitness.
 ---
 
-A run's spans say where and when something happened. A transcript says what: the prompt an
-attempt was given, what the agent sent to each tool, what came back, which permissions it asked
-for and how they were answered. SuperWitness reads it live from AgentPod's session events, the
-source of truth, for one attempt at a time.
+A run's spans tell you where and when something happened. When you need the “what,” open the
+transcript: the prompt an attempt received, what the agent sent to each tool, what came back, which
+permissions it requested and how they were answered. SuperWitness reads that content live from
+AgentPod's session events, the source of truth, one attempt at a time.
 
 **Content is evidence, never telemetry.** Traces and logs stay content-free. SuperWitness never
 stores a transcript, never logs one and never lets one be cached: every answer carries
@@ -86,4 +86,6 @@ GET /v1/runs/superpipeline/{board}/{run}/transcript/items/{seq_from}?attempt=&se
   the range has `"partial": true`.
 
 Agents use the MCP tool [`get_transcript`](/build/mcp/#get_transcript), with the same rules.
-Every code is on the [HTTP API](/build/api/#every-code) page.
+Every code is on the [HTTP API](/build/api/#every-code) page. Whichever path you use, the useful
+result is the same: a redacted, uncached view of one attempt, with enough coordinates to cite the
+moment without copying its content into a verdict.

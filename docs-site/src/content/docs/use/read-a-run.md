@@ -3,8 +3,9 @@ title: Read a run
 description: The app's run view, the run document, and the paged spans and logs behind them.
 ---
 
-A run can be read three ways: in the app, over HTTP, or through the
-[MCP tools](/build/mcp/). All three return the same run document, assembled at read time from
+You can read a run three ways: in the app, over HTTP, or through the
+[MCP tools](/build/mcp/). We will take the same document through each useful view, then page through
+the heavier spans and logs separately. All three entry points assemble the run at read time from
 every source. [Concepts](/concepts/) explains its fields; [Contracts](/build/contracts/) lists
 every one.
 
@@ -29,6 +30,10 @@ else is 400 `invalid_run_ref`. The answer is 404 `run_not_found` only when Super
 AgentPod hub both answer that they do not know the run. Any other failure of a source is a 200
 with that source's status in `sources`.
 
+The response gives you the joined view even when one source is having a bad day. Read `sources`
+first and you know whether a 0 is a real 0, an `unknown` is missing evidence, or a dependency needs
+attention.
+
 The document's `links` hold the paths for this run:
 
 ```json
@@ -52,6 +57,9 @@ Location: /v1/runs/superpipeline/brd_01/run_01
 An attempt id is `attempt_<id>`; anything else is 400 `invalid_attempt_id`. The hub not knowing
 the attempt is 404 `attempt_not_found`, and an attempt that was not dispatched from a
 SuperPipeline run is 404 `attempt_has_no_run`.
+
+The redirect gives you the canonical run address, so an attempt link becomes a run link without a
+second lookup in your client.
 
 ## Spans, one page at a time
 
@@ -125,4 +133,5 @@ Both lists page the same way:
 If the engine behind a list cannot answer, the request fails rather than returning an empty
 page: `traces_unavailable` or `logs_unavailable` (503), `traces_timeout` or `logs_timeout` (504),
 or `traces_unauthorized` or `logs_unauthorized` (502). The [HTTP API](/build/api/#errors) lists
-every error.
+every error. Follow `next_cursor` until it is absent or null and you have the ordered evidence;
+if a source fails, you get an explicit failure instead of an empty page wearing a convincing hat.

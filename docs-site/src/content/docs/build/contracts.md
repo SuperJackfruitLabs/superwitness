@@ -3,9 +3,9 @@ title: Contracts
 description: The run document and verdict shapes SuperWitness returns, and the recorded payloads that pin what it reads from other products.
 ---
 
-This page lists every field SuperWitness returns in a run document and a verdict, and the
-payloads it reads from other products. [Concepts](/concepts/) explains what the fields mean;
-this page is the exact shape.
+When you are implementing a client, “roughly this shape” is not much of a contract. This page lists
+every field SuperWitness returns in a run document and a verdict, plus the payloads it reads from
+other products. Use [Concepts](/concepts/) for meaning; stay here for the exact shape.
 
 Two rules hold throughout:
 
@@ -208,4 +208,6 @@ development run from them:
 | `jaeger_trace_workers.json` | VictoriaTraces' Jaeger API: a span from `superpipeline-api` carrying `run.id` |
 
 [With AgentPod and SuperPipeline](/use/with-agentpod-and-superpipeline/) lists the routes these
-come from.
+come from. Together, the recorded payloads and adapter tests keep both sides of the join reviewable:
+you can see what SuperWitness promises out and what it expects in without reverse-engineering either
+from a running service.
