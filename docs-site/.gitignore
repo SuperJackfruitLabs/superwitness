@@ -2,6 +2,8 @@
 dist/
 node_modules/
 .wrangler/
+# The suite docs theme and the tarballs it needs, vendored like the landing page's.
+!vendor/*.tgz
 
 # Docs pages served at /build/*, not build artifacts. The root .gitignore has no `build/`
 # rule today, but superpipeline's did and its pages vanished silently; this keeps a later
