@@ -53,12 +53,13 @@ run document, that is `log_count` and `errors`.
 SuperWitness. In the run document, both arrive under `verdicts`.
 
 That gives you one record to investigate instead of a small expedition through several systems.
+
 SuperWitness is a single Go binary and a Postgres database, self-hosted and MIT licensed. Start
 with [what it is](/what-it-is/), then [install it](/install/).
 
 <HeadsUp>
-  SuperWitness is meant to stand alone, and v0.0.12 is not there yet: it reads runs from
-  SuperPipeline and attempts from AgentPod, and without them it
+  v0.0.12 is the release in production. SuperWitness is meant to stand alone, and this release is
+  not there yet: it reads runs from SuperPipeline and attempts from AgentPod, and without them it
   runs only in fake mode, which serves one development run on loopback
   ([Try it without the other products](/install/#try-it-without-the-other-products)). Pages say
   where a feature is on `main` and not yet released.
