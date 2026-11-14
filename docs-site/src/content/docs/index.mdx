@@ -40,15 +40,19 @@ import JackAside from '@superjackfruit/docs-theme/components/JackAside.astro';
 
 ## Three questions, one run
 
-**What did it do?** The attempts that executed the run, the agent configuration behind each, and
-the spans they left. In the run document: `attempts` and `trace`.
+A run can leave evidence in several places. We bring the answers together without sanding off the
+gaps, so you can ask three plain questions.
 
-**How did the products run?** The logs and errors that share the run's id or its trace. In the
-run document: `log_count` and `errors`.
+**What did it do?** Follow the attempts that executed the run, the agent configuration behind each,
+and the spans they left. In the run document, start with `attempts` and `trace`.
 
-**Was it any good?** Gate decisions read from SuperPipeline, and the verdicts recorded in
-SuperWitness. In the run document: `verdicts`.
+**How did the products run?** Read the logs and errors that share the run's id or its trace. In the
+run document, that is `log_count` and `errors`.
 
+**Was it any good?** Put gate decisions from SuperPipeline beside the verdicts recorded in
+SuperWitness. In the run document, both arrive under `verdicts`.
+
+That gives you one record to investigate instead of a small expedition through several systems.
 SuperWitness is a single Go binary and a Postgres database, self-hosted and MIT licensed. Start
 with [what it is](/what-it-is/), then [install it](/install/).
 
