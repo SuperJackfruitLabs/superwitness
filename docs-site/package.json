@@ -14,7 +14,7 @@
     "@superjackfruitlabs/vibekit-docs": "^0.0.4",
     "@superjackfruitlabs/vibekit-frame": "^0.0.16",
     "@superjackfruitlabs/vibekit-ui": "^0.0.18",
-    "astro": "^7.3.2",
+    "astro": "^7.4.11",
     "starlight-llms-txt": "^0.12.0"
   }
 }
