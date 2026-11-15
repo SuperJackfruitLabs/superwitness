@@ -28,7 +28,7 @@ about the product is checked against the product.
 
 ## What is deliberate about it
 
-**It wears the suite's docs theme**, `@superjackfruit/docs-theme` (vendored under `vendor/` with
+**It wears the suite's docs theme**, `@superjackfruitlabs/vibekit-docs` (vendored under `vendor/` with
 the frontdoor and vibekit tarballs it needs, as the landing page vendors its own). The whole design
 config is `sjlDocs({ product: 'superwitness', status: 'half-lit' })` in `astro.config.mjs`:
 vibekit's jade, the suite's faces (self-hosted), the street, status badges, Copy Markdown, the

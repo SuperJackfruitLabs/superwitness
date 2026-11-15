@@ -30,7 +30,7 @@ every release credits them. In summary:
 | portions of the OpenTelemetry Go modules and otelhttp, from the Go Authors | BSD-3-Clause |
 | yosida95/uritemplate, google/uuid, grpc-gateway, Go protobuf, and golang.org/x sync, net, oauth2, sys, text and time | BSD-3-Clause |
 | svelte and the SvelteKit client runtime, in the embedded app | MIT |
-| `@superjackfruit/vibekit`, the suite's shared design kit, vendored in `web/vendor/` | by the same authors; its package declares no open-source licence (`UNLICENSED`) |
+| `@superjackfruitlabs/vibekit-ui`, the suite's shared design kit, vendored in `web/vendor/` | by the same authors; its package declares no open-source licence (`UNLICENSED`) |
 | Archivo, Atkinson Hyperlegible Next, Azeret Mono, Bricolage Grotesque, Figtree, Geist, Martian Mono and Newsreader, bundled in the app through vibekit (from the `@fontsource` packages) | SIL Open Font License 1.1 |
 
 The list covers what the binary links, not test-only modules. Build and test tools are not bundled: the
