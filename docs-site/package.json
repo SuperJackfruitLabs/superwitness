@@ -10,7 +10,7 @@
     "check": "astro check"
   },
   "dependencies": {
-    "@astrojs/starlight": "^0.42.0",
+    "@astrojs/starlight": "^0.43.1",
     "@superjackfruitlabs/vibekit-docs": "^0.0.5",
     "@superjackfruitlabs/vibekit-frame": "^0.0.18",
     "@superjackfruitlabs/vibekit-ui": "^0.0.20",
