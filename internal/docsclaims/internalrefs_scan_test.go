@@ -222,10 +222,15 @@ func TestVendoredTreatyExceptionIsNarrow(t *testing.T) {
 const executionFixturePath = "internal/source/testdata/execution-evidence-v1.json"
 const executionFixtureDigest = "0c29ac94d21fcef7bc854a2fbf0b7d81d8261d77162ae530f51de0799120e96f"
 
+const orgPlaneFixturePath = "internal/auth/testdata/org-plane-tokens.json"
+const orgPlaneFixtureDigest = "02fe35656f7d9280c3e2a782559afef99bb0f1fe82818e1511b4b342ff6ace58"
+
 func syntheticExecutionRef(file string, data []byte, r internalRef) bool {
 	expected := map[string]string{
 		executionFixturePath: executionFixtureDigest,
 		"internal/source/testdata/execution-export-v1.json": "6af4eebb36ecd99258ed5e9d7049a86163b6c1e7cbb3bd4500491902e7ff0de1",
+		// The org-plane token fixture: the plane's tokens name principals in the strict id grammar.
+		orgPlaneFixturePath: orgPlaneFixtureDigest,
 	}[file]
 	if expected == "" || r.pattern != "real-looking-id" {
 		return false
@@ -295,6 +300,31 @@ func TestExportFixtureExceptionIsExact(t *testing.T) {
 		t.Fatal("changed corpus bytes accepted")
 	}
 	if syntheticExecutionRef(path, b, internalRef{"real-looking-id", "prn_0123456789abcdef0123"}) {
+		t.Fatal("non-synthetic identity accepted")
+	}
+}
+
+func TestOrgPlaneFixtureExceptionIsExact(t *testing.T) {
+	b, err := os.ReadFile(filepath.Join(repoRoot(t), orgPlaneFixturePath))
+	if err != nil {
+		t.Fatal(err)
+	}
+	refs := 0
+	for _, line := range strings.Split(string(b), "\n") {
+		for _, r := range scanLine(line, privateNameDigests) {
+			refs++
+			if !syntheticExecutionRef(orgPlaneFixturePath, b, r) {
+				t.Fatalf("org-plane fixture exception requires reviewed exact bytes and synthetic identity: %s", r.match)
+			}
+		}
+	}
+	if refs == 0 {
+		t.Fatal("org-plane fixture no longer exercises the synthetic exception")
+	}
+	if syntheticExecutionRef(orgPlaneFixturePath, append(append([]byte{}, b...), ' '), internalRef{"real-looking-id", "prn_" + strings.Repeat("a", 20)}) {
+		t.Fatal("changed fixture bytes accepted")
+	}
+	if syntheticExecutionRef(orgPlaneFixturePath, b, internalRef{"real-looking-id", "prn_0123456789abcdef0123"}) {
 		t.Fatal("non-synthetic identity accepted")
 	}
 }

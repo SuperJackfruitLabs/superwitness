@@ -97,7 +97,7 @@ func TestPlaneRefreshRotatesAndPersists(t *testing.T) {
 		t.Fatalf("fresh: %v, refreshes %d; want no refresh", err, plane.RefreshRequests.Load())
 	}
 	r.now = r.now.Add(stale)
-	if p, err := r.resolve(); err != nil || p.ID != "prn_human01" {
+	if p, err := r.resolve(); err != nil || p.ID != testutil.PlaneHuman {
 		t.Fatalf("stale: %+v %v", p, err)
 	}
 	s, second := r.stored(t)
@@ -131,7 +131,7 @@ func TestPlaneRefusedRefreshEndsTheSession(t *testing.T) {
 	if r.store.Len() != 0 {
 		t.Errorf("sessions = %d; the refused session stays in the store", r.store.Len())
 	}
-	if !strings.Contains(r.logs.String(), `"msg":"auth.session_ended","principal":"prn_human01","reason":"grant_refused"`) {
+	if !strings.Contains(r.logs.String(), `"msg":"auth.session_ended","principal":"`+testutil.PlaneHuman+`","reason":"grant_refused"`) {
 		t.Errorf("logs = %s", r.logs)
 	}
 }
@@ -149,7 +149,7 @@ func TestPlaneRefreshWithoutTheProductEndsTheSession(t *testing.T) {
 // A refresh that names another principal is not this session's grant: the session ends.
 func TestPlaneRefreshForSomeoneElseEndsTheSession(t *testing.T) {
 	r, plane := planeSignedIn(t)
-	plane.RefreshSubOverride = "prn_human02"
+	plane.RefreshSubOverride = testutil.PlaneHuman2
 	r.now = r.now.Add(stale)
 	if _, err := r.resolve(); !errors.Is(err, auth.ErrSessionInvalid) || r.store.Len() != 0 {
 		t.Errorf("%v, sessions %d", err, r.store.Len())
@@ -314,7 +314,7 @@ func TestPlaneSignInWithoutARefreshTokenIsRefused(t *testing.T) {
 // A session with no grant (one issued before sessions held one) does not stand under the plane.
 func TestPlaneSessionWithoutAGrantEnds(t *testing.T) {
 	r, _ := newPlaneRig(t)
-	tok, err := r.login.Sessions.Issue(context.Background(), auth.Principal{ID: "prn_human01", Kind: auth.KindHuman, Tenant: "org_01"})
+	tok, err := r.login.Sessions.Issue(context.Background(), auth.Principal{ID: testutil.PlaneHuman, Kind: auth.KindHuman, Tenant: testutil.PlaneOrg})
 	if err != nil {
 		t.Fatal(err)
 	}
