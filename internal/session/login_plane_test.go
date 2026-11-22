@@ -41,7 +41,7 @@ func newPlaneRig(t *testing.T) (*rig, *testutil.PlaneStub) {
 	r.login = &Login{Endpoints: endpoints, ClientID: "superwitness-web",
 		PublicURL: sw.URL, Origin: sw.URL, Key: key, Provider: "accounts.example", SubIsPrincipal: true,
 		Tokens: tokens, Principals: noLookups{t},
-		Sessions: &Manager{Store: r.store, Allowed: map[string]bool{"prn_human01": true, "prn_agent01": true}, Now: now,
+		Sessions: &Manager{Store: r.store, Allowed: map[string]bool{testutil.PlaneHuman: true, testutil.PlaneAgent: true}, Now: now,
 			Logger: logger, Grants: &PlaneGrants{Endpoints: endpoints, ClientID: "superwitness-web", Tokens: tokens}},
 		Logger: logger, Now: now}
 	mux := http.NewServeMux()
@@ -55,12 +55,12 @@ func newPlaneRig(t *testing.T) (*rig, *testutil.PlaneStub) {
 
 func TestPlaneSignIn(t *testing.T) {
 	r, plane := newPlaneRig(t)
-	plane.SignInAs("prn_human01", "human", "human01@example.com")
+	plane.SignInAs(testutil.PlaneHuman, "human", "human01@example.com")
 	if code, body := r.signIn(t, "/runs"); code != 200 || body != "app:/runs" {
 		t.Fatalf("landed on %d %q", code, body)
 	}
 	p, err := r.login.Sessions.Resolve(context.Background(), r.sessionCookie())
-	if err != nil || p.ID != "prn_human01" || p.Kind != auth.KindHuman || p.Tenant != "org_01" || p.Email != "human01@example.com" {
+	if err != nil || p.ID != testutil.PlaneHuman || p.Kind != auth.KindHuman || p.Tenant != testutil.PlaneOrg || p.Email != "human01@example.com" {
 		t.Errorf("session principal = %+v %v", p, err)
 	}
 	a, tk := plane.LastAuthorize, plane.LastToken
@@ -83,7 +83,7 @@ func TestPlaneSignIn(t *testing.T) {
 
 func TestPlaneSignInRefusesNonHumans(t *testing.T) {
 	r, plane := newPlaneRig(t)
-	plane.SignInAs("prn_agent01", "agent", "")
+	plane.SignInAs(testutil.PlaneAgent, "agent", "")
 	if code, _ := r.signIn(t, "/"); code != 403 || r.store.Len() != 0 || !strings.Contains(r.logs.String(), `"reason":"not_human"`) {
 		t.Errorf("%d, sessions %d, logs %s", code, r.store.Len(), r.logs)
 	}
@@ -96,14 +96,14 @@ func TestPlaneSignInRefusesWhenProductNotEnabled(t *testing.T) {
 	if code != 403 || !strings.Contains(body, "Not authorised") || r.store.Len() != 0 {
 		t.Errorf("%d %q", code, body)
 	}
-	if !strings.Contains(r.logs.String(), `"reason":"product_not_enabled"`) || !strings.Contains(r.logs.String(), `"org":"org_01"`) {
+	if !strings.Contains(r.logs.String(), `"reason":"product_not_enabled"`) || !strings.Contains(r.logs.String(), `"org":"`+testutil.PlaneOrg+`"`) {
 		t.Errorf("logs = %s", r.logs)
 	}
 }
 
 func TestPlaneSignInOnlyListedPeople(t *testing.T) {
 	r, plane := newPlaneRig(t)
-	plane.SignInAs("prn_human02", "human", "")
+	plane.SignInAs(testutil.PlaneHuman2, "human", "")
 	if code, _ := r.signIn(t, "/"); code != 403 || r.store.Len() != 0 {
 		t.Errorf("%d, sessions %d", code, r.store.Len())
 	}

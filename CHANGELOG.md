@@ -19,6 +19,14 @@ and the release notes quote that section.
 
 ### Changed
 
+- Under the organization plane, access tokens are verified by the suite's token rules and tested
+  against treaty's signed token vectors (treaty 0.0.15, `treaty.json`). Tokens that were accepted
+  before are now refused when they lack `jti`, `mayDispatch` or `mayGrantReach`; when
+  `mayDispatch` holds anything but `prn_` ids or `mayGrantReach` is not a boolean; when `sub` or
+  `org` is not the prefix and 20 lowercase hex characters; when they live longer than 300 seconds;
+  or when an optional claim such as `email_verified` has the wrong type. JWKS keys whose `alg` is
+  not EdDSA or whose `use` is not `sig` are ignored, under either issuer. The hub's tokens are
+  checked as before.
 - Code-quality checks for contributors, with no change to what superwitness does:
   golangci-lint (pinned) in `make lint` and type-aware oxlint (pinned) for the web app, each with a
   per-rule ratchet, and an architecture test that holds file and package size limits and the

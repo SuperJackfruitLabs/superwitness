@@ -1,0 +1,1012 @@
+{
+  "corpus": "ecosystem-identity/token-vectors",
+  "version": 1,
+  "generatedBy": "scripts/token-vectors.ts. Do not edit by hand: change the script and run it.",
+  "purpose": "Signed access tokens and what every verifier must answer for each, in every language. A verifier takes `jwks` below and a case's `verifier` options, verifies the case's `token`, and must produce the case's `expect`: the claims exactly, or a refusal with exactly that code. This is the conformance test for verifyAccessToken in @superjackfruitlabs/treaty-ecosystem-identity and for every other verifier.",
+  "warning": "TEST KEYS ONLY. The keys in jwks sign nothing real, and their issuer is a .test name. A verifier must never trust these keys. The private keys are not published: scripts/token-vectors.ts derives them from fixed seeds to regenerate this file.",
+  "rules": {
+    "algorithm": "EdDSA",
+    "curve": "Ed25519",
+    "leewaySeconds": 30,
+    "maxLifetimeSeconds": 300,
+    "kidRequired": true,
+    "issuer": "exact match",
+    "audience": "equals, or (as an array) contains, the verifier's audience",
+    "grammar": {
+      "sub": "^prn_[0-9a-f]{20}$",
+      "org": "^org_[0-9a-f]{20}$",
+      "mayDispatch": "^prn_[0-9a-f]{20}$ for every value"
+    },
+    "source": "docs/2026-11-22-every-crossing-phase-1.md, ruling 3; claims in token_claims.json"
+  },
+  "howToRead": {
+    "refusalCodes": "The closed set of codes a verifier may refuse with. Every case has exactly one fault, so the answer does not depend on the order a verifier checks in.",
+    "jwks": "What the verifier is given. Only OKP Ed25519 keys are used; any other key is ignored as if absent, whatever its kid.",
+    "cases": "verifier.now is unix seconds. expect.claims is the token's whole payload: a verifier gives back every claim, the conditional and unknown ones included."
+  },
+  "refusalCodes": [
+    {
+      "code": "malformed",
+      "meaning": "Not a compact JWS of three base64url parts whose header and payload are JSON objects."
+    },
+    {
+      "code": "bad_algorithm",
+      "meaning": "The header's alg is not EdDSA (none, HS256 and every other value). The algorithm is pinned, never read from the header."
+    },
+    {
+      "code": "missing_kid",
+      "meaning": "The header has no kid, or an empty one."
+    },
+    {
+      "code": "unknown_key",
+      "meaning": "No Ed25519 key in the JWKS has the header's kid. Keys of any other type or curve are ignored, as if absent."
+    },
+    {
+      "code": "bad_signature",
+      "meaning": "The signature does not verify with the key the kid names."
+    },
+    {
+      "code": "wrong_issuer",
+      "meaning": "iss is not exactly the verifier's issuer."
+    },
+    {
+      "code": "wrong_audience",
+      "meaning": "aud neither equals the verifier's audience nor, as an array, contains it."
+    },
+    {
+      "code": "expired",
+      "meaning": "now ≥ exp + 30: past expiry by the leeway or more."
+    },
+    {
+      "code": "not_yet_valid",
+      "meaning": "nbf is present and nbf > now + 30."
+    },
+    {
+      "code": "issued_in_future",
+      "meaning": "iat > now + 30."
+    },
+    {
+      "code": "lifetime_too_long",
+      "meaning": "exp - iat > 300."
+    },
+    {
+      "code": "missing_claim",
+      "meaning": "A required claim is absent: iss, aud, exp, iat, jti, sub, principalKind, org, ent, mayDispatch or mayGrantReach."
+    },
+    {
+      "code": "bad_claim",
+      "meaning": "A claim is present with the wrong type or grammar: sub or org outside the id grammar, principalKind outside its enum, ent or mayDispatch not a string array, any mayDispatch value that is not a prn_ id (the whole token is refused), mayGrantReach not a boolean, or a conditional claim of the wrong type."
+    },
+    {
+      "code": "product_not_enabled",
+      "meaning": "ent does not contain the verifier's product. The consumer answers 403 { error: 'product_not_enabled', org }."
+    }
+  ],
+  "testKey": {
+    "kid": "test-ed25519-1",
+    "note": "The key that signs every valid case; its public half is in jwks."
+  },
+  "otherKeys": {
+    "retired": {
+      "kid": "test-ed25519-retired",
+      "note": "Not in jwks: it signs unknown-kid and signed-by-another-key."
+    },
+    "ignored": "jwks also lists a P-256 key under the test key's kid, and an X25519 key. Neither is Ed25519; a verifier ignores both."
+  },
+  "jwks": {
+    "keys": [
+      {
+        "kty": "EC",
+        "crv": "P-256",
+        "x": "OsigzPzTZqy8ZaPthXcAPAR4VkIq-Tl3fab_K3OTZxo",
+        "y": "vvKXD8RNMdZhIokWPwNQTVd9bvgG6OgZnpwE4yTRbnU",
+        "kid": "test-ed25519-1",
+        "alg": "ES256",
+        "use": "sig"
+      },
+      {
+        "kty": "OKP",
+        "crv": "Ed25519",
+        "x": "xMP5TWa3xtXCSW5Xpqzc9RlPDVJp2VmbBesL4Iipzdk",
+        "kid": "test-ed25519-1",
+        "alg": "EdDSA",
+        "use": "sig"
+      },
+      {
+        "kty": "OKP",
+        "crv": "X25519",
+        "x": "zlG2yaHasqF0ay-JA2ooRcSEP_KNYIezvDfELl4pWmQ",
+        "kid": "test-x25519",
+        "use": "sig"
+      }
+    ]
+  },
+  "cases": [
+    {
+      "name": "example-oauth-human",
+      "why": "token_claims.json's oauth-human example, signed: it verifies and every claim comes back unchanged, the conditional ones included.",
+      "token": "eyJhbGciOiJFZERTQSIsImtpZCI6InRlc3QtZWQyNTUxOS0xIn0.eyJpc3MiOiJodHRwczovL2lzc3Vlci50cmVhdHkudGVzdCIsInN1YiI6InBybl8wMTIzNDU2Nzg5YWJjZGVmMDEyMyIsImF1ZCI6WyJodHRwczovL2FwcC5zdXBlcnBpcGVsaW5lLmRldiIsImh0dHBzOi8vYWNjb3VudHMuc3VwZXJqYWNrZnJ1aXQuY29tL2FwaS9hdXRoL29hdXRoMi91c2VyaW5mbyJdLCJpYXQiOjE3OTEzMDAwMDAsImV4cCI6MTc5MTMwMDMwMCwianRpIjoiUXMxIiwicHJpbmNpcGFsS2luZCI6Imh1bWFuIiwib3JnIjoib3JnXzAwMDAwMDAwMDAwMDAwMDAwMDAwIiwiZW50IjpbImFnZW50cG9kIiwic3VwZXJwaXBlbGluZSJdLCJtYXlEaXNwYXRjaCI6W10sIm1heUdyYW50UmVhY2giOmZhbHNlLCJlbWFpbCI6ImFAZXhhbXBsZS50ZXN0IiwiZW1haWxfdmVyaWZpZWQiOnRydWUsInNjb3BlIjoib3BlbmlkIG9mZmxpbmVfYWNjZXNzIiwiY2xpZW50X2lkIjoic3VwZXJwaXBlbGluZS13ZWIiLCJhenAiOiJzdXBlcnBpcGVsaW5lLXdlYiIsInNpZCI6InMxIn0.VpM-236TVPw2tfL_oaxk9q9CTsK6OEgR9OHtn6zEFfh7_dH53RwaaxJ2FCie0o5KqAwmdQ5JoTMjKocU1Vb_Bw",
+      "verifier": {
+        "issuer": "https://issuer.treaty.test",
+        "audience": "https://app.superpipeline.dev",
+        "product": "superpipeline",
+        "now": 1791300060
+      },
+      "expect": {
+        "ok": true,
+        "claims": {
+          "iss": "https://issuer.treaty.test",
+          "sub": "prn_0123456789abcdef0123",
+          "aud": [
+            "https://app.superpipeline.dev",
+            "https://accounts.superjackfruit.com/api/auth/oauth2/userinfo"
+          ],
+          "iat": 1791300000,
+          "exp": 1791300300,
+          "jti": "Qs1",
+          "principalKind": "human",
+          "org": "org_00000000000000000000",
+          "ent": [
+            "agentpod",
+            "superpipeline"
+          ],
+          "mayDispatch": [],
+          "mayGrantReach": false,
+          "email": "a@example.test",
+          "email_verified": true,
+          "scope": "openid offline_access",
+          "client_id": "superpipeline-web",
+          "azp": "superpipeline-web",
+          "sid": "s1"
+        }
+      }
+    },
+    {
+      "name": "example-device-human",
+      "why": "token_claims.json's device-human example, signed: it verifies and every claim comes back unchanged, the conditional ones included.",
+      "token": "eyJhbGciOiJFZERTQSIsImtpZCI6InRlc3QtZWQyNTUxOS0xIn0.eyJpc3MiOiJodHRwczovL2lzc3Vlci50cmVhdHkudGVzdCIsInN1YiI6InBybl8wMTIzNDU2Nzg5YWJjZGVmMDEyMyIsImF1ZCI6Imh0dHBzOi8vaHViLmFnZW50cG9kLmRldiIsImlhdCI6MTc5MTMwMDAwMCwiZXhwIjoxNzkxMzAwMzAwLCJqdGkiOiJRczIiLCJwcmluY2lwYWxLaW5kIjoiaHVtYW4iLCJvcmciOiJvcmdfMDAwMDAwMDAwMDAwMDAwMDAwMDAiLCJlbnQiOlsiYWdlbnRwb2QiXSwibWF5RGlzcGF0Y2giOlsicHJuX2FhYWFhYWFhYWFhYWFhYWFhYWFhIl0sIm1heUdyYW50UmVhY2giOnRydWUsImVtYWlsIjoiYUBleGFtcGxlLnRlc3QiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiYW1yIjpbImRldmljZSJdfQ.nwbUWtW9aPUV-x3I3MDj_ld9hPQ8tV6pJNg4yFMSI5DhrWphu-v0IqefF4D1Tt5xKcTG8Tt66ntGm6xnTPqdDw",
+      "verifier": {
+        "issuer": "https://issuer.treaty.test",
+        "audience": "https://hub.agentpod.dev",
+        "product": "agentpod",
+        "now": 1791300060
+      },
+      "expect": {
+        "ok": true,
+        "claims": {
+          "iss": "https://issuer.treaty.test",
+          "sub": "prn_0123456789abcdef0123",
+          "aud": "https://hub.agentpod.dev",
+          "iat": 1791300000,
+          "exp": 1791300300,
+          "jti": "Qs2",
+          "principalKind": "human",
+          "org": "org_00000000000000000000",
+          "ent": [
+            "agentpod"
+          ],
+          "mayDispatch": [
+            "prn_aaaaaaaaaaaaaaaaaaaa"
+          ],
+          "mayGrantReach": true,
+          "email": "a@example.test",
+          "email_verified": true,
+          "amr": [
+            "device"
+          ]
+        }
+      }
+    },
+    {
+      "name": "example-service",
+      "why": "token_claims.json's service example, signed: it verifies and every claim comes back unchanged, the conditional ones included.",
+      "token": "eyJhbGciOiJFZERTQSIsImtpZCI6InRlc3QtZWQyNTUxOS0xIn0.eyJpc3MiOiJodHRwczovL2lzc3Vlci50cmVhdHkudGVzdCIsInN1YiI6InBybl9iYmJiYmJiYmJiYmJiYmJiYmJiYiIsImF1ZCI6Imh0dHBzOi8vYXBwLnN1cGVycGlwZWxpbmUuZGV2IiwiaWF0IjoxNzkxMzAwMDAwLCJleHAiOjE3OTEzMDAzMDAsImp0aSI6IlFzMyIsInByaW5jaXBhbEtpbmQiOiJzZXJ2aWNlIiwib3JnIjoib3JnXzAwMDAwMDAwMDAwMDAwMDAwMDAwIiwiZW50IjpbInN1cGVycGlwZWxpbmUiXSwibWF5RGlzcGF0Y2giOltdLCJtYXlHcmFudFJlYWNoIjpmYWxzZSwic2NvcGUiOiJldmlkZW5jZTpyZWFkIiwiYW1yIjpbInNlcnZpY2UiXX0.kGh-bkIFhKWpCJAqMdTNbZ2fU4tBJguvE7J9ltUsWSNAfvPZD-8SotW-xKtNfW-yQpr5RhXGlFAeSauK5sq-CQ",
+      "verifier": {
+        "issuer": "https://issuer.treaty.test",
+        "audience": "https://app.superpipeline.dev",
+        "product": "superpipeline",
+        "now": 1791300060
+      },
+      "expect": {
+        "ok": true,
+        "claims": {
+          "iss": "https://issuer.treaty.test",
+          "sub": "prn_bbbbbbbbbbbbbbbbbbbb",
+          "aud": "https://app.superpipeline.dev",
+          "iat": 1791300000,
+          "exp": 1791300300,
+          "jti": "Qs3",
+          "principalKind": "service",
+          "org": "org_00000000000000000000",
+          "ent": [
+            "superpipeline"
+          ],
+          "mayDispatch": [],
+          "mayGrantReach": false,
+          "scope": "evidence:read",
+          "amr": [
+            "service"
+          ]
+        }
+      }
+    },
+    {
+      "name": "example-agent",
+      "why": "token_claims.json's agent example, signed: it verifies and every claim comes back unchanged, the conditional ones included.",
+      "token": "eyJhbGciOiJFZERTQSIsImtpZCI6InRlc3QtZWQyNTUxOS0xIn0.eyJpc3MiOiJodHRwczovL2lzc3Vlci50cmVhdHkudGVzdCIsInN1YiI6InBybl9hYWFhYWFhYWFhYWFhYWFhYWFhYSIsImF1ZCI6WyJodHRwczovL2FwcC5zdXBlcnBpcGVsaW5lLmRldiIsImh0dHBzOi8vaHViLmFnZW50cG9kLmRldiJdLCJpYXQiOjE3OTEzMDAwMDAsImV4cCI6MTc5MTMwMDMwMCwianRpIjoiUXM0IiwicHJpbmNpcGFsS2luZCI6ImFnZW50Iiwib3JnIjoib3JnXzAwMDAwMDAwMDAwMDAwMDAwMDAwIiwiZW50IjpbImFnZW50cG9kIiwic3VwZXJwaXBlbGluZSJdLCJtYXlEaXNwYXRjaCI6W10sIm1heUdyYW50UmVhY2giOmZhbHNlLCJhY3QiOnsic3ViIjoicHJuX2JiYmJiYmJiYmJiYmJiYmJiYmJiIn0sImFtciI6WyJleGNoYW5nZSJdfQ.XQql5gaU20ppG92Mln237-_XYA9CPZOaWzjEhIyuqV17miScx7g8Zj9idsRmff-oUVpeo8BqxKQwzTmbPxCEAA",
+      "verifier": {
+        "issuer": "https://issuer.treaty.test",
+        "audience": "https://hub.agentpod.dev",
+        "product": "agentpod",
+        "now": 1791300060
+      },
+      "expect": {
+        "ok": true,
+        "claims": {
+          "iss": "https://issuer.treaty.test",
+          "sub": "prn_aaaaaaaaaaaaaaaaaaaa",
+          "aud": [
+            "https://app.superpipeline.dev",
+            "https://hub.agentpod.dev"
+          ],
+          "iat": 1791300000,
+          "exp": 1791300300,
+          "jti": "Qs4",
+          "principalKind": "agent",
+          "org": "org_00000000000000000000",
+          "ent": [
+            "agentpod",
+            "superpipeline"
+          ],
+          "mayDispatch": [],
+          "mayGrantReach": false,
+          "act": {
+            "sub": "prn_bbbbbbbbbbbbbbbbbbbb"
+          },
+          "amr": [
+            "exchange"
+          ]
+        }
+      }
+    },
+    {
+      "name": "example-assertion-human",
+      "why": "token_claims.json's assertion-human example, signed: it verifies and every claim comes back unchanged, the conditional ones included.",
+      "token": "eyJhbGciOiJFZERTQSIsImtpZCI6InRlc3QtZWQyNTUxOS0xIn0.eyJpc3MiOiJodHRwczovL2lzc3Vlci50cmVhdHkudGVzdCIsInN1YiI6InBybl8wMTIzNDU2Nzg5YWJjZGVmMDEyMyIsImF1ZCI6Imh0dHBzOi8vYXBwLnN1cGVycGlwZWxpbmUuZGV2IiwiaWF0IjoxNzkxMzAwMDAwLCJleHAiOjE3OTEzMDAxMjAsImp0aSI6IlFzNSIsInByaW5jaXBhbEtpbmQiOiJodW1hbiIsIm9yZyI6Im9yZ18wMDAwMDAwMDAwMDAwMDAwMDAwMCIsImVudCI6WyJhZ2VudHBvZCIsInN1cGVycGlwZWxpbmUiXSwibWF5RGlzcGF0Y2giOltdLCJtYXlHcmFudFJlYWNoIjpmYWxzZSwiZW1haWwiOiJhQGV4YW1wbGUudGVzdCIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJhY3QiOnsic3ViIjoicHJuX2JiYmJiYmJiYmJiYmJiYmJiYmJiIn0sImFtciI6WyJhc3NlcnRpb24iXX0.EbVto5nBPzx2kQa2KeFQahrG_9tb5yKszIFrs7lsqmphCTmjZWPOwWpm0thPIJS5d8rKqDtfEKot-BVWfqjuDQ",
+      "verifier": {
+        "issuer": "https://issuer.treaty.test",
+        "audience": "https://app.superpipeline.dev",
+        "product": "superpipeline",
+        "now": 1791300060
+      },
+      "expect": {
+        "ok": true,
+        "claims": {
+          "iss": "https://issuer.treaty.test",
+          "sub": "prn_0123456789abcdef0123",
+          "aud": "https://app.superpipeline.dev",
+          "iat": 1791300000,
+          "exp": 1791300120,
+          "jti": "Qs5",
+          "principalKind": "human",
+          "org": "org_00000000000000000000",
+          "ent": [
+            "agentpod",
+            "superpipeline"
+          ],
+          "mayDispatch": [],
+          "mayGrantReach": false,
+          "email": "a@example.test",
+          "email_verified": true,
+          "act": {
+            "sub": "prn_bbbbbbbbbbbbbbbbbbbb"
+          },
+          "amr": [
+            "assertion"
+          ]
+        }
+      }
+    },
+    {
+      "name": "alg-none",
+      "why": "Header alg none and an empty signature.",
+      "token": "eyJhbGciOiJub25lIiwia2lkIjoidGVzdC1lZDI1NTE5LTEifQ.eyJpc3MiOiJodHRwczovL2lzc3Vlci50cmVhdHkudGVzdCIsInN1YiI6InBybl9iYmJiYmJiYmJiYmJiYmJiYmJiYiIsImF1ZCI6Imh0dHBzOi8vYXBwLnN1cGVycGlwZWxpbmUuZGV2IiwiaWF0IjoxNzkxMzAwMDAwLCJleHAiOjE3OTEzMDAzMDAsImp0aSI6IlFzMyIsInByaW5jaXBhbEtpbmQiOiJzZXJ2aWNlIiwib3JnIjoib3JnXzAwMDAwMDAwMDAwMDAwMDAwMDAwIiwiZW50IjpbInN1cGVycGlwZWxpbmUiXSwibWF5RGlzcGF0Y2giOltdLCJtYXlHcmFudFJlYWNoIjpmYWxzZSwic2NvcGUiOiJldmlkZW5jZTpyZWFkIiwiYW1yIjpbInNlcnZpY2UiXX0.",
+      "verifier": {
+        "issuer": "https://issuer.treaty.test",
+        "audience": "https://app.superpipeline.dev",
+        "product": "superpipeline",
+        "now": 1791300060
+      },
+      "expect": {
+        "ok": false,
+        "code": "bad_algorithm"
+      }
+    },
+    {
+      "name": "expired",
+      "why": "now is an hour past exp.",
+      "token": "eyJhbGciOiJFZERTQSIsImtpZCI6InRlc3QtZWQyNTUxOS0xIn0.eyJpc3MiOiJodHRwczovL2lzc3Vlci50cmVhdHkudGVzdCIsInN1YiI6InBybl9iYmJiYmJiYmJiYmJiYmJiYmJiYiIsImF1ZCI6Imh0dHBzOi8vYXBwLnN1cGVycGlwZWxpbmUuZGV2IiwiaWF0IjoxNzkxMzAwMDAwLCJleHAiOjE3OTEzMDAzMDAsImp0aSI6IlFzMyIsInByaW5jaXBhbEtpbmQiOiJzZXJ2aWNlIiwib3JnIjoib3JnXzAwMDAwMDAwMDAwMDAwMDAwMDAwIiwiZW50IjpbInN1cGVycGlwZWxpbmUiXSwibWF5RGlzcGF0Y2giOltdLCJtYXlHcmFudFJlYWNoIjpmYWxzZSwic2NvcGUiOiJldmlkZW5jZTpyZWFkIiwiYW1yIjpbInNlcnZpY2UiXX0.kGh-bkIFhKWpCJAqMdTNbZ2fU4tBJguvE7J9ltUsWSNAfvPZD-8SotW-xKtNfW-yQpr5RhXGlFAeSauK5sq-CQ",
+      "verifier": {
+        "issuer": "https://issuer.treaty.test",
+        "audience": "https://app.superpipeline.dev",
+        "product": "superpipeline",
+        "now": 1791303900
+      },
+      "expect": {
+        "ok": false,
+        "code": "expired"
+      }
+    },
+    {
+      "name": "wrong-issuer",
+      "why": "Validly signed, iss is another issuer.",
+      "token": "eyJhbGciOiJFZERTQSIsImtpZCI6InRlc3QtZWQyNTUxOS0xIn0.eyJpc3MiOiJodHRwczovL2lzc3Vlci5leGFtcGxlLnRlc3QiLCJzdWIiOiJwcm5fYmJiYmJiYmJiYmJiYmJiYmJiYmIiLCJhdWQiOiJodHRwczovL2FwcC5zdXBlcnBpcGVsaW5lLmRldiIsImlhdCI6MTc5MTMwMDAwMCwiZXhwIjoxNzkxMzAwMzAwLCJqdGkiOiJRczMiLCJwcmluY2lwYWxLaW5kIjoic2VydmljZSIsIm9yZyI6Im9yZ18wMDAwMDAwMDAwMDAwMDAwMDAwMCIsImVudCI6WyJzdXBlcnBpcGVsaW5lIl0sIm1heURpc3BhdGNoIjpbXSwibWF5R3JhbnRSZWFjaCI6ZmFsc2UsInNjb3BlIjoiZXZpZGVuY2U6cmVhZCIsImFtciI6WyJzZXJ2aWNlIl19._K4LzKDT8Le3pvyROLmXLIvNG8P1fNh4gY51p0XruPuchyrq3OOrjW48rOWg3PS_DrO9nbNIw5OaJp045e7UCg",
+      "verifier": {
+        "issuer": "https://issuer.treaty.test",
+        "audience": "https://app.superpipeline.dev",
+        "product": "superpipeline",
+        "now": 1791300060
+      },
+      "expect": {
+        "ok": false,
+        "code": "wrong_issuer"
+      }
+    },
+    {
+      "name": "wrong-audience",
+      "why": "Validly signed for AgentPod's hub, presented to SuperPipeline.",
+      "token": "eyJhbGciOiJFZERTQSIsImtpZCI6InRlc3QtZWQyNTUxOS0xIn0.eyJpc3MiOiJodHRwczovL2lzc3Vlci50cmVhdHkudGVzdCIsInN1YiI6InBybl9iYmJiYmJiYmJiYmJiYmJiYmJiYiIsImF1ZCI6Imh0dHBzOi8vaHViLmFnZW50cG9kLmRldiIsImlhdCI6MTc5MTMwMDAwMCwiZXhwIjoxNzkxMzAwMzAwLCJqdGkiOiJRczMiLCJwcmluY2lwYWxLaW5kIjoic2VydmljZSIsIm9yZyI6Im9yZ18wMDAwMDAwMDAwMDAwMDAwMDAwMCIsImVudCI6WyJzdXBlcnBpcGVsaW5lIl0sIm1heURpc3BhdGNoIjpbXSwibWF5R3JhbnRSZWFjaCI6ZmFsc2UsInNjb3BlIjoiZXZpZGVuY2U6cmVhZCIsImFtciI6WyJzZXJ2aWNlIl19.kPknyoolDQ82O2nVrJsz_uGw4i-R21SHha1uyqZLxh2po611ctpFYD466KzVyKRk4m-gX_is-tHhbrWzjAjBBg",
+      "verifier": {
+        "issuer": "https://issuer.treaty.test",
+        "audience": "https://app.superpipeline.dev",
+        "product": "superpipeline",
+        "now": 1791300060
+      },
+      "expect": {
+        "ok": false,
+        "code": "wrong_audience"
+      }
+    },
+    {
+      "name": "unknown-kid",
+      "why": "Signed by a retired key whose kid is no longer in the JWKS.",
+      "token": "eyJhbGciOiJFZERTQSIsImtpZCI6InRlc3QtZWQyNTUxOS1yZXRpcmVkIn0.eyJpc3MiOiJodHRwczovL2lzc3Vlci50cmVhdHkudGVzdCIsInN1YiI6InBybl9iYmJiYmJiYmJiYmJiYmJiYmJiYiIsImF1ZCI6Imh0dHBzOi8vYXBwLnN1cGVycGlwZWxpbmUuZGV2IiwiaWF0IjoxNzkxMzAwMDAwLCJleHAiOjE3OTEzMDAzMDAsImp0aSI6IlFzMyIsInByaW5jaXBhbEtpbmQiOiJzZXJ2aWNlIiwib3JnIjoib3JnXzAwMDAwMDAwMDAwMDAwMDAwMDAwIiwiZW50IjpbInN1cGVycGlwZWxpbmUiXSwibWF5RGlzcGF0Y2giOltdLCJtYXlHcmFudFJlYWNoIjpmYWxzZSwic2NvcGUiOiJldmlkZW5jZTpyZWFkIiwiYW1yIjpbInNlcnZpY2UiXX0.qtCxy-ViByy9wE-ule9klMWzLT2rgqBjF7tTAJHl0hRxpjp8epldls3IFg765BzSq0zwQRvR_njRYLCg9GqsDA",
+      "verifier": {
+        "issuer": "https://issuer.treaty.test",
+        "audience": "https://app.superpipeline.dev",
+        "product": "superpipeline",
+        "now": 1791300060
+      },
+      "expect": {
+        "ok": false,
+        "code": "unknown_key"
+      }
+    },
+    {
+      "name": "missing-org",
+      "why": "No org claim.",
+      "token": "eyJhbGciOiJFZERTQSIsImtpZCI6InRlc3QtZWQyNTUxOS0xIn0.eyJpc3MiOiJodHRwczovL2lzc3Vlci50cmVhdHkudGVzdCIsInN1YiI6InBybl9iYmJiYmJiYmJiYmJiYmJiYmJiYiIsImF1ZCI6Imh0dHBzOi8vYXBwLnN1cGVycGlwZWxpbmUuZGV2IiwiaWF0IjoxNzkxMzAwMDAwLCJleHAiOjE3OTEzMDAzMDAsImp0aSI6IlFzMyIsInByaW5jaXBhbEtpbmQiOiJzZXJ2aWNlIiwiZW50IjpbInN1cGVycGlwZWxpbmUiXSwibWF5RGlzcGF0Y2giOltdLCJtYXlHcmFudFJlYWNoIjpmYWxzZSwic2NvcGUiOiJldmlkZW5jZTpyZWFkIiwiYW1yIjpbInNlcnZpY2UiXX0.BAVMqv0k6-81hQjkadcHgEHJhstj8dS5bsVrpdB_wZAx-lAz7zysOQF9mi4d-tGaff1cTq3lpolWdtco3_dOCw",
+      "verifier": {
+        "issuer": "https://issuer.treaty.test",
+        "audience": "https://app.superpipeline.dev",
+        "product": "superpipeline",
+        "now": 1791300060
+      },
+      "expect": {
+        "ok": false,
+        "code": "missing_claim"
+      }
+    },
+    {
+      "name": "product-not-enabled",
+      "why": "ent is [agentpod]; the verifier is SuperPipeline.",
+      "token": "eyJhbGciOiJFZERTQSIsImtpZCI6InRlc3QtZWQyNTUxOS0xIn0.eyJpc3MiOiJodHRwczovL2lzc3Vlci50cmVhdHkudGVzdCIsInN1YiI6InBybl9iYmJiYmJiYmJiYmJiYmJiYmJiYiIsImF1ZCI6Imh0dHBzOi8vYXBwLnN1cGVycGlwZWxpbmUuZGV2IiwiaWF0IjoxNzkxMzAwMDAwLCJleHAiOjE3OTEzMDAzMDAsImp0aSI6IlFzMyIsInByaW5jaXBhbEtpbmQiOiJzZXJ2aWNlIiwib3JnIjoib3JnXzAwMDAwMDAwMDAwMDAwMDAwMDAwIiwiZW50IjpbImFnZW50cG9kIl0sIm1heURpc3BhdGNoIjpbXSwibWF5R3JhbnRSZWFjaCI6ZmFsc2UsInNjb3BlIjoiZXZpZGVuY2U6cmVhZCIsImFtciI6WyJzZXJ2aWNlIl19.a2WOHpzf4Q6sTEDn3601YHGWVoBZNVNzU3TctY-JgerJ84pfarpb1LP0-UtkH6ui8cD-41-1cffIYu4xN8fqAQ",
+      "verifier": {
+        "issuer": "https://issuer.treaty.test",
+        "audience": "https://app.superpipeline.dev",
+        "product": "superpipeline",
+        "now": 1791300060
+      },
+      "expect": {
+        "ok": false,
+        "code": "product_not_enabled"
+      }
+    },
+    {
+      "name": "mayDispatch-absent",
+      "why": "No mayDispatch claim: an issuer that predates the control pair.",
+      "token": "eyJhbGciOiJFZERTQSIsImtpZCI6InRlc3QtZWQyNTUxOS0xIn0.eyJpc3MiOiJodHRwczovL2lzc3Vlci50cmVhdHkudGVzdCIsInN1YiI6InBybl9iYmJiYmJiYmJiYmJiYmJiYmJiYiIsImF1ZCI6Imh0dHBzOi8vYXBwLnN1cGVycGlwZWxpbmUuZGV2IiwiaWF0IjoxNzkxMzAwMDAwLCJleHAiOjE3OTEzMDAzMDAsImp0aSI6IlFzMyIsInByaW5jaXBhbEtpbmQiOiJzZXJ2aWNlIiwib3JnIjoib3JnXzAwMDAwMDAwMDAwMDAwMDAwMDAwIiwiZW50IjpbInN1cGVycGlwZWxpbmUiXSwibWF5R3JhbnRSZWFjaCI6ZmFsc2UsInNjb3BlIjoiZXZpZGVuY2U6cmVhZCIsImFtciI6WyJzZXJ2aWNlIl19.5xfRpcIbzjzTTHS1VqmK2t7cGCiNeiAqo9zmW0FL4-qjl0GaWut92-jgXFKYucTavegkKhszcv6G6TZOAR2hAQ",
+      "verifier": {
+        "issuer": "https://issuer.treaty.test",
+        "audience": "https://app.superpipeline.dev",
+        "product": "superpipeline",
+        "now": 1791300060
+      },
+      "expect": {
+        "ok": false,
+        "code": "missing_claim"
+      }
+    },
+    {
+      "name": "wildcard-mayDispatch-value",
+      "why": "mayDispatch holds * and prn_*. A pattern is not a prn, so the whole token is refused.",
+      "token": "eyJhbGciOiJFZERTQSIsImtpZCI6InRlc3QtZWQyNTUxOS0xIn0.eyJpc3MiOiJodHRwczovL2lzc3Vlci50cmVhdHkudGVzdCIsInN1YiI6InBybl9iYmJiYmJiYmJiYmJiYmJiYmJiYiIsImF1ZCI6Imh0dHBzOi8vYXBwLnN1cGVycGlwZWxpbmUuZGV2IiwiaWF0IjoxNzkxMzAwMDAwLCJleHAiOjE3OTEzMDAzMDAsImp0aSI6IlFzMyIsInByaW5jaXBhbEtpbmQiOiJzZXJ2aWNlIiwib3JnIjoib3JnXzAwMDAwMDAwMDAwMDAwMDAwMDAwIiwiZW50IjpbInN1cGVycGlwZWxpbmUiXSwibWF5RGlzcGF0Y2giOlsiKiIsInBybl8qIl0sIm1heUdyYW50UmVhY2giOmZhbHNlLCJzY29wZSI6ImV2aWRlbmNlOnJlYWQiLCJhbXIiOlsic2VydmljZSJdfQ.LhwhP1gLuMYAnGgbGW1fYzwtW6ZD7QIDl5BKmrgukgyz21Yu9-EkCOj4Qouz4K38DBKfxA3NWeDpViF1g9DEDw",
+      "verifier": {
+        "issuer": "https://issuer.treaty.test",
+        "audience": "https://app.superpipeline.dev",
+        "product": "superpipeline",
+        "now": 1791300060
+      },
+      "expect": {
+        "ok": false,
+        "code": "bad_claim"
+      }
+    },
+    {
+      "name": "alg-not-eddsa",
+      "why": "HS256, keyed with the test key's public bytes: the classic algorithm-confusion token.",
+      "token": "eyJhbGciOiJIUzI1NiIsImtpZCI6InRlc3QtZWQyNTUxOS0xIn0.eyJpc3MiOiJodHRwczovL2lzc3Vlci50cmVhdHkudGVzdCIsInN1YiI6InBybl9iYmJiYmJiYmJiYmJiYmJiYmJiYiIsImF1ZCI6Imh0dHBzOi8vYXBwLnN1cGVycGlwZWxpbmUuZGV2IiwiaWF0IjoxNzkxMzAwMDAwLCJleHAiOjE3OTEzMDAzMDAsImp0aSI6IlFzMyIsInByaW5jaXBhbEtpbmQiOiJzZXJ2aWNlIiwib3JnIjoib3JnXzAwMDAwMDAwMDAwMDAwMDAwMDAwIiwiZW50IjpbInN1cGVycGlwZWxpbmUiXSwibWF5RGlzcGF0Y2giOltdLCJtYXlHcmFudFJlYWNoIjpmYWxzZSwic2NvcGUiOiJldmlkZW5jZTpyZWFkIiwiYW1yIjpbInNlcnZpY2UiXX0.3KWwNPLMKIwD2T6Krl2D1Y1WvGq5uTYsRfDS5g1tyQg",
+      "verifier": {
+        "issuer": "https://issuer.treaty.test",
+        "audience": "https://app.superpipeline.dev",
+        "product": "superpipeline",
+        "now": 1791300060
+      },
+      "expect": {
+        "ok": false,
+        "code": "bad_algorithm"
+      }
+    },
+    {
+      "name": "issuer-with-path",
+      "why": "iss is the issuer with a path after it; iss must be exact.",
+      "token": "eyJhbGciOiJFZERTQSIsImtpZCI6InRlc3QtZWQyNTUxOS0xIn0.eyJpc3MiOiJodHRwczovL2lzc3Vlci50cmVhdHkudGVzdC9hcGkvYXV0aCIsInN1YiI6InBybl9iYmJiYmJiYmJiYmJiYmJiYmJiYiIsImF1ZCI6Imh0dHBzOi8vYXBwLnN1cGVycGlwZWxpbmUuZGV2IiwiaWF0IjoxNzkxMzAwMDAwLCJleHAiOjE3OTEzMDAzMDAsImp0aSI6IlFzMyIsInByaW5jaXBhbEtpbmQiOiJzZXJ2aWNlIiwib3JnIjoib3JnXzAwMDAwMDAwMDAwMDAwMDAwMDAwIiwiZW50IjpbInN1cGVycGlwZWxpbmUiXSwibWF5RGlzcGF0Y2giOltdLCJtYXlHcmFudFJlYWNoIjpmYWxzZSwic2NvcGUiOiJldmlkZW5jZTpyZWFkIiwiYW1yIjpbInNlcnZpY2UiXX0.eh3Gprz8lZjnghIX1dwYv4IN780qdGZ8G2QfW2RM_bLCMXQJPVYbvMb0_tEpsHyuiOZsvIGuROUxNRschBBfAg",
+      "verifier": {
+        "issuer": "https://issuer.treaty.test",
+        "audience": "https://app.superpipeline.dev",
+        "product": "superpipeline",
+        "now": 1791300060
+      },
+      "expect": {
+        "ok": false,
+        "code": "wrong_issuer"
+      }
+    },
+    {
+      "name": "missing-ent",
+      "why": "No ent claim.",
+      "token": "eyJhbGciOiJFZERTQSIsImtpZCI6InRlc3QtZWQyNTUxOS0xIn0.eyJpc3MiOiJodHRwczovL2lzc3Vlci50cmVhdHkudGVzdCIsInN1YiI6InBybl9iYmJiYmJiYmJiYmJiYmJiYmJiYiIsImF1ZCI6Imh0dHBzOi8vYXBwLnN1cGVycGlwZWxpbmUuZGV2IiwiaWF0IjoxNzkxMzAwMDAwLCJleHAiOjE3OTEzMDAzMDAsImp0aSI6IlFzMyIsInByaW5jaXBhbEtpbmQiOiJzZXJ2aWNlIiwib3JnIjoib3JnXzAwMDAwMDAwMDAwMDAwMDAwMDAwIiwibWF5RGlzcGF0Y2giOltdLCJtYXlHcmFudFJlYWNoIjpmYWxzZSwic2NvcGUiOiJldmlkZW5jZTpyZWFkIiwiYW1yIjpbInNlcnZpY2UiXX0.9XM_S9RdXZgnc233f6o9ER0EWsUsTm9oTrkEiRqZ6g4zGtagbSW3NdVbG4nikIttIbxdQX8UCL_scvliWrbGCg",
+      "verifier": {
+        "issuer": "https://issuer.treaty.test",
+        "audience": "https://app.superpipeline.dev",
+        "product": "superpipeline",
+        "now": 1791300060
+      },
+      "expect": {
+        "ok": false,
+        "code": "missing_claim"
+      }
+    },
+    {
+      "name": "missing-jti",
+      "why": "No jti claim.",
+      "token": "eyJhbGciOiJFZERTQSIsImtpZCI6InRlc3QtZWQyNTUxOS0xIn0.eyJpc3MiOiJodHRwczovL2lzc3Vlci50cmVhdHkudGVzdCIsInN1YiI6InBybl9iYmJiYmJiYmJiYmJiYmJiYmJiYiIsImF1ZCI6Imh0dHBzOi8vYXBwLnN1cGVycGlwZWxpbmUuZGV2IiwiaWF0IjoxNzkxMzAwMDAwLCJleHAiOjE3OTEzMDAzMDAsInByaW5jaXBhbEtpbmQiOiJzZXJ2aWNlIiwib3JnIjoib3JnXzAwMDAwMDAwMDAwMDAwMDAwMDAwIiwiZW50IjpbInN1cGVycGlwZWxpbmUiXSwibWF5RGlzcGF0Y2giOltdLCJtYXlHcmFudFJlYWNoIjpmYWxzZSwic2NvcGUiOiJldmlkZW5jZTpyZWFkIiwiYW1yIjpbInNlcnZpY2UiXX0.pq3nWGks0wmPGew3SD_qInYFiHZcfhAQpOsSlbcmRqp16kVT1uksc5x1oETCDhxtEGbGVke52Db1-QQAnAYLDw",
+      "verifier": {
+        "issuer": "https://issuer.treaty.test",
+        "audience": "https://app.superpipeline.dev",
+        "product": "superpipeline",
+        "now": 1791300060
+      },
+      "expect": {
+        "ok": false,
+        "code": "missing_claim"
+      }
+    },
+    {
+      "name": "unknown-principalKind",
+      "why": "principalKind is robot.",
+      "token": "eyJhbGciOiJFZERTQSIsImtpZCI6InRlc3QtZWQyNTUxOS0xIn0.eyJpc3MiOiJodHRwczovL2lzc3Vlci50cmVhdHkudGVzdCIsInN1YiI6InBybl9iYmJiYmJiYmJiYmJiYmJiYmJiYiIsImF1ZCI6Imh0dHBzOi8vYXBwLnN1cGVycGlwZWxpbmUuZGV2IiwiaWF0IjoxNzkxMzAwMDAwLCJleHAiOjE3OTEzMDAzMDAsImp0aSI6IlFzMyIsInByaW5jaXBhbEtpbmQiOiJyb2JvdCIsIm9yZyI6Im9yZ18wMDAwMDAwMDAwMDAwMDAwMDAwMCIsImVudCI6WyJzdXBlcnBpcGVsaW5lIl0sIm1heURpc3BhdGNoIjpbXSwibWF5R3JhbnRSZWFjaCI6ZmFsc2UsInNjb3BlIjoiZXZpZGVuY2U6cmVhZCIsImFtciI6WyJzZXJ2aWNlIl19.dU62-Uino91Ni_yplT1gMn1jHUZ9M2AOAy5QsOxGHS8HpM0kLcUPH99Um9UCTKBPsIFNHItGivwai5Fb3ZgyBA",
+      "verifier": {
+        "issuer": "https://issuer.treaty.test",
+        "audience": "https://app.superpipeline.dev",
+        "product": "superpipeline",
+        "now": 1791300060
+      },
+      "expect": {
+        "ok": false,
+        "code": "bad_claim"
+      }
+    },
+    {
+      "name": "lifetime-over-300",
+      "why": "exp - iat is 3600.",
+      "token": "eyJhbGciOiJFZERTQSIsImtpZCI6InRlc3QtZWQyNTUxOS0xIn0.eyJpc3MiOiJodHRwczovL2lzc3Vlci50cmVhdHkudGVzdCIsInN1YiI6InBybl9iYmJiYmJiYmJiYmJiYmJiYmJiYiIsImF1ZCI6Imh0dHBzOi8vYXBwLnN1cGVycGlwZWxpbmUuZGV2IiwiaWF0IjoxNzkxMzAwMDAwLCJleHAiOjE3OTEzMDM2MDAsImp0aSI6IlFzMyIsInByaW5jaXBhbEtpbmQiOiJzZXJ2aWNlIiwib3JnIjoib3JnXzAwMDAwMDAwMDAwMDAwMDAwMDAwIiwiZW50IjpbInN1cGVycGlwZWxpbmUiXSwibWF5RGlzcGF0Y2giOltdLCJtYXlHcmFudFJlYWNoIjpmYWxzZSwic2NvcGUiOiJldmlkZW5jZTpyZWFkIiwiYW1yIjpbInNlcnZpY2UiXX0.ijFic-eBZCn1CEe7_f1waMRjCw_NFMeVAbaPzgEvtLYsRwHNDWnc1SWFvML2Wwz8DzJ31e51xgu3DNgXWKKvDQ",
+      "verifier": {
+        "issuer": "https://issuer.treaty.test",
+        "audience": "https://app.superpipeline.dev",
+        "product": "superpipeline",
+        "now": 1791300060
+      },
+      "expect": {
+        "ok": false,
+        "code": "lifetime_too_long"
+      }
+    },
+    {
+      "name": "exp-leeway-29",
+      "why": "now = exp + 29: inside the leeway.",
+      "token": "eyJhbGciOiJFZERTQSIsImtpZCI6InRlc3QtZWQyNTUxOS0xIn0.eyJpc3MiOiJodHRwczovL2lzc3Vlci50cmVhdHkudGVzdCIsInN1YiI6InBybl9iYmJiYmJiYmJiYmJiYmJiYmJiYiIsImF1ZCI6Imh0dHBzOi8vYXBwLnN1cGVycGlwZWxpbmUuZGV2IiwiaWF0IjoxNzkxMzAwMDAwLCJleHAiOjE3OTEzMDAzMDAsImp0aSI6IlFzMyIsInByaW5jaXBhbEtpbmQiOiJzZXJ2aWNlIiwib3JnIjoib3JnXzAwMDAwMDAwMDAwMDAwMDAwMDAwIiwiZW50IjpbInN1cGVycGlwZWxpbmUiXSwibWF5RGlzcGF0Y2giOltdLCJtYXlHcmFudFJlYWNoIjpmYWxzZSwic2NvcGUiOiJldmlkZW5jZTpyZWFkIiwiYW1yIjpbInNlcnZpY2UiXX0.kGh-bkIFhKWpCJAqMdTNbZ2fU4tBJguvE7J9ltUsWSNAfvPZD-8SotW-xKtNfW-yQpr5RhXGlFAeSauK5sq-CQ",
+      "verifier": {
+        "issuer": "https://issuer.treaty.test",
+        "audience": "https://app.superpipeline.dev",
+        "product": "superpipeline",
+        "now": 1791300329
+      },
+      "expect": {
+        "ok": true,
+        "claims": {
+          "iss": "https://issuer.treaty.test",
+          "sub": "prn_bbbbbbbbbbbbbbbbbbbb",
+          "aud": "https://app.superpipeline.dev",
+          "iat": 1791300000,
+          "exp": 1791300300,
+          "jti": "Qs3",
+          "principalKind": "service",
+          "org": "org_00000000000000000000",
+          "ent": [
+            "superpipeline"
+          ],
+          "mayDispatch": [],
+          "mayGrantReach": false,
+          "scope": "evidence:read",
+          "amr": [
+            "service"
+          ]
+        }
+      }
+    },
+    {
+      "name": "exp-leeway-31",
+      "why": "now = exp + 31: past the leeway.",
+      "token": "eyJhbGciOiJFZERTQSIsImtpZCI6InRlc3QtZWQyNTUxOS0xIn0.eyJpc3MiOiJodHRwczovL2lzc3Vlci50cmVhdHkudGVzdCIsInN1YiI6InBybl9iYmJiYmJiYmJiYmJiYmJiYmJiYiIsImF1ZCI6Imh0dHBzOi8vYXBwLnN1cGVycGlwZWxpbmUuZGV2IiwiaWF0IjoxNzkxMzAwMDAwLCJleHAiOjE3OTEzMDAzMDAsImp0aSI6IlFzMyIsInByaW5jaXBhbEtpbmQiOiJzZXJ2aWNlIiwib3JnIjoib3JnXzAwMDAwMDAwMDAwMDAwMDAwMDAwIiwiZW50IjpbInN1cGVycGlwZWxpbmUiXSwibWF5RGlzcGF0Y2giOltdLCJtYXlHcmFudFJlYWNoIjpmYWxzZSwic2NvcGUiOiJldmlkZW5jZTpyZWFkIiwiYW1yIjpbInNlcnZpY2UiXX0.kGh-bkIFhKWpCJAqMdTNbZ2fU4tBJguvE7J9ltUsWSNAfvPZD-8SotW-xKtNfW-yQpr5RhXGlFAeSauK5sq-CQ",
+      "verifier": {
+        "issuer": "https://issuer.treaty.test",
+        "audience": "https://app.superpipeline.dev",
+        "product": "superpipeline",
+        "now": 1791300331
+      },
+      "expect": {
+        "ok": false,
+        "code": "expired"
+      }
+    },
+    {
+      "name": "iat-future-29",
+      "why": "iat is 29 s after now.",
+      "token": "eyJhbGciOiJFZERTQSIsImtpZCI6InRlc3QtZWQyNTUxOS0xIn0.eyJpc3MiOiJodHRwczovL2lzc3Vlci50cmVhdHkudGVzdCIsInN1YiI6InBybl9iYmJiYmJiYmJiYmJiYmJiYmJiYiIsImF1ZCI6Imh0dHBzOi8vYXBwLnN1cGVycGlwZWxpbmUuZGV2IiwiaWF0IjoxNzkxMzAwMDAwLCJleHAiOjE3OTEzMDAzMDAsImp0aSI6IlFzMyIsInByaW5jaXBhbEtpbmQiOiJzZXJ2aWNlIiwib3JnIjoib3JnXzAwMDAwMDAwMDAwMDAwMDAwMDAwIiwiZW50IjpbInN1cGVycGlwZWxpbmUiXSwibWF5RGlzcGF0Y2giOltdLCJtYXlHcmFudFJlYWNoIjpmYWxzZSwic2NvcGUiOiJldmlkZW5jZTpyZWFkIiwiYW1yIjpbInNlcnZpY2UiXX0.kGh-bkIFhKWpCJAqMdTNbZ2fU4tBJguvE7J9ltUsWSNAfvPZD-8SotW-xKtNfW-yQpr5RhXGlFAeSauK5sq-CQ",
+      "verifier": {
+        "issuer": "https://issuer.treaty.test",
+        "audience": "https://app.superpipeline.dev",
+        "product": "superpipeline",
+        "now": 1791299971
+      },
+      "expect": {
+        "ok": true,
+        "claims": {
+          "iss": "https://issuer.treaty.test",
+          "sub": "prn_bbbbbbbbbbbbbbbbbbbb",
+          "aud": "https://app.superpipeline.dev",
+          "iat": 1791300000,
+          "exp": 1791300300,
+          "jti": "Qs3",
+          "principalKind": "service",
+          "org": "org_00000000000000000000",
+          "ent": [
+            "superpipeline"
+          ],
+          "mayDispatch": [],
+          "mayGrantReach": false,
+          "scope": "evidence:read",
+          "amr": [
+            "service"
+          ]
+        }
+      }
+    },
+    {
+      "name": "iat-future-31",
+      "why": "iat is 31 s after now.",
+      "token": "eyJhbGciOiJFZERTQSIsImtpZCI6InRlc3QtZWQyNTUxOS0xIn0.eyJpc3MiOiJodHRwczovL2lzc3Vlci50cmVhdHkudGVzdCIsInN1YiI6InBybl9iYmJiYmJiYmJiYmJiYmJiYmJiYiIsImF1ZCI6Imh0dHBzOi8vYXBwLnN1cGVycGlwZWxpbmUuZGV2IiwiaWF0IjoxNzkxMzAwMDAwLCJleHAiOjE3OTEzMDAzMDAsImp0aSI6IlFzMyIsInByaW5jaXBhbEtpbmQiOiJzZXJ2aWNlIiwib3JnIjoib3JnXzAwMDAwMDAwMDAwMDAwMDAwMDAwIiwiZW50IjpbInN1cGVycGlwZWxpbmUiXSwibWF5RGlzcGF0Y2giOltdLCJtYXlHcmFudFJlYWNoIjpmYWxzZSwic2NvcGUiOiJldmlkZW5jZTpyZWFkIiwiYW1yIjpbInNlcnZpY2UiXX0.kGh-bkIFhKWpCJAqMdTNbZ2fU4tBJguvE7J9ltUsWSNAfvPZD-8SotW-xKtNfW-yQpr5RhXGlFAeSauK5sq-CQ",
+      "verifier": {
+        "issuer": "https://issuer.treaty.test",
+        "audience": "https://app.superpipeline.dev",
+        "product": "superpipeline",
+        "now": 1791299969
+      },
+      "expect": {
+        "ok": false,
+        "code": "issued_in_future"
+      }
+    },
+    {
+      "name": "nbf-future-29",
+      "why": "nbf is 29 s after now.",
+      "token": "eyJhbGciOiJFZERTQSIsImtpZCI6InRlc3QtZWQyNTUxOS0xIn0.eyJpc3MiOiJodHRwczovL2lzc3Vlci50cmVhdHkudGVzdCIsInN1YiI6InBybl9iYmJiYmJiYmJiYmJiYmJiYmJiYiIsImF1ZCI6Imh0dHBzOi8vYXBwLnN1cGVycGlwZWxpbmUuZGV2IiwiaWF0IjoxNzkxMzAwMDAwLCJleHAiOjE3OTEzMDAzMDAsImp0aSI6IlFzMyIsInByaW5jaXBhbEtpbmQiOiJzZXJ2aWNlIiwib3JnIjoib3JnXzAwMDAwMDAwMDAwMDAwMDAwMDAwIiwiZW50IjpbInN1cGVycGlwZWxpbmUiXSwibWF5RGlzcGF0Y2giOltdLCJtYXlHcmFudFJlYWNoIjpmYWxzZSwic2NvcGUiOiJldmlkZW5jZTpyZWFkIiwiYW1yIjpbInNlcnZpY2UiXSwibmJmIjoxNzkxMzAwMDYwfQ.XDOstEbxDs38dTZZBEDgRV1XNWOfkVlCOdWA7mNA4wVOybRACH-cg9gbMpIx-cvW7m_3Oc0WhkVHQnRcM9srDg",
+      "verifier": {
+        "issuer": "https://issuer.treaty.test",
+        "audience": "https://app.superpipeline.dev",
+        "product": "superpipeline",
+        "now": 1791300031
+      },
+      "expect": {
+        "ok": true,
+        "claims": {
+          "iss": "https://issuer.treaty.test",
+          "sub": "prn_bbbbbbbbbbbbbbbbbbbb",
+          "aud": "https://app.superpipeline.dev",
+          "iat": 1791300000,
+          "exp": 1791300300,
+          "jti": "Qs3",
+          "principalKind": "service",
+          "org": "org_00000000000000000000",
+          "ent": [
+            "superpipeline"
+          ],
+          "mayDispatch": [],
+          "mayGrantReach": false,
+          "scope": "evidence:read",
+          "amr": [
+            "service"
+          ],
+          "nbf": 1791300060
+        }
+      }
+    },
+    {
+      "name": "nbf-future-31",
+      "why": "nbf is 31 s after now.",
+      "token": "eyJhbGciOiJFZERTQSIsImtpZCI6InRlc3QtZWQyNTUxOS0xIn0.eyJpc3MiOiJodHRwczovL2lzc3Vlci50cmVhdHkudGVzdCIsInN1YiI6InBybl9iYmJiYmJiYmJiYmJiYmJiYmJiYiIsImF1ZCI6Imh0dHBzOi8vYXBwLnN1cGVycGlwZWxpbmUuZGV2IiwiaWF0IjoxNzkxMzAwMDAwLCJleHAiOjE3OTEzMDAzMDAsImp0aSI6IlFzMyIsInByaW5jaXBhbEtpbmQiOiJzZXJ2aWNlIiwib3JnIjoib3JnXzAwMDAwMDAwMDAwMDAwMDAwMDAwIiwiZW50IjpbInN1cGVycGlwZWxpbmUiXSwibWF5RGlzcGF0Y2giOltdLCJtYXlHcmFudFJlYWNoIjpmYWxzZSwic2NvcGUiOiJldmlkZW5jZTpyZWFkIiwiYW1yIjpbInNlcnZpY2UiXSwibmJmIjoxNzkxMzAwMDYwfQ.XDOstEbxDs38dTZZBEDgRV1XNWOfkVlCOdWA7mNA4wVOybRACH-cg9gbMpIx-cvW7m_3Oc0WhkVHQnRcM9srDg",
+      "verifier": {
+        "issuer": "https://issuer.treaty.test",
+        "audience": "https://app.superpipeline.dev",
+        "product": "superpipeline",
+        "now": 1791300029
+      },
+      "expect": {
+        "ok": false,
+        "code": "not_yet_valid"
+      }
+    },
+    {
+      "name": "lifetime-300",
+      "why": "exp - iat is exactly 300.",
+      "token": "eyJhbGciOiJFZERTQSIsImtpZCI6InRlc3QtZWQyNTUxOS0xIn0.eyJpc3MiOiJodHRwczovL2lzc3Vlci50cmVhdHkudGVzdCIsInN1YiI6InBybl9iYmJiYmJiYmJiYmJiYmJiYmJiYiIsImF1ZCI6Imh0dHBzOi8vYXBwLnN1cGVycGlwZWxpbmUuZGV2IiwiaWF0IjoxNzkxMzAwMDAwLCJleHAiOjE3OTEzMDAzMDAsImp0aSI6IlFzMyIsInByaW5jaXBhbEtpbmQiOiJzZXJ2aWNlIiwib3JnIjoib3JnXzAwMDAwMDAwMDAwMDAwMDAwMDAwIiwiZW50IjpbInN1cGVycGlwZWxpbmUiXSwibWF5RGlzcGF0Y2giOltdLCJtYXlHcmFudFJlYWNoIjpmYWxzZSwic2NvcGUiOiJldmlkZW5jZTpyZWFkIiwiYW1yIjpbInNlcnZpY2UiXX0.kGh-bkIFhKWpCJAqMdTNbZ2fU4tBJguvE7J9ltUsWSNAfvPZD-8SotW-xKtNfW-yQpr5RhXGlFAeSauK5sq-CQ",
+      "verifier": {
+        "issuer": "https://issuer.treaty.test",
+        "audience": "https://app.superpipeline.dev",
+        "product": "superpipeline",
+        "now": 1791300060
+      },
+      "expect": {
+        "ok": true,
+        "claims": {
+          "iss": "https://issuer.treaty.test",
+          "sub": "prn_bbbbbbbbbbbbbbbbbbbb",
+          "aud": "https://app.superpipeline.dev",
+          "iat": 1791300000,
+          "exp": 1791300300,
+          "jti": "Qs3",
+          "principalKind": "service",
+          "org": "org_00000000000000000000",
+          "ent": [
+            "superpipeline"
+          ],
+          "mayDispatch": [],
+          "mayGrantReach": false,
+          "scope": "evidence:read",
+          "amr": [
+            "service"
+          ]
+        }
+      }
+    },
+    {
+      "name": "lifetime-301",
+      "why": "exp - iat is 301.",
+      "token": "eyJhbGciOiJFZERTQSIsImtpZCI6InRlc3QtZWQyNTUxOS0xIn0.eyJpc3MiOiJodHRwczovL2lzc3Vlci50cmVhdHkudGVzdCIsInN1YiI6InBybl9iYmJiYmJiYmJiYmJiYmJiYmJiYiIsImF1ZCI6Imh0dHBzOi8vYXBwLnN1cGVycGlwZWxpbmUuZGV2IiwiaWF0IjoxNzkxMzAwMDAwLCJleHAiOjE3OTEzMDAzMDEsImp0aSI6IlFzMyIsInByaW5jaXBhbEtpbmQiOiJzZXJ2aWNlIiwib3JnIjoib3JnXzAwMDAwMDAwMDAwMDAwMDAwMDAwIiwiZW50IjpbInN1cGVycGlwZWxpbmUiXSwibWF5RGlzcGF0Y2giOltdLCJtYXlHcmFudFJlYWNoIjpmYWxzZSwic2NvcGUiOiJldmlkZW5jZTpyZWFkIiwiYW1yIjpbInNlcnZpY2UiXX0.MmubT8uUw_syZigbeh_8fbc1AJTxNqyatrIP_rf36iiRyucxEQjeoPo6P0Cn4mN95qf2TxZC3S4c089kaCtxBg",
+      "verifier": {
+        "issuer": "https://issuer.treaty.test",
+        "audience": "https://app.superpipeline.dev",
+        "product": "superpipeline",
+        "now": 1791300060
+      },
+      "expect": {
+        "ok": false,
+        "code": "lifetime_too_long"
+      }
+    },
+    {
+      "name": "missing-kid",
+      "why": "Signed with the test key, but the header names no kid.",
+      "token": "eyJhbGciOiJFZERTQSJ9.eyJpc3MiOiJodHRwczovL2lzc3Vlci50cmVhdHkudGVzdCIsInN1YiI6InBybl9iYmJiYmJiYmJiYmJiYmJiYmJiYiIsImF1ZCI6Imh0dHBzOi8vYXBwLnN1cGVycGlwZWxpbmUuZGV2IiwiaWF0IjoxNzkxMzAwMDAwLCJleHAiOjE3OTEzMDAzMDAsImp0aSI6IlFzMyIsInByaW5jaXBhbEtpbmQiOiJzZXJ2aWNlIiwib3JnIjoib3JnXzAwMDAwMDAwMDAwMDAwMDAwMDAwIiwiZW50IjpbInN1cGVycGlwZWxpbmUiXSwibWF5RGlzcGF0Y2giOltdLCJtYXlHcmFudFJlYWNoIjpmYWxzZSwic2NvcGUiOiJldmlkZW5jZTpyZWFkIiwiYW1yIjpbInNlcnZpY2UiXX0.XD9_kSt9Ai3r1pio2UnYILODq-J-VJieZggs3usHe51g1HebqsVAU7i17HVmnWGJRXzZqiwJVTmq3UZa_1WjDg",
+      "verifier": {
+        "issuer": "https://issuer.treaty.test",
+        "audience": "https://app.superpipeline.dev",
+        "product": "superpipeline",
+        "now": 1791300060
+      },
+      "expect": {
+        "ok": false,
+        "code": "missing_kid"
+      }
+    },
+    {
+      "name": "non-ed25519-key-ignored",
+      "why": "The JWKS lists a P-256 key under the same kid, first. It is not Ed25519, so it is ignored and the Ed25519 key verifies the token.",
+      "token": "eyJhbGciOiJFZERTQSIsImtpZCI6InRlc3QtZWQyNTUxOS0xIn0.eyJpc3MiOiJodHRwczovL2lzc3Vlci50cmVhdHkudGVzdCIsInN1YiI6InBybl9iYmJiYmJiYmJiYmJiYmJiYmJiYiIsImF1ZCI6Imh0dHBzOi8vYXBwLnN1cGVycGlwZWxpbmUuZGV2IiwiaWF0IjoxNzkxMzAwMDAwLCJleHAiOjE3OTEzMDAzMDAsImp0aSI6IlFzMyIsInByaW5jaXBhbEtpbmQiOiJzZXJ2aWNlIiwib3JnIjoib3JnXzAwMDAwMDAwMDAwMDAwMDAwMDAwIiwiZW50IjpbInN1cGVycGlwZWxpbmUiXSwibWF5RGlzcGF0Y2giOltdLCJtYXlHcmFudFJlYWNoIjpmYWxzZSwic2NvcGUiOiJldmlkZW5jZTpyZWFkIiwiYW1yIjpbInNlcnZpY2UiXX0.kGh-bkIFhKWpCJAqMdTNbZ2fU4tBJguvE7J9ltUsWSNAfvPZD-8SotW-xKtNfW-yQpr5RhXGlFAeSauK5sq-CQ",
+      "verifier": {
+        "issuer": "https://issuer.treaty.test",
+        "audience": "https://app.superpipeline.dev",
+        "product": "superpipeline",
+        "now": 1791300060
+      },
+      "expect": {
+        "ok": true,
+        "claims": {
+          "iss": "https://issuer.treaty.test",
+          "sub": "prn_bbbbbbbbbbbbbbbbbbbb",
+          "aud": "https://app.superpipeline.dev",
+          "iat": 1791300000,
+          "exp": 1791300300,
+          "jti": "Qs3",
+          "principalKind": "service",
+          "org": "org_00000000000000000000",
+          "ent": [
+            "superpipeline"
+          ],
+          "mayDispatch": [],
+          "mayGrantReach": false,
+          "scope": "evidence:read",
+          "amr": [
+            "service"
+          ]
+        }
+      }
+    },
+    {
+      "name": "kid-names-only-non-ed25519-key",
+      "why": "The kid names the JWKS's X25519 key, which is not an Ed25519 key, so no usable key has that kid.",
+      "token": "eyJhbGciOiJFZERTQSIsImtpZCI6InRlc3QteDI1NTE5In0.eyJpc3MiOiJodHRwczovL2lzc3Vlci50cmVhdHkudGVzdCIsInN1YiI6InBybl9iYmJiYmJiYmJiYmJiYmJiYmJiYiIsImF1ZCI6Imh0dHBzOi8vYXBwLnN1cGVycGlwZWxpbmUuZGV2IiwiaWF0IjoxNzkxMzAwMDAwLCJleHAiOjE3OTEzMDAzMDAsImp0aSI6IlFzMyIsInByaW5jaXBhbEtpbmQiOiJzZXJ2aWNlIiwib3JnIjoib3JnXzAwMDAwMDAwMDAwMDAwMDAwMDAwIiwiZW50IjpbInN1cGVycGlwZWxpbmUiXSwibWF5RGlzcGF0Y2giOltdLCJtYXlHcmFudFJlYWNoIjpmYWxzZSwic2NvcGUiOiJldmlkZW5jZTpyZWFkIiwiYW1yIjpbInNlcnZpY2UiXX0.saNSILWjJpaMsQV5Tldi6_mApvOX1jHeee_kL7HQCFaElu_VrLqp4BcpZN-2BBF5FqnpjVqKbvgN42Uelo0EAA",
+      "verifier": {
+        "issuer": "https://issuer.treaty.test",
+        "audience": "https://app.superpipeline.dev",
+        "product": "superpipeline",
+        "now": 1791300060
+      },
+      "expect": {
+        "ok": false,
+        "code": "unknown_key"
+      }
+    },
+    {
+      "name": "signed-by-another-key",
+      "why": "The kid names the test key; the signature is the retired key's.",
+      "token": "eyJhbGciOiJFZERTQSIsImtpZCI6InRlc3QtZWQyNTUxOS0xIn0.eyJpc3MiOiJodHRwczovL2lzc3Vlci50cmVhdHkudGVzdCIsInN1YiI6InBybl9iYmJiYmJiYmJiYmJiYmJiYmJiYiIsImF1ZCI6Imh0dHBzOi8vYXBwLnN1cGVycGlwZWxpbmUuZGV2IiwiaWF0IjoxNzkxMzAwMDAwLCJleHAiOjE3OTEzMDAzMDAsImp0aSI6IlFzMyIsInByaW5jaXBhbEtpbmQiOiJzZXJ2aWNlIiwib3JnIjoib3JnXzAwMDAwMDAwMDAwMDAwMDAwMDAwIiwiZW50IjpbInN1cGVycGlwZWxpbmUiXSwibWF5RGlzcGF0Y2giOltdLCJtYXlHcmFudFJlYWNoIjpmYWxzZSwic2NvcGUiOiJldmlkZW5jZTpyZWFkIiwiYW1yIjpbInNlcnZpY2UiXX0.J0toyM7wcmSLsray5ts2wP7S46nFe30-CMTHT8qwgSEPGmAi5As9rVLX3k5pySVPoXq9P2lTZXqm95TXHrGZBg",
+      "verifier": {
+        "issuer": "https://issuer.treaty.test",
+        "audience": "https://app.superpipeline.dev",
+        "product": "superpipeline",
+        "now": 1791300060
+      },
+      "expect": {
+        "ok": false,
+        "code": "bad_signature"
+      }
+    },
+    {
+      "name": "tampered-signature",
+      "why": "The first character of the signature changed.",
+      "token": "eyJhbGciOiJFZERTQSIsImtpZCI6InRlc3QtZWQyNTUxOS0xIn0.eyJpc3MiOiJodHRwczovL2lzc3Vlci50cmVhdHkudGVzdCIsInN1YiI6InBybl9iYmJiYmJiYmJiYmJiYmJiYmJiYiIsImF1ZCI6Imh0dHBzOi8vYXBwLnN1cGVycGlwZWxpbmUuZGV2IiwiaWF0IjoxNzkxMzAwMDAwLCJleHAiOjE3OTEzMDAzMDAsImp0aSI6IlFzMyIsInByaW5jaXBhbEtpbmQiOiJzZXJ2aWNlIiwib3JnIjoib3JnXzAwMDAwMDAwMDAwMDAwMDAwMDAwIiwiZW50IjpbInN1cGVycGlwZWxpbmUiXSwibWF5RGlzcGF0Y2giOltdLCJtYXlHcmFudFJlYWNoIjpmYWxzZSwic2NvcGUiOiJldmlkZW5jZTpyZWFkIiwiYW1yIjpbInNlcnZpY2UiXX0.AGh-bkIFhKWpCJAqMdTNbZ2fU4tBJguvE7J9ltUsWSNAfvPZD-8SotW-xKtNfW-yQpr5RhXGlFAeSauK5sq-CQ",
+      "verifier": {
+        "issuer": "https://issuer.treaty.test",
+        "audience": "https://app.superpipeline.dev",
+        "product": "superpipeline",
+        "now": 1791300060
+      },
+      "expect": {
+        "ok": false,
+        "code": "bad_signature"
+      }
+    },
+    {
+      "name": "not-a-jws",
+      "why": "One part, not three.",
+      "token": "not-a-token",
+      "verifier": {
+        "issuer": "https://issuer.treaty.test",
+        "audience": "https://app.superpipeline.dev",
+        "product": "superpipeline",
+        "now": 1791300060
+      },
+      "expect": {
+        "ok": false,
+        "code": "malformed"
+      }
+    },
+    {
+      "name": "aud-array-contains-audience",
+      "why": "aud is an array that contains the verifier's audience.",
+      "token": "eyJhbGciOiJFZERTQSIsImtpZCI6InRlc3QtZWQyNTUxOS0xIn0.eyJpc3MiOiJodHRwczovL2lzc3Vlci50cmVhdHkudGVzdCIsInN1YiI6InBybl9iYmJiYmJiYmJiYmJiYmJiYmJiYiIsImF1ZCI6WyJodHRwczovL2h1Yi5hZ2VudHBvZC5kZXYiLCJodHRwczovL2FwcC5zdXBlcnBpcGVsaW5lLmRldiJdLCJpYXQiOjE3OTEzMDAwMDAsImV4cCI6MTc5MTMwMDMwMCwianRpIjoiUXMzIiwicHJpbmNpcGFsS2luZCI6InNlcnZpY2UiLCJvcmciOiJvcmdfMDAwMDAwMDAwMDAwMDAwMDAwMDAiLCJlbnQiOlsic3VwZXJwaXBlbGluZSJdLCJtYXlEaXNwYXRjaCI6W10sIm1heUdyYW50UmVhY2giOmZhbHNlLCJzY29wZSI6ImV2aWRlbmNlOnJlYWQiLCJhbXIiOlsic2VydmljZSJdfQ.Srpg0Z5BeZicQUPlchd80JmFCxSoW9OibpeqZIVPrtvdYo3SOkUOp75k03ijwQp3atkXB832itWisP0O109NCw",
+      "verifier": {
+        "issuer": "https://issuer.treaty.test",
+        "audience": "https://app.superpipeline.dev",
+        "product": "superpipeline",
+        "now": 1791300060
+      },
+      "expect": {
+        "ok": true,
+        "claims": {
+          "iss": "https://issuer.treaty.test",
+          "sub": "prn_bbbbbbbbbbbbbbbbbbbb",
+          "aud": [
+            "https://hub.agentpod.dev",
+            "https://app.superpipeline.dev"
+          ],
+          "iat": 1791300000,
+          "exp": 1791300300,
+          "jti": "Qs3",
+          "principalKind": "service",
+          "org": "org_00000000000000000000",
+          "ent": [
+            "superpipeline"
+          ],
+          "mayDispatch": [],
+          "mayGrantReach": false,
+          "scope": "evidence:read",
+          "amr": [
+            "service"
+          ]
+        }
+      }
+    },
+    {
+      "name": "mayDispatch-non-prn-value",
+      "why": "mayDispatch holds a prn and a namespaced pattern. Any value that is not a prn refuses the whole token, the valid prn beside it included.",
+      "token": "eyJhbGciOiJFZERTQSIsImtpZCI6InRlc3QtZWQyNTUxOS0xIn0.eyJpc3MiOiJodHRwczovL2lzc3Vlci50cmVhdHkudGVzdCIsInN1YiI6InBybl9iYmJiYmJiYmJiYmJiYmJiYmJiYiIsImF1ZCI6Imh0dHBzOi8vYXBwLnN1cGVycGlwZWxpbmUuZGV2IiwiaWF0IjoxNzkxMzAwMDAwLCJleHAiOjE3OTEzMDAzMDAsImp0aSI6IlFzMyIsInByaW5jaXBhbEtpbmQiOiJzZXJ2aWNlIiwib3JnIjoib3JnXzAwMDAwMDAwMDAwMDAwMDAwMDAwIiwiZW50IjpbInN1cGVycGlwZWxpbmUiXSwibWF5RGlzcGF0Y2giOlsicHJuX2FhYWFhYWFhYWFhYWFhYWFhYWFhIiwiYWdlbnRwb2Q6Ki9oZXJtZXMiXSwibWF5R3JhbnRSZWFjaCI6ZmFsc2UsInNjb3BlIjoiZXZpZGVuY2U6cmVhZCIsImFtciI6WyJzZXJ2aWNlIl19.XRegL7BJgnvUwiI_r6Cn8iP46RJaHhdrKG1eOLCdXpjwmFIBqVJ1xIEMXlMCcit5mCCiB8GlbWK80dFNEw2gBw",
+      "verifier": {
+        "issuer": "https://issuer.treaty.test",
+        "audience": "https://app.superpipeline.dev",
+        "product": "superpipeline",
+        "now": 1791300060
+      },
+      "expect": {
+        "ok": false,
+        "code": "bad_claim"
+      }
+    },
+    {
+      "name": "mayGrantReach-absent",
+      "why": "No mayGrantReach claim: half of the control pair is missing.",
+      "token": "eyJhbGciOiJFZERTQSIsImtpZCI6InRlc3QtZWQyNTUxOS0xIn0.eyJpc3MiOiJodHRwczovL2lzc3Vlci50cmVhdHkudGVzdCIsInN1YiI6InBybl9iYmJiYmJiYmJiYmJiYmJiYmJiYiIsImF1ZCI6Imh0dHBzOi8vYXBwLnN1cGVycGlwZWxpbmUuZGV2IiwiaWF0IjoxNzkxMzAwMDAwLCJleHAiOjE3OTEzMDAzMDAsImp0aSI6IlFzMyIsInByaW5jaXBhbEtpbmQiOiJzZXJ2aWNlIiwib3JnIjoib3JnXzAwMDAwMDAwMDAwMDAwMDAwMDAwIiwiZW50IjpbInN1cGVycGlwZWxpbmUiXSwibWF5RGlzcGF0Y2giOltdLCJzY29wZSI6ImV2aWRlbmNlOnJlYWQiLCJhbXIiOlsic2VydmljZSJdfQ.kcGkfHejrL5WGaNdg-EOuDX2YWWFiwOvn-W5dYh-R_uWXU-T_nQfK6ca_menHDfeh50GAprd8-dVY8ysK61gCA",
+      "verifier": {
+        "issuer": "https://issuer.treaty.test",
+        "audience": "https://app.superpipeline.dev",
+        "product": "superpipeline",
+        "now": 1791300060
+      },
+      "expect": {
+        "ok": false,
+        "code": "missing_claim"
+      }
+    },
+    {
+      "name": "mayGrantReach-not-boolean",
+      "why": "mayGrantReach is the string \"false\".",
+      "token": "eyJhbGciOiJFZERTQSIsImtpZCI6InRlc3QtZWQyNTUxOS0xIn0.eyJpc3MiOiJodHRwczovL2lzc3Vlci50cmVhdHkudGVzdCIsInN1YiI6InBybl9iYmJiYmJiYmJiYmJiYmJiYmJiYiIsImF1ZCI6Imh0dHBzOi8vYXBwLnN1cGVycGlwZWxpbmUuZGV2IiwiaWF0IjoxNzkxMzAwMDAwLCJleHAiOjE3OTEzMDAzMDAsImp0aSI6IlFzMyIsInByaW5jaXBhbEtpbmQiOiJzZXJ2aWNlIiwib3JnIjoib3JnXzAwMDAwMDAwMDAwMDAwMDAwMDAwIiwiZW50IjpbInN1cGVycGlwZWxpbmUiXSwibWF5RGlzcGF0Y2giOltdLCJtYXlHcmFudFJlYWNoIjoiZmFsc2UiLCJzY29wZSI6ImV2aWRlbmNlOnJlYWQiLCJhbXIiOlsic2VydmljZSJdfQ.R8Dn4VdEWPG4g-EbvVaz3ZQJLFJ5hbT8pmUN-mc8yDSIjdYbmMo39_XrAM4acOqUowYwZX9NMtKoDEd3FT8oCA",
+      "verifier": {
+        "issuer": "https://issuer.treaty.test",
+        "audience": "https://app.superpipeline.dev",
+        "product": "superpipeline",
+        "now": 1791300060
+      },
+      "expect": {
+        "ok": false,
+        "code": "bad_claim"
+      }
+    },
+    {
+      "name": "sub-loose",
+      "why": "sub is prn_ followed by 20 characters that are not all lowercase hex.",
+      "token": "eyJhbGciOiJFZERTQSIsImtpZCI6InRlc3QtZWQyNTUxOS0xIn0.eyJpc3MiOiJodHRwczovL2lzc3Vlci50cmVhdHkudGVzdCIsInN1YiI6InBybl8wMTIzNDU2Nzg5YWJjZGVmZ2hpaiIsImF1ZCI6Imh0dHBzOi8vYXBwLnN1cGVycGlwZWxpbmUuZGV2IiwiaWF0IjoxNzkxMzAwMDAwLCJleHAiOjE3OTEzMDAzMDAsImp0aSI6IlFzMyIsInByaW5jaXBhbEtpbmQiOiJzZXJ2aWNlIiwib3JnIjoib3JnXzAwMDAwMDAwMDAwMDAwMDAwMDAwIiwiZW50IjpbInN1cGVycGlwZWxpbmUiXSwibWF5RGlzcGF0Y2giOltdLCJtYXlHcmFudFJlYWNoIjpmYWxzZSwic2NvcGUiOiJldmlkZW5jZTpyZWFkIiwiYW1yIjpbInNlcnZpY2UiXX0.mI0kNCNrOSnPQZvLaiQBA2RJ88oaLK8FIPTTM-7ICJFfb8fs6creWWnmwnlt3qbnfpsUx3O5ieTy_-F3IEW2Dg",
+      "verifier": {
+        "issuer": "https://issuer.treaty.test",
+        "audience": "https://app.superpipeline.dev",
+        "product": "superpipeline",
+        "now": 1791300060
+      },
+      "expect": {
+        "ok": false,
+        "code": "bad_claim"
+      }
+    },
+    {
+      "name": "org-loose",
+      "why": "org is org_ followed by 20 characters that are not all lowercase hex.",
+      "token": "eyJhbGciOiJFZERTQSIsImtpZCI6InRlc3QtZWQyNTUxOS0xIn0.eyJpc3MiOiJodHRwczovL2lzc3Vlci50cmVhdHkudGVzdCIsInN1YiI6InBybl9iYmJiYmJiYmJiYmJiYmJiYmJiYiIsImF1ZCI6Imh0dHBzOi8vYXBwLnN1cGVycGlwZWxpbmUuZGV2IiwiaWF0IjoxNzkxMzAwMDAwLCJleHAiOjE3OTEzMDAzMDAsImp0aSI6IlFzMyIsInByaW5jaXBhbEtpbmQiOiJzZXJ2aWNlIiwib3JnIjoib3JnXzAxMjM0NTY3ODlhYmNkZWZnaGlqIiwiZW50IjpbInN1cGVycGlwZWxpbmUiXSwibWF5RGlzcGF0Y2giOltdLCJtYXlHcmFudFJlYWNoIjpmYWxzZSwic2NvcGUiOiJldmlkZW5jZTpyZWFkIiwiYW1yIjpbInNlcnZpY2UiXX0.b2vI_Ngg_r5W3H_HiU7iT2QKRkVjWXCTbq8Xsrx0wPOszJboEKUwP8owzY6YPtU8tIIzbB6r7DCp2-V86B7HCg",
+      "verifier": {
+        "issuer": "https://issuer.treaty.test",
+        "audience": "https://app.superpipeline.dev",
+        "product": "superpipeline",
+        "now": 1791300060
+      },
+      "expect": {
+        "ok": false,
+        "code": "bad_claim"
+      }
+    },
+    {
+      "name": "missing-iat",
+      "why": "No iat claim, so the lifetime cannot be checked.",
+      "token": "eyJhbGciOiJFZERTQSIsImtpZCI6InRlc3QtZWQyNTUxOS0xIn0.eyJpc3MiOiJodHRwczovL2lzc3Vlci50cmVhdHkudGVzdCIsInN1YiI6InBybl9iYmJiYmJiYmJiYmJiYmJiYmJiYiIsImF1ZCI6Imh0dHBzOi8vYXBwLnN1cGVycGlwZWxpbmUuZGV2IiwiZXhwIjoxNzkxMzAwMzAwLCJqdGkiOiJRczMiLCJwcmluY2lwYWxLaW5kIjoic2VydmljZSIsIm9yZyI6Im9yZ18wMDAwMDAwMDAwMDAwMDAwMDAwMCIsImVudCI6WyJzdXBlcnBpcGVsaW5lIl0sIm1heURpc3BhdGNoIjpbXSwibWF5R3JhbnRSZWFjaCI6ZmFsc2UsInNjb3BlIjoiZXZpZGVuY2U6cmVhZCIsImFtciI6WyJzZXJ2aWNlIl19.8ctc5x6Kw4OugPDc4Qzcg-duaDdQOAkd_XRX0DBXdcGEWX8F_3_B0Ao6eUrb9Zy9KGEpSZKY3bkV56lTNY5OBQ",
+      "verifier": {
+        "issuer": "https://issuer.treaty.test",
+        "audience": "https://app.superpipeline.dev",
+        "product": "superpipeline",
+        "now": 1791300060
+      },
+      "expect": {
+        "ok": false,
+        "code": "missing_claim"
+      }
+    },
+    {
+      "name": "unknown-ent-value-ignored",
+      "why": "ent holds a product the verifier does not know beside its own; the unknown value is ignored.",
+      "token": "eyJhbGciOiJFZERTQSIsImtpZCI6InRlc3QtZWQyNTUxOS0xIn0.eyJpc3MiOiJodHRwczovL2lzc3Vlci50cmVhdHkudGVzdCIsInN1YiI6InBybl9iYmJiYmJiYmJiYmJiYmJiYmJiYiIsImF1ZCI6Imh0dHBzOi8vYXBwLnN1cGVycGlwZWxpbmUuZGV2IiwiaWF0IjoxNzkxMzAwMDAwLCJleHAiOjE3OTEzMDAzMDAsImp0aSI6IlFzMyIsInByaW5jaXBhbEtpbmQiOiJzZXJ2aWNlIiwib3JnIjoib3JnXzAwMDAwMDAwMDAwMDAwMDAwMDAwIiwiZW50IjpbInN1cGVycGlwZWxpbmUiLCJmdXR1cmVwcm9kdWN0Il0sIm1heURpc3BhdGNoIjpbXSwibWF5R3JhbnRSZWFjaCI6ZmFsc2UsInNjb3BlIjoiZXZpZGVuY2U6cmVhZCIsImFtciI6WyJzZXJ2aWNlIl19.wh6T3QgMg9X96tAN9hB9d0OjIw9g9IPJOf8HJ7kBdSTNbAS_oN7GfUTFPHDZ1AMgIbtQusdjNPGoCcc82h7LDA",
+      "verifier": {
+        "issuer": "https://issuer.treaty.test",
+        "audience": "https://app.superpipeline.dev",
+        "product": "superpipeline",
+        "now": 1791300060
+      },
+      "expect": {
+        "ok": true,
+        "claims": {
+          "iss": "https://issuer.treaty.test",
+          "sub": "prn_bbbbbbbbbbbbbbbbbbbb",
+          "aud": "https://app.superpipeline.dev",
+          "iat": 1791300000,
+          "exp": 1791300300,
+          "jti": "Qs3",
+          "principalKind": "service",
+          "org": "org_00000000000000000000",
+          "ent": [
+            "superpipeline",
+            "futureproduct"
+          ],
+          "mayDispatch": [],
+          "mayGrantReach": false,
+          "scope": "evidence:read",
+          "amr": [
+            "service"
+          ]
+        }
+      }
+    },
+    {
+      "name": "conditional-claim-wrong-type",
+      "why": "email_verified, a conditional claim, is the string \"true\". A conditional claim may be absent, never of the wrong type.",
+      "token": "eyJhbGciOiJFZERTQSIsImtpZCI6InRlc3QtZWQyNTUxOS0xIn0.eyJpc3MiOiJodHRwczovL2lzc3Vlci50cmVhdHkudGVzdCIsInN1YiI6InBybl9iYmJiYmJiYmJiYmJiYmJiYmJiYiIsImF1ZCI6Imh0dHBzOi8vYXBwLnN1cGVycGlwZWxpbmUuZGV2IiwiaWF0IjoxNzkxMzAwMDAwLCJleHAiOjE3OTEzMDAzMDAsImp0aSI6IlFzMyIsInByaW5jaXBhbEtpbmQiOiJzZXJ2aWNlIiwib3JnIjoib3JnXzAwMDAwMDAwMDAwMDAwMDAwMDAwIiwiZW50IjpbInN1cGVycGlwZWxpbmUiXSwibWF5RGlzcGF0Y2giOltdLCJtYXlHcmFudFJlYWNoIjpmYWxzZSwic2NvcGUiOiJldmlkZW5jZTpyZWFkIiwiYW1yIjpbInNlcnZpY2UiXSwiZW1haWwiOiJhQGV4YW1wbGUudGVzdCIsImVtYWlsX3ZlcmlmaWVkIjoidHJ1ZSJ9.5lv4OnEOjyzwMTpwFALAJ_t1lQtEzOQSOVY5RUr-qe80gYki1ImBeC2NpMUkZKNS51_py8khd2videpeOSHeDA",
+      "verifier": {
+        "issuer": "https://issuer.treaty.test",
+        "audience": "https://app.superpipeline.dev",
+        "product": "superpipeline",
+        "now": 1791300060
+      },
+      "expect": {
+        "ok": false,
+        "code": "bad_claim"
+      }
+    }
+  ]
+}

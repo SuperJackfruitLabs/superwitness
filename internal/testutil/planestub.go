@@ -18,6 +18,18 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+// Fixture ids in the id grammar the plane's tokens follow: the prefix, an underscore and 20
+// lowercase hex characters. They are built here, not spelled out, so the tracked tree holds no
+// id that looks machine-generated (internal/docsclaims).
+var (
+	PlaneHuman  = planeID("prn", 'a')
+	PlaneHuman2 = planeID("prn", 'b')
+	PlaneAgent  = planeID("prn", 'c')
+	PlaneOrg    = planeID("org", '0')
+)
+
+func planeID(prefix string, hex byte) string { return prefix + "_" + strings.Repeat(string(hex), 20) }
+
 // PlaneStub stands in for the organization plane's OAuth 2.1 endpoints in sign-in tests: a JWKS,
 // discovery, /api/auth/oauth2/authorize (signs in whoever SignInAs named, at once),
 // /api/auth/oauth2/token (form-encoded, PKCE S256, resource required) and /api/auth/oauth2/revoke.
@@ -67,7 +79,7 @@ func NewPlaneStub(t testing.TB, resource, clientID string) *PlaneStub {
 		t.Fatal(err)
 	}
 	p := &PlaneStub{Resource: resource, ClientID: clientID, priv: priv, codes: map[string]planeCode{},
-		grants: map[string]*planeGrant{}, sub: "prn_human01", kind: "human", ent: []string{"superwitness"}}
+		grants: map[string]*planeGrant{}, sub: PlaneHuman, kind: "human", ent: []string{"superwitness"}}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/auth/jwks", p.jwks)
 	mux.HandleFunc("GET /api/auth/oauth2/authorize", p.authorize)
@@ -174,7 +186,7 @@ func (p *PlaneStub) answer(sub, kind, email string, offline bool) ([]byte, error
 		aud = p.AudienceOverride
 	}
 	now := time.Now()
-	claims := jwt.MapClaims{"iss": p.URL, "aud": aud, "sub": sub, "principalKind": kind, "org": "org_01", "ent": ent,
+	claims := jwt.MapClaims{"iss": p.URL, "aud": aud, "sub": sub, "principalKind": kind, "org": PlaneOrg, "ent": ent,
 		"mayDispatch": []string{}, "mayGrantReach": false, "scope": "openid", "jti": "jti_" + random(8),
 		"client_id": p.ClientID, "azp": p.ClientID, "sid": "sid_01", "iat": now.Unix(), "exp": now.Add(5 * time.Minute).Unix()}
 	if email != "" {

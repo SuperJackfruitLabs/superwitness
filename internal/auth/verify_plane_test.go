@@ -6,18 +6,36 @@ import (
 	"errors"
 	"os"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
+// Fixture ids in the plane's id grammar (prefix, underscore, 20 lowercase hex). Built, not spelled
+// out, so the tracked tree holds no id that looks machine-generated (internal/docsclaims).
+var (
+	planeHuman   = planeID("prn", 'a')
+	planeService = planeID("prn", 'b')
+	planeAgent   = planeID("prn", 'c')
+	planeHub     = planeID("prn", 'd')
+	planeOrg     = planeID("org", '0')
+)
+
+func planeID(prefix string, hex byte) string { return prefix + "_" + strings.Repeat(string(hex), 20) }
+
 // signPlane signs the plane's claim set: no tenant; org, ent, jti and the grant claims present.
 func (is *issuer) signPlane(t *testing.T, now time.Time, edit func(jwt.MapClaims)) string {
 	t.Helper()
-	return is.sign(t, "k1", now, func(c jwt.MapClaims) {
+	return is.signPlaneWith(t, "k1", now, edit)
+}
+
+func (is *issuer) signPlaneWith(t *testing.T, kid string, now time.Time, edit func(jwt.MapClaims)) string {
+	t.Helper()
+	return is.sign(t, kid, now, func(c jwt.MapClaims) {
 		delete(c, "tenant")
-		c["org"], c["ent"], c["jti"] = "org_01", []string{"superpipeline", "superwitness"}, "jti_01"
+		c["sub"], c["org"], c["ent"], c["jti"] = planeAgent, planeOrg, []string{"superpipeline", "superwitness"}, "jti_01"
 		c["mayDispatch"], c["mayGrantReach"] = []string{}, false
 		if edit != nil {
 			edit(c)
@@ -36,12 +54,12 @@ func TestPlaneVerifyAccepts(t *testing.T) {
 	is.addKey(t, "k1")
 	now := time.Now()
 	p, err := newPlaneVerifier(is, &now).Verify(context.Background(), is.signPlane(t, now, func(c jwt.MapClaims) {
-		c["act"] = map[string]string{"sub": "prn_hub01"}
+		c["act"] = map[string]string{"sub": planeHub}
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if p.ID != "prn_agent01" || p.Kind != KindAgent || p.Tenant != "org_01" || p.Actor != "prn_hub01" {
+	if p.ID != planeAgent || p.Kind != KindAgent || p.Tenant != planeOrg || p.Actor != planeHub {
 		t.Errorf("got %+v", p)
 	}
 }
@@ -106,8 +124,8 @@ func TestPlaneVerifyEntitlement(t *testing.T) {
 	for name, ent := range map[string][]string{"other products": {"agentpod", "superpipeline"}, "none": {}} {
 		_, err := v.Verify(context.Background(), is.signPlane(t, now, func(c jwt.MapClaims) { c["ent"] = ent }))
 		var ne *NotEnabledError
-		if !errors.As(err, &ne) || ne.Org != "org_01" || !errors.Is(err, ErrUnauthenticated) {
-			t.Errorf("ent %s: %v; want NotEnabledError{org_01} wrapping ErrUnauthenticated", name, err)
+		if !errors.As(err, &ne) || ne.Org != planeOrg || !errors.Is(err, ErrUnauthenticated) {
+			t.Errorf("ent %s: %v; want NotEnabledError{%s} wrapping ErrUnauthenticated", name, err, planeOrg)
 		}
 	}
 }
@@ -118,14 +136,14 @@ func TestPlaneVerifyReadsGrantScopesOnlyFromAgentsAndServices(t *testing.T) {
 	now := time.Now()
 	v := newPlaneVerifier(is, &now)
 	human, err := v.Verify(context.Background(), is.signPlane(t, now, func(c jwt.MapClaims) {
-		c["sub"], c["principalKind"], c["scope"] = "prn_human01", "human", "openid runs:write"
+		c["sub"], c["principalKind"], c["scope"] = planeHuman, "human", "openid runs:write"
 	}))
 	if err != nil || human.HasScope("runs:write") || len(human.Scopes) != 0 {
 		t.Errorf("a person's OAuth scope string became grant scopes: %+v %v", human, err)
 	}
 	for _, kind := range []string{"service", "agent"} {
 		p, err := v.Verify(context.Background(), is.signPlane(t, now, func(c jwt.MapClaims) {
-			c["principalKind"], c["scope"] = kind, "runs:write"
+			c["sub"], c["principalKind"], c["scope"] = planeService, kind, "runs:write"
 		}))
 		if err != nil || !p.HasScope("runs:write") {
 			t.Errorf("%s: %+v %v", kind, p, err)
@@ -164,10 +182,7 @@ func TestPlaneVerifyServesTheLastGoodKeySet(t *testing.T) {
 	is.down.Store(false)
 	now = now.Add(minMissGap + time.Second) // the failed attempt above holds off refetches for minMissGap
 	is.addKey(t, "k2")                      // rotation: one refetch on the unknown kid
-	tok := is.sign(t, "k2", now, func(c jwt.MapClaims) {
-		delete(c, "tenant")
-		c["org"], c["ent"] = "org_01", []string{"superwitness"}
-	})
+	tok := is.signPlaneWith(t, "k2", now, nil)
 	if _, err := v.Verify(context.Background(), tok); err != nil {
 		t.Errorf("rotated key: %v", err)
 	}

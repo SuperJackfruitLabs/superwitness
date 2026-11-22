@@ -1,0 +1,19 @@
+{
+  "product": "superwitness",
+  "treaty": "0.0.15",
+  "produces": ["superwitness.runs", "superwitness.telemetry"],
+  "consumes": [
+    "accounts.token-claims",
+    "accounts.plane-api",
+    "accounts.sign-in",
+    "agentpod.hub-auth",
+    "superpipeline.board-read",
+    "agentpod.evidence"
+  ],
+  "vendored": [
+    {
+      "path": "internal/auth/testdata/treaty/token_vectors.json",
+      "source": "fixtures/ecosystem-identity/token_vectors.json"
+    }
+  ]
+}

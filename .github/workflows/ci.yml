@@ -91,6 +91,9 @@ jobs:
       # make lint runs the golangci-lint ratchet, a Node script (scripts/lint-go.mjs).
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
+      # treaty.json against the pinned treaty release: the crossings SuperWitness produces and
+      # consumes, and every vendored copy byte-identical to it (`treaty sync` rewrites them).
+      - run: npx -y @superjackfruitlabs/treaty-contracts@0.0.15 verify
       - run: make lint
       - run: make test
       # The docs-only plan and the `check` verdict (scripts/ci-plan.mjs). A change to either is
