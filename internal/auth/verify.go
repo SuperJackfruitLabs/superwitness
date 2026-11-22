@@ -9,8 +9,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"regexp"
-	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -26,8 +24,6 @@ const (
 
 // Product is superwitness's name in the organization plane's ent claim.
 const Product = "superwitness"
-
-var planeSubject = regexp.MustCompile(`^prn_[A-Za-z0-9_-]{1,64}$`)
 
 // NotEnabledError is a valid plane token whose workspace has not enabled superwitness. It
 // unwraps to ErrUnauthenticated, so a caller that only checks err != nil still refuses it.
@@ -64,6 +60,7 @@ type Verifier struct {
 	audience string
 	jwksURL  string
 	plane    bool
+	product  string // the plane's ent must contain it: Product
 	hc       *http.Client
 	Now      func() time.Time
 
@@ -79,12 +76,15 @@ func NewVerifier(issuer, audience string, hc *http.Client) *Verifier {
 	return newVerifier(issuer, issuer+"/api/auth/jwks", audience, false, hc)
 }
 
-// NewPlaneVerifier checks organization-plane tokens offline. iss must equal issuer exactly (it
-// is never trimmed or prefix-matched), keys come from jwksURL, aud must equal or contain
-// audience, sub must be a prn_ id, and org and ent must be present. ent without Product is a
-// NotEnabledError. Grant scopes are read only from agent and service tokens.
+// NewPlaneVerifier checks organization-plane tokens offline under treaty's token rules
+// (plane.go). iss must equal issuer exactly (it is never trimmed or prefix-matched), keys come
+// from jwksURL, aud must equal or contain audience. A refusal is a TokenError with treaty's
+// code; ent without Product is a NotEnabledError. Grant scopes are read only from agent and
+// service tokens.
 func NewPlaneVerifier(issuer, jwksURL, audience string, hc *http.Client) *Verifier {
-	return newVerifier(issuer, jwksURL, audience, true, hc)
+	v := newVerifier(issuer, jwksURL, audience, true, hc)
+	v.product = Product
+	return v
 }
 
 func newVerifier(issuer, jwksURL, audience string, plane bool, hc *http.Client) *Verifier {
@@ -105,19 +105,10 @@ type hubClaims struct {
 	} `json:"act,omitempty"`
 }
 
-type planeClaims struct {
-	jwt.RegisteredClaims
-	PrincipalKind string   `json:"principalKind"`
-	Org           string   `json:"org"`
-	Ent           []string `json:"ent"`   // nil when absent; [] when present and empty
-	Scope         string   `json:"scope"` // grant scopes on agent and service tokens; OAuth scopes on a person's
-	Email         string   `json:"email"`
-	Act           *struct {
-		Sub string `json:"sub"`
-	} `json:"act,omitempty"`
-}
-
 func (v *Verifier) Verify(ctx context.Context, raw string) (Principal, error) {
+	if v.plane {
+		return v.verifyPlaneToken(ctx, raw)
+	}
 	kid, ok := headerKid(raw)
 	if !ok {
 		return Principal{}, ErrUnauthenticated
@@ -125,9 +116,6 @@ func (v *Verifier) Verify(ctx context.Context, raw string) (Principal, error) {
 	key, err := v.key(ctx, kid)
 	if err != nil {
 		return Principal{}, ErrUnauthenticated
-	}
-	if v.plane {
-		return v.verifyPlane(raw, key)
 	}
 	return v.verifyHub(raw, key)
 }
@@ -157,29 +145,6 @@ func (v *Verifier) verifyHub(raw string, key ed25519.PublicKey) (Principal, erro
 		return Principal{}, ErrUnauthenticated
 	}
 	p := Principal{ID: c.Subject, Kind: kind, Tenant: c.Tenant, Scopes: strings.Fields(c.Scope), Email: c.Email}
-	if c.Act != nil {
-		p.Actor = c.Act.Sub
-	}
-	return p, nil
-}
-
-func (v *Verifier) verifyPlane(raw string, key ed25519.PublicKey) (Principal, error) {
-	var c planeClaims
-	if err := v.parse(raw, key, &c); err != nil || c.IssuedAt == nil || !planeSubject.MatchString(c.Subject) ||
-		!strings.HasPrefix(c.Org, "org_") || len(c.Org) == len("org_") || c.Ent == nil {
-		return Principal{}, ErrUnauthenticated
-	}
-	kind := PrincipalKind(c.PrincipalKind)
-	if !validKind(kind) {
-		return Principal{}, ErrUnauthenticated
-	}
-	if !slices.Contains(c.Ent, Product) {
-		return Principal{}, &NotEnabledError{Org: c.Org}
-	}
-	p := Principal{ID: c.Subject, Kind: kind, Tenant: c.Org, Email: c.Email}
-	if kind == KindAgent || kind == KindService { // a person's scope claim is OAuth's, not a grant
-		p.Scopes = strings.Fields(c.Scope)
-	}
 	if c.Act != nil {
 		p.Actor = c.Act.Sub
 	}
@@ -300,20 +265,34 @@ func (v *Verifier) fetch() (*keySet, error) {
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("jwks: HTTP %d", resp.StatusCode)
 	}
+	keys, err := parseJWKS(io.LimitReader(resp.Body, 1<<20))
+	if err != nil {
+		return nil, err
+	}
+	return &keySet{keys: keys, fetchedAt: v.Now()}, nil
+}
+
+// parseJWKS reads a JWKS's Ed25519 signing keys by kid. Every other key is ignored as if absent,
+// whatever its kid: another kty or crv, an alg other than EdDSA (or Ed25519), a use other than
+// sig. A set with no Ed25519 key is an error.
+func parseJWKS(r io.Reader) (map[string]ed25519.PublicKey, error) {
 	var doc struct {
 		Keys []struct {
 			Kty string `json:"kty"`
 			Crv string `json:"crv"`
+			Alg string `json:"alg"`
+			Use string `json:"use"`
 			X   string `json:"x"`
 			Kid string `json:"kid"`
 		} `json:"keys"`
 	}
-	if err := json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&doc); err != nil {
+	if err := json.NewDecoder(r).Decode(&doc); err != nil {
 		return nil, fmt.Errorf("jwks: %w", err)
 	}
 	keys := map[string]ed25519.PublicKey{}
 	for _, k := range doc.Keys {
-		if k.Kty != "OKP" || k.Crv != "Ed25519" || k.Kid == "" {
+		if k.Kty != "OKP" || k.Crv != "Ed25519" || k.Kid == "" ||
+			k.Alg != "" && k.Alg != "EdDSA" && k.Alg != "Ed25519" || k.Use != "" && k.Use != "sig" {
 			continue
 		}
 		x, err := base64.RawURLEncoding.DecodeString(k.X)
@@ -325,5 +304,5 @@ func (v *Verifier) fetch() (*keySet, error) {
 	if len(keys) == 0 {
 		return nil, errors.New("jwks: no Ed25519 keys")
 	}
-	return &keySet{keys: keys, fetchedAt: v.Now()}, nil
+	return keys, nil
 }

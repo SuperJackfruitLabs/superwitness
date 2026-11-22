@@ -113,11 +113,23 @@ a scope today: `POST /v1/runs` needs `runs:write`, from a service principal
 needs `transcripts:read` ([Transcripts](/use/transcripts/#who-may-read-content)). A `scope`
 claim that is not a string makes the token invalid.
 
-Under the organization plane (`SW_ORG_PLANE_ISSUER` set), the issuer is that exact value, the
-keys come from `SW_ORG_PLANE_JWKS_URL`, `sub` must be a `prn_` id, and `org` and `ent` must be
-present in place of `tenant`. SuperWitness reads `scope` only from agent and service tokens. A
-token whose `ent` claim lacks `superwitness` is answered
-`403 {"error":"product_not_enabled","org":"org_…"}`.
+Under the organization plane (`SW_ORG_PLANE_ISSUER` set), SuperWitness follows the suite's
+access-token rules, the same in every product's verifier and tested against treaty's signed token
+vectors. The issuer is that exact value and the keys come from `SW_ORG_PLANE_JWKS_URL`; only
+Ed25519 keys are used, and a token must name one by `kid`. It accepts a token only when:
+
+- it is an EdDSA JWT whose audience (`aud`) is, or includes, `SW_PUBLIC_URL`;
+- `exp` and `iat` are present, `exp` has not passed, and neither `iat` nor a `nbf` is in the
+  future, each with 30 seconds of clock leeway; and it lives at most 300 seconds (`exp - iat`);
+- it carries `jti`, `principalKind` (`human`, `agent` or `service`), `org` and `ent` in place of
+  `tenant`, and the control pair: `mayDispatch`, a list of `prn_` ids (any other value refuses the
+  token), and `mayGrantReach`, a boolean;
+- `sub` and `org` follow the id grammar exactly: `prn_` or `org_` and 20 lowercase hex characters;
+- every optional claim it carries (`act`, `email`, `email_verified`, `scope`, `amr`, `orgRole`,
+  `client_id`, `azp`, `sid`) has its type.
+
+SuperWitness reads `scope` only from agent and service tokens. A token whose `ent` claim lacks
+`superwitness` is answered `403 {"error":"product_not_enabled","org":"org_…"}`.
 
 Every such principal is admitted; which principals can get a token for SuperWitness's audience
 is decided at the hub. The principal kind decides how its verdicts are recorded: their
