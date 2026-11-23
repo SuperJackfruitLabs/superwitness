@@ -40,11 +40,11 @@ still works when you have its link.
 | `started_at`, `ended_at` | no | RFC 3339 timestamps, or `null` when not yet known |
 | `reported_at` | yes | RFC 3339: when the source produced this report |
 
-:::caution[On main, not yet released]
-`stage_key` and `card_id`, and the `stage_key` filter on [listing runs](#listing-runs), are on
-`main` and not in v0.0.12, the latest release. A v0.0.12 server refuses a report that carries
-either field (422 `invalid_report`, unknown field) and ignores a `stage_key` query. Leave both
-fields out when reporting to a release older than the one that ships them. SuperPipeline sends
+:::note[Since v0.0.13]
+`stage_key` and `card_id`, and the `stage_key` filter on [listing runs](#listing-runs), shipped in
+v0.0.13. A v0.0.12 or older server refuses a report that carries either field (422
+`invalid_report`, unknown field) and ignores a `stage_key` query. Leave both fields out when
+reporting to a release older than v0.0.13. SuperPipeline sends
 them only when its `SUPERWITNESS_REPORT_STAGE` is set.
 :::
 
@@ -121,7 +121,7 @@ the run when it has not started, then by `source` and `external_ref`.
 | `scope` | only runs in this scope id |
 | `status` | only runs with this status; repeat it for several |
 | `executor` | only runs this principal executed |
-| `stage_key` | only runs reported with this `stage_key`; with `scope`, one stage's history on one board. On `main`, not yet released |
+| `stage_key` | only runs reported with this `stage_key`; with `scope`, one stage's history on one board. Since v0.0.13 |
 | `since`, `until` | RFC 3339; runs whose start (or first sighting) is at or after `since` and before `until` |
 | `needs_verdict` | `true`: finished runs (`succeeded`, `failed`, `cancelled`) that no verdict names yet |
 | `cursor` | `next_cursor` from the previous page |
@@ -150,7 +150,7 @@ the run when it has not started, then by `source` and `external_ref`.
   `external_ref` that is not `<board>/<run>`, cannot be a verdict's subject yet: it is refused
   400 `invalid_subject`.
 - `stage_key` and `card_id` are as last reported, or `null` when the newest report left them out.
-  On `main`, not yet released: v0.0.12 answers neither.
+  Since v0.0.13: v0.0.12 answers neither.
 - `latest_verdict` is the newest verdict on the run that no other verdict supersedes, or `null`.
   Verdicts on the run's attempts do not count.
 - `counts` totals every status for the same filter without `status`, so a view can show its tabs.
