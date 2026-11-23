@@ -7,6 +7,8 @@ and the release notes quote that section.
 
 ## Unreleased
 
+## v0.0.13 — 2026-11-23
+
 ### Added
 
 - A run report may carry two optional fields, `stage_key` and `card_id` (1 to 128 characters
@@ -27,6 +29,14 @@ and the release notes quote that section.
   or when an optional claim such as `email_verified` has the wrong type. JWKS keys whose `alg` is
   not EdDSA or whose `use` is not `sig` are ignored, under either issuer. The hub's tokens are
   checked as before.
+
+## v0.0.12 — 2026-11-02
+
+v0.0.9 to v0.0.12 were released before this file was stamped; their notes are on the GitHub
+releases. This entry was under Unreleased when v0.0.12 was tagged.
+
+### Changed
+
 - Code-quality checks for contributors, with no change to what superwitness does:
   golangci-lint (pinned) in `make lint` and type-aware oxlint (pinned) for the web app, each with a
   per-rule ratchet, and an architecture test that holds file and package size limits and the
