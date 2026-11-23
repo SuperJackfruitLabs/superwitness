@@ -10,7 +10,7 @@
     "check:frame": "node scripts/check-frame.mjs"
   },
   "dependencies": {
-    "@astrojs/sitemap": "^3.7.4",
+    "@astrojs/sitemap": "^3.7.6",
     "@superjackfruitlabs/vibekit-frame": "^0.0.18",
     "@superjackfruitlabs/vibekit-ui": "^0.0.21",
     "astro": "^7.3.2",
