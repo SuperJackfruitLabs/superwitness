@@ -60,6 +60,13 @@ The conventions also say which keys each span must carry (a `dispatch` also carr
 and `dispatch.status`, for instance). That is for producers to test: a span missing a key is still
 read and shown, never refused.
 
+The conventions also give each key its type, and SuperWitness serves a span's attributes in it. A
+store's Jaeger API may send every tag as a string, numbers included (VictoriaTraces does), so a tag
+the store types `int64`, `float64` or `bool` is read as that type, and any other tag whose key the
+conventions name is read as their type: `acp.seq_from` `"3"` is served as `3`. A value that does
+not read as its type (`"three"` for an `int`) and a key the conventions do not name are served as
+the store sent them.
+
 ### Trace context between products
 
 For a run to land in one trace, each hop must continue the caller's trace context. This is the

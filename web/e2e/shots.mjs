@@ -120,10 +120,10 @@ const hub = (id, parent, name, start, ms, attrs = {}) => ({ trace_id: TR, span_i
 const spans = [
   hub("7a1c9e04b2d35f60", undefined, "dispatch", 0, 300000, { "board.id": "brd_01", "card.id": "crd_01" }),
   hub("1f2e3d4c5b6a7980", "7a1c9e04b2d35f60", "attempt", 2, 296000, { "harness.name": "hermes" }),
-  hub("2a3b4c5d6e7f8091", "1f2e3d4c5b6a7980", "turn", 4.5, 290000, { "acp.seq_from": "1", "acp.seq_to": "9" }),
-  hub("3b4c5d6e7f809102", "2a3b4c5d6e7f8091", "tool_call", 6, 1200, { "acp.seq_from": "3", "acp.seq_to": "4", "tool.kind": "read", "tool.status": "completed" }),
-  hub("4c5d6e7f80910213", "2a3b4c5d6e7f8091", "permission", 114, 4000, { "acp.seq_from": "5", "acp.seq_to": "6", "permission.auto": "false" }),
-  hub("00f067aa0ba902bc", "2a3b4c5d6e7f8091", "tool_call", 182, 800, { "acp.seq_from": "7", "acp.seq_to": "8", "tool.kind": "edit", "tool.status": "failed", "otel.status_code": "ERROR" }),
+  hub("2a3b4c5d6e7f8091", "1f2e3d4c5b6a7980", "turn", 4.5, 290000, { "acp.seq_from": 1, "acp.seq_to": 9 }),
+  hub("3b4c5d6e7f809102", "2a3b4c5d6e7f8091", "tool_call", 6, 1200, { "acp.seq_from": 3, "acp.seq_to": 4, "tool.kind": "read", "tool.status": "completed" }),
+  hub("4c5d6e7f80910213", "2a3b4c5d6e7f8091", "permission", 114, 4000, { "acp.seq_from": 5, "acp.seq_to": 6, "permission.auto": "false" }),
+  hub("00f067aa0ba902bc", "2a3b4c5d6e7f8091", "tool_call", 182, 800, { "acp.seq_from": 7, "acp.seq_to": 8, "tool.kind": "edit", "tool.status": "failed", "otel.status_code": "ERROR" }),
   { trace_id: "9c8b7a6f5e4d3c2b1a0f9e8d7c6b5a49", span_id: "5d6e7f8091021324", name: "POST /v1/boards/:id/runs/:runId/heartbeat", service: "superpipeline-api", start: at(288), duration_ms: 12, attributes: { "http.status_code": "200" } },
 ];
 const logs = [
