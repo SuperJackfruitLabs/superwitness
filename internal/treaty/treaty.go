@@ -9,6 +9,9 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
+	"math"
+	"slices"
+	"strconv"
 	"strings"
 )
 
@@ -122,10 +125,90 @@ type Conventions struct {
 	Logs       map[string]Signal    `json:"logs"`
 }
 
-// Attribute is one attribute key's type: string, int, …
+// Attribute is one attribute key's type (string, int, double or boolean), the values a string
+// may take when the conventions list them, and the least a number may be.
 type Attribute struct {
-	Type string   `json:"type"`
-	Enum []string `json:"enum"`
+	Type    string   `json:"type"`
+	Enum    []string `json:"enum"`
+	Minimum *float64 `json:"minimum"`
+}
+
+// Admits reports whether v, a value as JSON decodes it (string, bool, float64 or json.Number) or
+// as Coerce returns it (int64), is of the attribute's type, on its list and at least its minimum.
+// The conventions' cases hold it to their verdicts.
+func (a Attribute) Admits(v any) bool {
+	switch a.Type {
+	case "string":
+		s, ok := v.(string)
+		return ok && (len(a.Enum) == 0 || slices.Contains(a.Enum, s))
+	case "boolean":
+		_, ok := v.(bool)
+		return ok
+	case "int", "double":
+		f, ok := number(v)
+		if !ok || (a.Type == "int" && f != math.Trunc(f)) {
+			return false
+		}
+		return a.Minimum == nil || f >= *a.Minimum
+	}
+	return false
+}
+
+// Coerce returns v as the attribute's type when v is text (or a number for a string attribute)
+// that reads as one: "3" is 3 for an int, "true" is true for a boolean, 3 is "3" for a string. A
+// value that does not read as the type, or an attribute of a type Coerce does not know, comes
+// back unchanged: telemetry is best-effort, so a reader shows what the producer sent.
+func (a Attribute) Coerce(v any) any {
+	return CoerceTo(a.Type, v)
+}
+
+// CoerceTo is Coerce for a type named string, int, double or boolean.
+func CoerceTo(typ string, v any) any {
+	s, isText := v.(string)
+	if n, ok := v.(json.Number); ok {
+		s, isText = n.String(), true
+	}
+	switch typ {
+	case "string":
+		switch x := v.(type) {
+		case json.Number:
+			return x.String()
+		case bool:
+			return strconv.FormatBool(x)
+		case float64:
+			return strconv.FormatFloat(x, 'f', -1, 64)
+		}
+	case "int":
+		if isText {
+			if n, err := strconv.ParseInt(s, 10, 64); err == nil {
+				return n
+			}
+		}
+	case "double":
+		if isText {
+			if f, err := strconv.ParseFloat(s, 64); err == nil && !math.IsInf(f, 0) && !math.IsNaN(f) {
+				return f
+			}
+		}
+	case "boolean":
+		if _, isNumber := v.(json.Number); isText && !isNumber && (s == "true" || s == "false") {
+			return s == "true"
+		}
+	}
+	return v
+}
+
+func number(v any) (float64, bool) {
+	switch x := v.(type) {
+	case int64:
+		return float64(x), true
+	case float64:
+		return x, true
+	case json.Number:
+		f, err := x.Float64()
+		return f, err == nil
+	}
+	return 0, false
 }
 
 // Signal is one span or log record: the service that emits it and the keys it carries.

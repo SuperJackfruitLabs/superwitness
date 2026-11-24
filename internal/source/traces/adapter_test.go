@@ -100,7 +100,7 @@ func TestListSpansMergesServices(t *testing.T) {
 	if spans[0].ParentSpanID != "" || spans[1].ParentSpanID != "00f067aa0ba902b7" {
 		t.Errorf("parents = %q %q", spans[0].ParentSpanID, spans[1].ParentSpanID)
 	}
-	if spans[1].Attributes["acp.seq_from"] != "1" || spans[1].Attributes["attempt.id"] != "attempt_01" {
+	if spans[1].Attributes["acp.seq_from"] != int64(1) || spans[1].Attributes["attempt.id"] != "attempt_01" {
 		t.Errorf("attrs = %v", spans[1].Attributes)
 	}
 	if spans[0].Service != "agentpod-hub" || spans[3].Service != "superpipeline-api" {

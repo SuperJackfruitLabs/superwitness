@@ -75,3 +75,67 @@ func TestLoaders(t *testing.T) {
 		t.Fatalf("telemetry cases: %v", err)
 	}
 }
+
+// Admits gives the conventions' cases their verdicts: every value of a valid span case is of its
+// key's type, and every invalid case lacks a key its span requires or has a value Admits refuses.
+func TestAdmitsAgreesWithTheCases(t *testing.T) {
+	conv, err := TelemetryConventions()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cases, err := TelemetryExamples()
+	if err != nil {
+		t.Fatal(err)
+	}
+	refused := func(span string, body json.RawMessage) []string {
+		var attrs map[string]any
+		dec := json.NewDecoder(strings.NewReader(string(body)))
+		dec.UseNumber()
+		if err := dec.Decode(&attrs); err != nil {
+			t.Fatal(err)
+		}
+		var why []string
+		for _, k := range conv.Spans[span].Required {
+			if _, ok := attrs[k]; !ok {
+				why = append(why, "no "+k)
+			}
+		}
+		for k, v := range attrs {
+			if a, ok := conv.Attributes[k]; ok && !a.Admits(v) {
+				why = append(why, k)
+			}
+		}
+		return why
+	}
+	for span, c := range cases.Spans {
+		for name, body := range c.Valid {
+			if why := refused(span, body); len(why) > 0 {
+				t.Errorf("%s %q is valid, but refused for %v", span, name, why)
+			}
+		}
+		for _, inv := range c.Invalid {
+			if len(refused(span, inv.Body)) == 0 {
+				t.Errorf("%s %q is invalid, but admitted", span, inv.Why)
+			}
+		}
+	}
+}
+
+func TestCoerce(t *testing.T) {
+	for _, c := range []struct {
+		typ  string
+		in   any
+		want any
+	}{
+		{"int", "3", int64(3)}, {"int", json.Number("3"), int64(3)}, {"int", "-1", int64(-1)},
+		{"int", "1.5", "1.5"}, {"int", "three", "three"}, {"int", "", ""}, {"int", true, true},
+		{"double", "0.25", 0.25}, {"double", "NaN", "NaN"}, {"double", "1e999", "1e999"},
+		{"boolean", "true", true}, {"boolean", "false", false}, {"boolean", "1", "1"}, {"boolean", "TRUE", "TRUE"},
+		{"string", json.Number("42"), "42"}, {"string", true, "true"}, {"string", "x", "x"},
+		{"string[]", "x", "x"},
+	} {
+		if got := CoerceTo(c.typ, c.in); got != c.want {
+			t.Errorf("CoerceTo(%s, %#v) = %#v, want %#v", c.typ, c.in, got, c.want)
+		}
+	}
+}

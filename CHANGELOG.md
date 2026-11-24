@@ -33,6 +33,17 @@ and the release notes quote that section.
 - The trace and log queries use only attribute keys the telemetry conventions name, and a test
   holds them there. A span missing a key the conventions require is still shown.
 
+### Fixed
+
+- Span attributes are served in the types the suite's telemetry conventions give them. A trace
+  store's Jaeger API may send every tag as a string (VictoriaTraces does, numbers included), so
+  `run.epoch`, `acp.seq_from` and `acp.seq_to` reached `/spans` and the run report as text and
+  failed the conventions' `int`. Each tag the store types `int64`, `float64` or `bool` is now read
+  as that type, and any other tag whose key the conventions name as the conventions' type
+  (`int`, `double`, `boolean`, `string`). A value that does not read as its type, and a key the
+  conventions do not name, is served as the store sent it; a span is never dropped over one.
+  Span `attributes` values are therefore strings, numbers or booleans, no longer only strings.
+
 ## v0.0.13 — 2026-11-23
 
 ### Added
