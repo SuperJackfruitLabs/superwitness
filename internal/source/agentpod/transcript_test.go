@@ -69,7 +69,7 @@ func TestTranscriptPageLeavesOutWhatIsUnset(t *testing.T) {
 }
 
 func TestTranscriptItemRequest(t *testing.T) {
-	srv, seen := recordingHub(t, 200, `{"session_id":"acps_01","item":{"kind":"tool_call","seq_from":7,"seq_to":8,"redactions":0}}`)
+	srv, seen := recordingHub(t, 200, `{"session_id":"acps_01","item":{"kind":"tool_call","id":"call_7","seq_from":7,"seq_to":8,"title":"read","tool_kind":"read","status":"completed","input":{},"output":{"content":[],"raw":null},"redactions":0}}`)
 	a := New(srv.URL, &auth.StaticTokenSource{Value: "tok-hub"}, nil)
 	if _, st := a.TranscriptItem(context.Background(), source.ItemQuery{SessionID: "acps_01", SeqFrom: 7, Full: true, OnBehalfOf: "prn_human01"}); st != source.StatusOK {
 		t.Fatalf("status %s", st)
@@ -90,7 +90,7 @@ func TestTranscriptItemRequest(t *testing.T) {
 }
 
 func TestTranscriptItemForwardsTheRangeItWasShownIn(t *testing.T) {
-	srv, seen := recordingHub(t, 200, `{"session_id":"acps_01","item":{"kind":"tool_call","seq_from":3,"seq_to":4,"redactions":0}}`)
+	srv, seen := recordingHub(t, 200, `{"session_id":"acps_01","item":{"kind":"other","seq":3,"type":"usage_update","redactions":0}}`)
 	a := New(srv.URL, &auth.StaticTokenSource{Value: "tok-hub"}, nil)
 	if _, st := a.TranscriptItem(context.Background(), source.ItemQuery{SessionID: "acps_01", SeqFrom: 3, Full: true, RangeFrom: i64(3), RangeTo: i64(4)}); st != source.StatusOK {
 		t.Fatalf("status %s", st)
@@ -111,6 +111,8 @@ func TestTranscriptStatuses(t *testing.T) {
 	}{
 		{"ok", 200, pageBody, source.StatusOK, false},
 		{"200 that is not JSON", 200, "<html>", source.StatusUnavailable, false},
+		{"200 that is not a page", 200, `{"session_id":"acps_01","items":[]}`, source.StatusUnavailable, false},
+		{"a page of another session", 200, strings.Replace(pageBody, "acps_01", "acps_02", 1), source.StatusUnavailable, false},
 		{"the hub's not found", 404, `{"error":"not_found"}`, source.StatusNotFound, false},
 		{"bare 404: the route is not deployed", 404, "404 page not found", source.StatusUnavailable, false},
 		{"too large", 413, `{"error":"item_too_large"}`, source.StatusTooLarge, false},

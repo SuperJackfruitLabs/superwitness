@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"slices"
 	"strings"
 	"testing"
@@ -20,6 +19,7 @@ import (
 	"github.com/SuperJackfruitLabs/superwitness/internal/runs"
 	"github.com/SuperJackfruitLabs/superwitness/internal/source"
 	"github.com/SuperJackfruitLabs/superwitness/internal/source/fake"
+	"github.com/SuperJackfruitLabs/superwitness/internal/treaty"
 	"github.com/SuperJackfruitLabs/superwitness/internal/verdicts"
 )
 
@@ -29,17 +29,18 @@ func mcpServer(t *testing.T) *httptest.Server {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fixtureBytes, err := os.ReadFile("../source/testdata/execution-evidence-v1.json")
+	corpus, err := treaty.Examples("execution-evidence.v1")
 	if err != nil {
 		t.Fatal(err)
 	}
-	var corpus struct {
-		Success []struct{ Value source.ExecutionEvidence }
-	}
-	if err := json.Unmarshal(fixtureBytes, &corpus); err != nil {
+	fixtureBytes, err := corpus.Case("empty-unreported")
+	if err != nil {
 		t.Fatal(err)
 	}
-	execution := corpus.Success[0].Value
+	var execution source.ExecutionEvidence
+	if err := json.Unmarshal(fixtureBytes, &execution); err != nil {
+		t.Fatal(err)
+	}
 	execution.Contributors.Closure = "complete"
 	execution.Binding.Run.ID = fake.DevRun
 	execution.Task.BoardID = fake.DevBoard

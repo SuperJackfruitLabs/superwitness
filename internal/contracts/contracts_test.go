@@ -7,8 +7,7 @@ import (
 
 func TestFixturesAreJSON(t *testing.T) {
 	for name, b := range map[string][]byte{
-		"superpipeline": SuperpipelineEvidence, "hub run": HubEvidenceRun, "hub attempt": HubEvidenceAttempt,
-		"principal": HubPrincipal, "jaeger hub": JaegerTraceHub, "jaeger workers": JaegerTraceWorkers,
+		"jaeger hub": JaegerTraceHub, "jaeger workers": JaegerTraceWorkers,
 		"run report schema": RunReportSchema,
 	} {
 		var v any

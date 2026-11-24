@@ -33,7 +33,7 @@ func (a *Adapter) TranscriptPage(ctx context.Context, q source.TranscriptQuery) 
 	if len(v) > 0 {
 		p += "?" + v.Encode()
 	}
-	return a.getContent(ctx, p, q.OnBehalfOf, maxTranscriptPage)
+	return a.getContent(ctx, p, q.OnBehalfOf, maxTranscriptPage, func(b []byte) bool { return validPage(b, q.SessionID) })
 }
 
 func (a *Adapter) TranscriptItem(ctx context.Context, q source.ItemQuery) (json.RawMessage, source.SourceStatus) {
@@ -51,12 +51,13 @@ func (a *Adapter) TranscriptItem(ctx context.Context, q source.ItemQuery) (json.
 	if len(v) > 0 {
 		p += "?" + v.Encode()
 	}
-	return a.getContent(ctx, p, q.OnBehalfOf, maxTranscriptItem)
+	return a.getContent(ctx, p, q.OnBehalfOf, maxTranscriptItem, func(b []byte) bool { return validItemResponse(b, q.SessionID) })
 }
 
-// getContent GETs a transcript route and returns the body exactly as the hub sent it. The body
-// is session content: nothing here logs it, or any error body, and nothing keeps it.
-func (a *Adapter) getContent(ctx context.Context, path, onBehalfOf string, limit int64) (json.RawMessage, source.SourceStatus) {
+// getContent GETs a transcript route and returns the body exactly as the hub sent it, once valid
+// says it has the route's shape. The body is session content: nothing here logs it, or any
+// error body, and nothing keeps it.
+func (a *Adapter) getContent(ctx context.Context, path, onBehalfOf string, limit int64, valid func([]byte) bool) (json.RawMessage, source.SourceStatus) {
 	tok, err := a.Tokens.Token(ctx)
 	if err != nil {
 		return nil, source.TokenStatus(ctx, err)
@@ -81,7 +82,7 @@ func (a *Adapter) getContent(ctx context.Context, path, onBehalfOf string, limit
 	}
 	switch resp.StatusCode {
 	case http.StatusOK:
-		if int64(len(body)) > limit || !json.Valid(body) {
+		if int64(len(body)) > limit || !json.Valid(body) || !valid(body) {
 			return nil, source.StatusUnavailable
 		}
 		return body, source.StatusOK
