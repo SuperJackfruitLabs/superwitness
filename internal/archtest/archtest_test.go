@@ -42,7 +42,7 @@ var oversizePackages = map[string]int{}
 // place here (or in testSupport).
 var layers = [][]string{
 	// Foundation: no imports from this module.
-	{"internal/auth", "internal/config", "internal/contracts", "internal/ratelimit", "internal/web"},
+	{"internal/auth", "internal/config", "internal/contracts", "internal/ratelimit", "internal/treaty", "internal/web"},
 	// The source contract: what every source of runs, traces, logs and evidence implements.
 	{"internal/source"},
 	// The sources themselves.

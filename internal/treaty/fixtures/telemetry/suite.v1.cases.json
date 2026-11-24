@@ -1,0 +1,334 @@
+{
+  "description": "Cases for schemas/telemetry/suite.v1.json: attributes per span and log record as a producer emits them (OpenTelemetry values: an int is a JSON integer), and trace-context carriers. The dispatch, attempt and turn bodies follow the hub's recorded trace (superwitness internal/contracts/jaeger_trace_hub.json).",
+  "spans": {
+    "dispatch": {
+      "valid": {
+        "a completed dispatch": {
+          "run.id": "run_01",
+          "board.id": "brd_01",
+          "card.id": "crd_01",
+          "external.source": "superpipeline",
+          "station.id": "stn_01",
+          "dispatch.status": "reported"
+        },
+        "with the observed epoch and its attempt": {
+          "run.id": "run_01",
+          "board.id": "brd_01",
+          "card.id": "crd_01",
+          "external.source": "superpipeline",
+          "station.id": "stn_01",
+          "dispatch.status": "reported",
+          "run.epoch": 2,
+          "attempt.id": "attempt_01",
+          "fingerprint.digest": "sha256:c1a88701c4409ae0eafb5f51ec7dabbe5f18037c1256baa045ab8cabf7ed3426",
+          "dispatch.observation": "strict-resume",
+          "hub.session.id": "hs_1"
+        },
+        "a dispatch that threw": {
+          "run.id": "run_01",
+          "board.id": "brd_01",
+          "card.id": "crd_01",
+          "external.source": "superpipeline",
+          "station.id": "stn_01",
+          "dispatch.status": "threw"
+        }
+      },
+      "invalid": [
+        {
+          "why": "no run.id",
+          "body": {
+            "board.id": "brd_01",
+            "card.id": "crd_01",
+            "external.source": "superpipeline",
+            "station.id": "stn_01",
+            "dispatch.status": "reported"
+          }
+        },
+        {
+          "why": "no dispatch.status (the span never ended)",
+          "body": {
+            "run.id": "run_01",
+            "board.id": "brd_01",
+            "card.id": "crd_01",
+            "external.source": "superpipeline",
+            "station.id": "stn_01"
+          }
+        },
+        {
+          "why": "run.epoch as text",
+          "body": {
+            "run.id": "run_01",
+            "board.id": "brd_01",
+            "card.id": "crd_01",
+            "external.source": "superpipeline",
+            "station.id": "stn_01",
+            "dispatch.status": "reported",
+            "run.epoch": "2"
+          }
+        }
+      ]
+    },
+    "attempt": {
+      "valid": {
+        "a completed attempt": {
+          "attempt.id": "attempt_01",
+          "station.id": "stn_01",
+          "fingerprint.digest": "sha256:c1a88701c4409ae0eafb5f51ec7dabbe5f18037c1256baa045ab8cabf7ed3426",
+          "harness.name": "hermes",
+          "acp.session_id": "acps_01",
+          "acp.seq_from": 1,
+          "acp.seq_to": 9,
+          "attempt.state": "completed",
+          "run.id": "run_01"
+        },
+        "a failed attempt with no run": {
+          "attempt.id": "attempt_01",
+          "station.id": "stn_01",
+          "fingerprint.digest": "sha256:c1a88701c4409ae0eafb5f51ec7dabbe5f18037c1256baa045ab8cabf7ed3426",
+          "harness.name": "hermes",
+          "acp.session_id": "acps_01",
+          "acp.seq_from": 1,
+          "acp.seq_to": 9,
+          "attempt.state": "failed"
+        }
+      },
+      "invalid": [
+        {
+          "why": "no attempt.id",
+          "body": {
+            "station.id": "stn_01",
+            "fingerprint.digest": "sha256:c1a88701c4409ae0eafb5f51ec7dabbe5f18037c1256baa045ab8cabf7ed3426",
+            "harness.name": "hermes",
+            "acp.session_id": "acps_01",
+            "acp.seq_from": 1,
+            "acp.seq_to": 9,
+            "attempt.state": "completed",
+            "run.id": "run_01"
+          }
+        },
+        {
+          "why": "acp.seq_from as text",
+          "body": {
+            "attempt.id": "attempt_01",
+            "station.id": "stn_01",
+            "fingerprint.digest": "sha256:c1a88701c4409ae0eafb5f51ec7dabbe5f18037c1256baa045ab8cabf7ed3426",
+            "harness.name": "hermes",
+            "acp.session_id": "acps_01",
+            "acp.seq_from": "1",
+            "acp.seq_to": 9,
+            "attempt.state": "completed",
+            "run.id": "run_01"
+          }
+        },
+        {
+          "why": "an attempt.state off the list",
+          "body": {
+            "attempt.id": "attempt_01",
+            "station.id": "stn_01",
+            "fingerprint.digest": "sha256:c1a88701c4409ae0eafb5f51ec7dabbe5f18037c1256baa045ab8cabf7ed3426",
+            "harness.name": "hermes",
+            "acp.session_id": "acps_01",
+            "acp.seq_from": 1,
+            "acp.seq_to": 9,
+            "attempt.state": "cancelled",
+            "run.id": "run_01"
+          }
+        },
+        {
+          "why": "a negative seq",
+          "body": {
+            "attempt.id": "attempt_01",
+            "station.id": "stn_01",
+            "fingerprint.digest": "sha256:c1a88701c4409ae0eafb5f51ec7dabbe5f18037c1256baa045ab8cabf7ed3426",
+            "harness.name": "hermes",
+            "acp.session_id": "acps_01",
+            "acp.seq_from": 1,
+            "acp.seq_to": -1,
+            "attempt.state": "completed",
+            "run.id": "run_01"
+          }
+        },
+        {
+          "why": "no harness.name",
+          "body": {
+            "attempt.id": "attempt_01",
+            "station.id": "stn_01",
+            "fingerprint.digest": "sha256:c1a88701c4409ae0eafb5f51ec7dabbe5f18037c1256baa045ab8cabf7ed3426",
+            "acp.session_id": "acps_01",
+            "acp.seq_from": 1,
+            "acp.seq_to": 9,
+            "attempt.state": "completed",
+            "run.id": "run_01"
+          }
+        }
+      ]
+    },
+    "turn": {
+      "valid": {
+        "a turn": {
+          "attempt.id": "attempt_01",
+          "station.id": "stn_01",
+          "fingerprint.digest": "sha256:c1a88701c4409ae0eafb5f51ec7dabbe5f18037c1256baa045ab8cabf7ed3426",
+          "acp.seq_from": 1,
+          "acp.seq_to": 9
+        },
+        "a turn that errored": {
+          "attempt.id": "attempt_01",
+          "station.id": "stn_01",
+          "fingerprint.digest": "sha256:c1a88701c4409ae0eafb5f51ec7dabbe5f18037c1256baa045ab8cabf7ed3426",
+          "acp.seq_from": 1,
+          "acp.seq_to": 9,
+          "run.id": "run_01",
+          "error.type": "timeout"
+        }
+      },
+      "invalid": [
+        {
+          "why": "no acp.seq_to",
+          "body": {
+            "attempt.id": "attempt_01",
+            "station.id": "stn_01",
+            "fingerprint.digest": "sha256:c1a88701c4409ae0eafb5f51ec7dabbe5f18037c1256baa045ab8cabf7ed3426",
+            "acp.seq_from": 1
+          }
+        },
+        {
+          "why": "a fractional seq",
+          "body": {
+            "attempt.id": "attempt_01",
+            "station.id": "stn_01",
+            "fingerprint.digest": "sha256:c1a88701c4409ae0eafb5f51ec7dabbe5f18037c1256baa045ab8cabf7ed3426",
+            "acp.seq_from": 1.5,
+            "acp.seq_to": 9
+          }
+        }
+      ]
+    },
+    "run_route": {
+      "valid": {
+        "a heartbeat": {
+          "run.id": "run_01",
+          "board.id": "brd_01",
+          "run.action": "heartbeat",
+          "http.route": "/v1/boards/:id/runs/:runId/:action",
+          "http.response.status_code": 200
+        },
+        "the run itself": {
+          "run.id": "run_01",
+          "board.id": "brd_01"
+        }
+      },
+      "invalid": [
+        {
+          "why": "no board.id",
+          "body": {
+            "run.id": "run_01"
+          }
+        }
+      ]
+    }
+  },
+  "logs": {
+    "run route": {
+      "valid": {
+        "one request": {
+          "level": "info",
+          "msg": "run route",
+          "run.id": "run_01",
+          "board.id": "brd_01",
+          "route": "/v1/boards/:id/runs/:runId/:action",
+          "run.action": "complete",
+          "method": "POST",
+          "status": 200,
+          "traceparent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
+        }
+      },
+      "invalid": [
+        {
+          "why": "no run.id",
+          "body": {
+            "msg": "run route",
+            "board.id": "brd_01"
+          }
+        },
+        {
+          "why": "a numeric run.id",
+          "body": {
+            "msg": "run route",
+            "run.id": 1,
+            "board.id": "brd_01"
+          }
+        }
+      ]
+    }
+  },
+  "propagation": {
+    "acp-meta-traceparent": {
+      "valid": {
+        "traceparent alone": {
+          "traceparent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
+        },
+        "with tracestate": {
+          "traceparent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
+          "tracestate": "vendor=1"
+        },
+        "a span not sampled": {
+          "traceparent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-00"
+        }
+      },
+      "invalid": [
+        {
+          "why": "no traceparent",
+          "body": {
+            "tracestate": "vendor=1"
+          }
+        },
+        {
+          "why": "garbage",
+          "body": {
+            "traceparent": "nope"
+          }
+        },
+        {
+          "why": "a zero trace id",
+          "body": {
+            "traceparent": "00-00000000000000000000000000000000-00f067aa0ba902b7-01"
+          }
+        },
+        {
+          "why": "a zero span id",
+          "body": {
+            "traceparent": "00-4bf92f3577b34da6a3ce929d0e0e4736-0000000000000000-01"
+          }
+        },
+        {
+          "why": "a version other than 00",
+          "body": {
+            "traceparent": "01-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
+          }
+        },
+        {
+          "why": "upper-case hex",
+          "body": {
+            "traceparent": "00-4BF92F3577B34DA6A3CE929D0E0E4736-00f067aa0ba902b7-01"
+          }
+        }
+      ]
+    },
+    "http-traceparent": {
+      "valid": {
+        "traceparent": {
+          "traceparent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
+        }
+      },
+      "invalid": [
+        {
+          "why": "a short span id",
+          "body": {
+            "traceparent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa-01"
+          }
+        }
+      ]
+    }
+  }
+}

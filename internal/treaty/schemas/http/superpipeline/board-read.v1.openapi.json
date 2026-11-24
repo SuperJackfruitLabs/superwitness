@@ -1,0 +1,2538 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "SuperPipeline board reads",
+    "version": "1",
+    "description": "What a service reads of a board: the board list, the board snapshot, one card and its attempts, comments, links and activities, and a run's evidence. Written from SuperPipeline's apps/api/src/service-routes.ts (the reads, `cards:read`), apps/api/src/routes/boards/evidence.ts (the evidence, `evidence:read`), board/pipeline.ts (the snapshot), board/run-history.ts, board/comments.ts, card-links.ts and db/catalog.ts. A person and a coordinator agent read the same paths and get the same bodies; this document contracts the service form, whose tenant comes from the token, so a board in another tenant is 404 BOARD_NOT_FOUND. Every refusal is error.v1. Bodies are open, a reader ignores properties it does not know, except the run evidence, which is closed: its C4 shape is frozen and its v1 shape is read strictly."
+  },
+  "x-treaty-error-envelope": "error.v1",
+  "paths": {
+    "/v1/boards": {
+      "get": {
+        "operationId": "listBoards",
+        "summary": "Every board in the token's tenant",
+        "security": [
+          {
+            "serviceToken": ["cards:read"]
+          }
+        ],
+        "x-treaty-error-codes": ["UNAUTHORIZED", "FORBIDDEN", "UNEXPECTED"],
+        "responses": {
+          "200": {
+            "description": "The boards, newest first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["boards"],
+                  "properties": {
+                    "boards": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/BoardSummary"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/Unexpected"
+          }
+        }
+      }
+    },
+    "/v1/boards/{boardId}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/boardId"
+        }
+      ],
+      "get": {
+        "operationId": "readBoard",
+        "summary": "The board snapshot",
+        "security": [
+          {
+            "serviceToken": ["cards:read"]
+          }
+        ],
+        "x-treaty-error-codes": [
+          "UNAUTHORIZED",
+          "FORBIDDEN",
+          "BOARD_NOT_FOUND",
+          "UNEXPECTED"
+        ],
+        "responses": {
+          "200": {
+            "description": "The whole board",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BoardSnapshot"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/Unexpected"
+          }
+        },
+        "description": "The read a placement service starts every pass with (its stages and cards), and the one a library reads a board's cards and references from. A board that is not this tenant's, or is not initialised, is BOARD_NOT_FOUND."
+      }
+    },
+    "/v1/boards/{boardId}/cards/{cardId}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/boardId"
+        },
+        {
+          "$ref": "#/components/parameters/cardId"
+        }
+      ],
+      "get": {
+        "operationId": "readCard",
+        "summary": "One card",
+        "security": [
+          {
+            "serviceToken": ["cards:read"]
+          }
+        ],
+        "x-treaty-error-codes": [
+          "UNAUTHORIZED",
+          "FORBIDDEN",
+          "BOARD_NOT_FOUND",
+          "CARD_NOT_FOUND",
+          "NOT_INITIALIZED",
+          "UNEXPECTED"
+        ],
+        "responses": {
+          "200": {
+            "description": "The card, under `card`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["card"],
+                  "properties": {
+                    "card": {
+                      "$ref": "#/components/schemas/CardView"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/Unexpected"
+          }
+        }
+      }
+    },
+    "/v1/boards/{boardId}/cards/{cardId}/attempts": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/boardId"
+        },
+        {
+          "$ref": "#/components/parameters/cardId"
+        }
+      ],
+      "get": {
+        "operationId": "listCardAttempts",
+        "summary": "Every run of a card",
+        "security": [
+          {
+            "serviceToken": ["cards:read"]
+          }
+        ],
+        "x-treaty-error-codes": [
+          "UNAUTHORIZED",
+          "FORBIDDEN",
+          "BOARD_NOT_FOUND",
+          "UNEXPECTED"
+        ],
+        "responses": {
+          "200": {
+            "description": "The card's runs, oldest first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["attempts"],
+                  "properties": {
+                    "attempts": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AttemptView"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/Unexpected"
+          }
+        },
+        "description": "A card the board does not have answers an empty list, not a refusal."
+      }
+    },
+    "/v1/boards/{boardId}/cards/{cardId}/comments": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/boardId"
+        },
+        {
+          "$ref": "#/components/parameters/cardId"
+        }
+      ],
+      "get": {
+        "operationId": "listCardComments",
+        "summary": "A card's comment thread",
+        "security": [
+          {
+            "serviceToken": ["cards:read"]
+          }
+        ],
+        "x-treaty-error-codes": [
+          "UNAUTHORIZED",
+          "FORBIDDEN",
+          "BOARD_NOT_FOUND",
+          "CARD_NOT_FOUND",
+          "NOT_INITIALIZED",
+          "UNEXPECTED"
+        ],
+        "responses": {
+          "200": {
+            "description": "Every comment, oldest first, deleted ones included with an empty body and `deletedAt` set",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["comments"],
+                  "properties": {
+                    "comments": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CommentView"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/Unexpected"
+          }
+        }
+      }
+    },
+    "/v1/boards/{boardId}/cards/{cardId}/links": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/boardId"
+        },
+        {
+          "$ref": "#/components/parameters/cardId"
+        }
+      ],
+      "get": {
+        "operationId": "listCardLinks",
+        "summary": "Every edge touching a card",
+        "security": [
+          {
+            "serviceToken": ["cards:read"]
+          }
+        ],
+        "x-treaty-error-codes": [
+          "UNAUTHORIZED",
+          "FORBIDDEN",
+          "BOARD_NOT_FOUND",
+          "UNEXPECTED"
+        ],
+        "responses": {
+          "200": {
+            "description": "The card's edges, from both stores",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CardLinks"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/Unexpected"
+          }
+        },
+        "description": "A card with no edges, or one the board does not have, answers two empty lists."
+      }
+    },
+    "/v1/boards/{boardId}/cards/{cardId}/activities": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/boardId"
+        },
+        {
+          "$ref": "#/components/parameters/cardId"
+        }
+      ],
+      "get": {
+        "operationId": "listCardActivities",
+        "summary": "A card's timeline, handoff and gates",
+        "security": [
+          {
+            "serviceToken": ["cards:read"]
+          }
+        ],
+        "x-treaty-error-codes": [
+          "UNAUTHORIZED",
+          "FORBIDDEN",
+          "BOARD_NOT_FOUND",
+          "UNEXPECTED"
+        ],
+        "responses": {
+          "200": {
+            "description": "The card's history",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CardActivities"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/Unexpected"
+          }
+        },
+        "description": "A card the board does not have answers empty lists and a null handoff."
+      }
+    },
+    "/v1/boards/{boardId}/runs/{runId}/evidence": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/evidenceBoardId"
+        },
+        {
+          "$ref": "#/components/parameters/runId"
+        }
+      ],
+      "get": {
+        "operationId": "readRunEvidence",
+        "summary": "One run as evidence (contract C4)",
+        "security": [
+          {
+            "serviceToken": ["evidence:read"]
+          }
+        ],
+        "x-treaty-error-codes": [
+          "UNAUTHORIZED",
+          "FORBIDDEN",
+          "BOARD_NOT_FOUND",
+          "RUN_NOT_FOUND",
+          "UNEXPECTED"
+        ],
+        "responses": {
+          "200": {
+            "description": "The run, its card, the gates that judged it and its usage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunEvidence"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/Unexpected"
+          }
+        },
+        "description": "Answered before any other board route: only a service token with `evidence:read` reads it, and it reads nothing else. Agents and people may not. The principal ids are filled from the catalogue."
+      }
+    },
+    "/v1/boards/{boardId}/runs/{runId}/evidence-v1": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/evidenceBoardId"
+        },
+        {
+          "$ref": "#/components/parameters/runId"
+        }
+      ],
+      "get": {
+        "operationId": "readRunEvidenceV1",
+        "summary": "One run as versioned evidence (superpipeline-run-evidence/v1)",
+        "security": [
+          {
+            "serviceToken": ["evidence:read"]
+          }
+        ],
+        "x-treaty-error-codes": [
+          "UNAUTHORIZED",
+          "FORBIDDEN",
+          "BOARD_NOT_FOUND",
+          "RUN_NOT_FOUND",
+          "UNEXPECTED"
+        ],
+        "responses": {
+          "200": {
+            "description": "The C4 evidence under `pipeline`, with provenance, usage and the executor's evidence path",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunEvidenceV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/Unexpected"
+          }
+        },
+        "description": "An explicit opt-in beside `\u2026/evidence`, on the same credential and refusals. A reader that finds another `schema_version` refuses it rather than reading it as v1."
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "serviceToken": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "An Organization-plane access token for a service principal (`principalKind: service`) of a workspace mapped to a SuperPipeline tenant: `cards:read` for the board and card reads, `evidence:read` for a run's evidence. No valid service token is 401 UNAUTHORIZED; a scope it lacks is 403 FORBIDDEN."
+      }
+    },
+    "parameters": {
+      "boardId": {
+        "name": "boardId",
+        "in": "path",
+        "required": true,
+        "description": "The board. The service routes match only brd_ and 16 lowercase hex digits.",
+        "schema": {
+          "type": "string",
+          "pattern": "^brd_[0-9a-f]{16}$"
+        }
+      },
+      "cardId": {
+        "name": "cardId",
+        "in": "path",
+        "required": true,
+        "description": "The card. The service routes match only card_ and 16 lowercase hex digits.",
+        "schema": {
+          "type": "string",
+          "pattern": "^card_[0-9a-f]{16}$"
+        }
+      },
+      "evidenceBoardId": {
+        "name": "boardId",
+        "in": "path",
+        "required": true,
+        "description": "The board the run is on. Any path segment: a board that is not this tenant's, or not initialised, is BOARD_NOT_FOUND.",
+        "schema": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "runId": {
+        "name": "runId",
+        "in": "path",
+        "required": true,
+        "description": "The run.",
+        "schema": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "responses": {
+      "Unauthorized": {
+        "description": "No valid service token for a mapped workspace (UNAUTHORIZED)",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../../common/error.v1.json"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "The token lacks the scope (FORBIDDEN)",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../../common/error.v1.json"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "No such board in this tenant (BOARD_NOT_FOUND), card (CARD_NOT_FOUND, NOT_INITIALIZED) or run (RUN_NOT_FOUND)",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../../common/error.v1.json"
+            }
+          }
+        }
+      },
+      "Unexpected": {
+        "description": "A failure nobody planned for (UNEXPECTED)",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../../common/error.v1.json"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "ActivityView": {
+        "type": "object",
+        "description": "One durable entry in a card's timeline (ActivityView, board/views.ts). Ephemeral activities are not kept.",
+        "required": [
+          "seq",
+          "runId",
+          "type",
+          "ts",
+          "body",
+          "action",
+          "parameter",
+          "result",
+          "signal"
+        ],
+        "properties": {
+          "seq": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "runId": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "ts": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "body": {
+            "type": ["string", "null"]
+          },
+          "action": {
+            "type": ["string", "null"]
+          },
+          "parameter": {
+            "description": "Any JSON value, or null."
+          },
+          "result": {
+            "description": "Any JSON value, or null."
+          },
+          "signal": {
+            "type": ["string", "null"]
+          }
+        }
+      },
+      "ApprovalDetail": {
+        "type": "object",
+        "required": ["version", "summary", "reason", "files", "digest"],
+        "properties": {
+          "version": {
+            "const": 1
+          },
+          "summary": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "reason": {
+            "type": ["string", "null"],
+            "maxLength": 300
+          },
+          "files": {
+            "type": "array",
+            "maxItems": 16,
+            "items": {
+              "type": "object",
+              "required": ["path", "change", "bytes", "preview"],
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 512
+                },
+                "change": {
+                  "enum": ["create", "edit", "delete"]
+                },
+                "bytes": {
+                  "type": ["integer", "null"],
+                  "minimum": 0
+                },
+                "preview": {
+                  "type": ["string", "null"],
+                  "maxLength": 1200
+                },
+                "preview_truncated": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          "digest": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        }
+      },
+      "ApprovalSubjectEnvelope": {
+        "type": "object",
+        "description": "A subject as a decision envelope carries it (gate.v2 \u00a73): identity, expiry and the bounded preview.",
+        "required": [
+          "id",
+          "digest",
+          "schema",
+          "revision",
+          "expiresAt",
+          "preview",
+          "previewComplete"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "digest": {
+            "type": "string"
+          },
+          "schema": {
+            "type": "string"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "expiresAt": {
+            "$ref": "#/components/schemas/NullableTimestamp"
+          },
+          "preview": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PreviewBlock"
+            }
+          },
+          "previewComplete": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApprovalSubjectView": {
+        "type": "object",
+        "description": "A frozen approval subject with its canonical payload (ApprovalSubjectView).",
+        "required": ["id", "digest", "schema", "revision", "canonical"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "digest": {
+            "type": "string"
+          },
+          "schema": {
+            "type": "string"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "canonical": {
+            "description": "Any JSON value: the kind's canonical payload."
+          }
+        }
+      },
+      "AttemptView": {
+        "type": "object",
+        "required": [
+          "runId",
+          "cardId",
+          "stageKey",
+          "agentId",
+          "status",
+          "outcome",
+          "startedAt",
+          "endedAt",
+          "costUsd",
+          "model",
+          "profileKey",
+          "completion",
+          "handoff",
+          "failureReason"
+        ],
+        "properties": {
+          "runId": {
+            "type": "string"
+          },
+          "cardId": {
+            "type": "string"
+          },
+          "stageKey": {
+            "type": "string"
+          },
+          "agentId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "startedAt": {
+            "type": "string"
+          },
+          "endedAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "costUsd": {
+            "type": "number"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "profileKey": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "completion": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "handoff": {
+            "$ref": "#/components/schemas/JsonValue"
+          },
+          "failureReason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "BoardSnapshot": {
+        "type": "object",
+        "description": "The whole board as one read (BoardSnapshot, board/views.ts; built by snapshot in board/pipeline.ts): its stages, every card, the pending gates and questions, every reference, usage, and its settings. A board that is not initialised is 404 BOARD_NOT_FOUND, so `boardId` is always a string here. `intro` and `decisionTimeout` are present only when set.",
+        "required": [
+          "boardId",
+          "tenantId",
+          "name",
+          "stages",
+          "cards",
+          "gates",
+          "elicitations",
+          "references",
+          "usage",
+          "github",
+          "stale"
+        ],
+        "properties": {
+          "boardId": {
+            "type": "string"
+          },
+          "tenantId": {
+            "type": ["string", "null"]
+          },
+          "name": {
+            "type": ["string", "null"]
+          },
+          "stages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StageDef"
+            },
+            "description": "In board order. A placement service reads each stage's `key`, `ownerKind`, `owner`, `requires` and `placement`."
+          },
+          "intro": {
+            "type": "object",
+            "required": ["lede", "composeHint"],
+            "properties": {
+              "lede": {
+                "type": "string"
+              },
+              "composeHint": {
+                "type": "string"
+              }
+            }
+          },
+          "cards": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CardView"
+            },
+            "description": "Every card, archived ones included (`archivedAt` set)."
+          },
+          "gates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GateView"
+            },
+            "description": "The pending gates on cards that are not archived, oldest first, each with its `summary`."
+          },
+          "elicitations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ElicitationView"
+            },
+            "description": "The questions agents are blocked on."
+          },
+          "references": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReferenceView"
+            },
+            "description": "Every reference on every card; a reader filters by `cardId`."
+          },
+          "usage": {
+            "$ref": "#/components/schemas/BoardUsage"
+          },
+          "github": {
+            "type": "object",
+            "required": [
+              "issueTrigger",
+              "webhookConfigured",
+              "webhookUrl",
+              "triggerGrantCount"
+            ],
+            "properties": {
+              "issueTrigger": {
+                "type": "boolean"
+              },
+              "webhookConfigured": {
+                "type": "boolean"
+              },
+              "webhookUrl": {
+                "type": "string"
+              },
+              "triggerGrantCount": {
+                "type": ["integer", "null"],
+                "minimum": 0,
+                "description": "How many principals the board's trigger grant names, never which; null when none is recorded."
+              }
+            }
+          },
+          "stale": {
+            "type": "object",
+            "required": ["enabled", "afterHours"],
+            "properties": {
+              "enabled": {
+                "type": "boolean"
+              },
+              "afterHours": {
+                "type": "number",
+                "minimum": 0
+              }
+            }
+          },
+          "decisionTimeout": {
+            "type": "object",
+            "properties": {
+              "remindAfterMinutes": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "escalateAfterMinutes": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          }
+        }
+      },
+      "BoardSummary": {
+        "type": "object",
+        "description": "One board in the token's tenant (listBoards, db/catalog.ts).",
+        "required": ["id", "name", "updatedAt"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^brd_[0-9a-f]{16}$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "$ref": "#/components/schemas/NullableTimestamp"
+          }
+        }
+      },
+      "BoardUsage": {
+        "type": "object",
+        "required": [
+          "totalCostUsd",
+          "estimatedCostUsd",
+          "budgetUsd",
+          "cardUsdCap",
+          "overBudget"
+        ],
+        "properties": {
+          "totalCostUsd": {
+            "type": "number",
+            "minimum": 0
+          },
+          "estimatedCostUsd": {
+            "type": "number",
+            "minimum": 0
+          },
+          "budgetUsd": {
+            "type": ["number", "null"]
+          },
+          "cardUsdCap": {
+            "type": ["number", "null"]
+          },
+          "overBudget": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CardActivities": {
+        "type": "object",
+        "description": "A card's history (getCardActivities, board/run-history.ts): its timeline oldest first, its current handoff, and every gate on it, decided ones included, with who decided and what they said.",
+        "required": ["activities", "handoff", "gates"],
+        "properties": {
+          "activities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActivityView"
+            }
+          },
+          "handoff": {
+            "$ref": "#/components/schemas/JsonValue"
+          },
+          "gates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GateView"
+            }
+          }
+        }
+      },
+      "CardLinks": {
+        "type": "object",
+        "description": "Every edge touching a card (cardLinksBody, card-links.ts): same-board `links` from the board, cross-board `externalLinks` from the catalogue. `enforced` is true only for an edge that can refuse a claim (`blocks`, `parent`); a cross-board edge is advisory, always false.",
+        "required": ["links", "externalLinks"],
+        "properties": {
+          "links": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "fromCardId",
+                "toCardId",
+                "kind",
+                "createdAt",
+                "createdBy",
+                "enforced"
+              ],
+              "properties": {
+                "fromCardId": {
+                  "type": "string"
+                },
+                "toCardId": {
+                  "type": "string"
+                },
+                "kind": {
+                  "$ref": "#/components/schemas/LinkKind"
+                },
+                "createdAt": {
+                  "$ref": "#/components/schemas/Timestamp"
+                },
+                "createdBy": {
+                  "type": ["string", "null"]
+                },
+                "enforced": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          "externalLinks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "fromBoardId",
+                "fromCardId",
+                "toBoardId",
+                "toCardId",
+                "kind",
+                "enforced",
+                "otherBoardName",
+                "otherCardTitle"
+              ],
+              "properties": {
+                "fromBoardId": {
+                  "type": "string"
+                },
+                "fromCardId": {
+                  "type": "string"
+                },
+                "toBoardId": {
+                  "type": "string"
+                },
+                "toCardId": {
+                  "type": "string"
+                },
+                "kind": {
+                  "$ref": "#/components/schemas/LinkKind"
+                },
+                "enforced": {
+                  "const": false
+                },
+                "otherBoardName": {
+                  "type": ["string", "null"],
+                  "description": "Null when the other board is not this tenant's, or is gone."
+                },
+                "otherCardTitle": {
+                  "type": ["string", "null"],
+                  "description": "Null when the other card cannot be read, for any reason."
+                }
+              }
+            }
+          }
+        }
+      },
+      "CardNeedsHuman": {
+        "type": "object",
+        "required": ["reason"],
+        "properties": {
+          "reason": {
+            "enum": [
+              "question",
+              "repeated-failure",
+              "blocked",
+              "review",
+              "not-authorised"
+            ]
+          },
+          "elicitationId": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "failureCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "summary": {
+            "type": "string"
+          }
+        }
+      },
+      "CardReservation": {
+        "type": "object",
+        "description": "The live hold on a card (CardReservation, packages/contract claims.ts): the agent it is held for, until when, the placement decision that asked for it and the service that made it. A lapsed hold is never shown.",
+        "required": ["agentId", "reservedUntil", "decisionId", "reservedBy"],
+        "properties": {
+          "agentId": {
+            "type": "string"
+          },
+          "reservedUntil": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "decisionId": {
+            "type": "string"
+          },
+          "reservedBy": {
+            "type": "string"
+          }
+        }
+      },
+      "CardView": {
+        "type": "object",
+        "description": "A card as every board route returns it (CardView, board/model.ts).",
+        "required": [
+          "id",
+          "title",
+          "spec",
+          "ownerUserId",
+          "queuedBy",
+          "queuedByAgentId",
+          "queuedGrant",
+          "labels",
+          "projectId",
+          "milestoneId",
+          "dueAt",
+          "archivedAt",
+          "currentStageKey",
+          "state",
+          "delegateAgentId",
+          "lastAgentId",
+          "queuedGrantOwner",
+          "stageSince",
+          "currentRunId",
+          "priority",
+          "contextId",
+          "createdAt",
+          "updatedAt",
+          "stateSince",
+          "costUsd",
+          "overBudget",
+          "attemptCount",
+          "parentCardId",
+          "openChildCount",
+          "costUsdRollup",
+          "blockedBy"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "spec": {
+            "description": "Any JSON value: the card's spec."
+          },
+          "ownerUserId": {
+            "type": "string"
+          },
+          "queuedBy": {
+            "type": ["string", "null"]
+          },
+          "queuedByAgentId": {
+            "type": ["string", "null"]
+          },
+          "queuedGrant": {
+            "type": ["array", "null"],
+            "items": {
+              "type": "string"
+            }
+          },
+          "labels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "projectId": {
+            "type": ["string", "null"]
+          },
+          "milestoneId": {
+            "type": ["string", "null"]
+          },
+          "dueAt": {
+            "type": ["string", "null"],
+            "description": "An ISO date, no time."
+          },
+          "needsHuman": {
+            "$ref": "#/components/schemas/CardNeedsHuman"
+          },
+          "reservation": {
+            "$ref": "#/components/schemas/CardReservation"
+          },
+          "placementWindowUntil": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "archivedAt": {
+            "$ref": "#/components/schemas/NullableTimestamp"
+          },
+          "currentStageKey": {
+            "type": "string"
+          },
+          "state": {
+            "$ref": "#/components/schemas/TaskState"
+          },
+          "delegateAgentId": {
+            "type": ["string", "null"]
+          },
+          "lastAgentId": {
+            "type": ["string", "null"]
+          },
+          "queuedGrantOwner": {
+            "type": ["string", "null"]
+          },
+          "stageSince": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "currentRunId": {
+            "type": ["string", "null"]
+          },
+          "priority": {
+            "type": "number"
+          },
+          "contextId": {
+            "type": "string"
+          },
+          "createdAt": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "updatedAt": {
+            "$ref": "#/components/schemas/NullableTimestamp"
+          },
+          "stateSince": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "costUsd": {
+            "type": "number",
+            "minimum": 0
+          },
+          "overBudget": {
+            "type": "boolean"
+          },
+          "attemptCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "parentCardId": {
+            "type": ["string", "null"]
+          },
+          "openChildCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "costUsdRollup": {
+            "type": "number",
+            "minimum": 0
+          },
+          "blockedBy": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["cardId", "title"],
+              "properties": {
+                "cardId": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "repositories": {
+            "$ref": "../../superpipeline-api/card-repositories.v1.json#/properties/repositories",
+            "description": "Proposed. The repositories this card chose from a stage allowlist (run-checkpoint-policy.v2), sorted. Absent: the card names none. Fixed once the card's bench exists."
+          },
+          "primaryRepository": {
+            "$ref": "../../superpipeline-api/card-repositories.v1.json#/properties/primaryRepository",
+            "description": "Proposed. One of `repositories`: where the card's work starts. Only with `repositories`."
+          }
+        }
+      },
+      "CheckDef": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": ["name", "provider"],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "provider": {
+                "const": "ci"
+              },
+              "contexts": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": ["name", "provider", "kind"],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "provider": {
+                "const": "verdict"
+              },
+              "kind": {
+                "type": "string"
+              },
+              "standard": {
+                "type": "string"
+              },
+              "atLeast": {
+                "type": "number"
+              },
+              "pass": {
+                "const": true
+              },
+              "judgeKinds": {
+                "type": "array",
+                "items": {
+                  "enum": ["grader", "rule", "agent", "human"]
+                }
+              }
+            }
+          }
+        ]
+      },
+      "CommentView": {
+        "type": "object",
+        "description": "A remark on a card (CommentView, board/views.ts).",
+        "required": [
+          "id",
+          "cardId",
+          "author",
+          "body",
+          "createdAt",
+          "deletedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "cardId": {
+            "type": "string"
+          },
+          "author": {
+            "type": "object",
+            "required": ["kind", "id", "name"],
+            "properties": {
+              "kind": {
+                "enum": ["human", "agent"]
+              },
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": ["string", "null"]
+              }
+            }
+          },
+          "body": {
+            "type": "string"
+          },
+          "createdAt": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "deletedAt": {
+            "$ref": "#/components/schemas/NullableTimestamp"
+          }
+        }
+      },
+      "Delivery": {
+        "type": "object",
+        "description": "How an approved publishing subject is delivered (GateView.delivery).",
+        "required": [
+          "mode",
+          "liveUrl",
+          "remindAt",
+          "readBackStatus",
+          "recordedBy",
+          "recordedAt"
+        ],
+        "properties": {
+          "mode": {
+            "enum": ["manual", "automatic"]
+          },
+          "liveUrl": {
+            "type": ["string", "null"]
+          },
+          "remindAt": {
+            "$ref": "#/components/schemas/NullableTimestamp"
+          },
+          "readBackStatus": {
+            "enum": ["not_checked", "matched", "mismatch", "service_reported"]
+          },
+          "recordedBy": {
+            "type": ["string", "null"]
+          },
+          "recordedAt": {
+            "$ref": "#/components/schemas/NullableTimestamp"
+          }
+        }
+      },
+      "ElicitationView": {
+        "type": "object",
+        "description": "An agent's question to a person, with its answer once given (ElicitationView, board/views.ts).",
+        "required": [
+          "id",
+          "cardId",
+          "runId",
+          "stageKey",
+          "agentId",
+          "question",
+          "signal",
+          "options",
+          "status",
+          "answer",
+          "createdAt"
+        ],
+        "properties": {
+          "strictDecision": {
+            "$ref": "#/components/schemas/StrictDecision"
+          },
+          "detail": {
+            "$ref": "#/components/schemas/ApprovalDetail"
+          },
+          "approvalSubject": {
+            "$ref": "#/components/schemas/ApprovalSubjectEnvelope"
+          },
+          "id": {
+            "type": "string"
+          },
+          "cardId": {
+            "type": "string"
+          },
+          "runId": {
+            "type": "string"
+          },
+          "stageKey": {
+            "type": "string"
+          },
+          "agentId": {
+            "type": "string"
+          },
+          "question": {
+            "type": "string"
+          },
+          "signal": {
+            "type": ["string", "null"]
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GateOption"
+            }
+          },
+          "status": {
+            "enum": ["pending", "answered", "cancelled"]
+          },
+          "answer": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "required": ["option", "text", "answeredBy", "answeredAt"],
+                "properties": {
+                  "option": {
+                    "type": ["string", "null"]
+                  },
+                  "text": {
+                    "type": ["string", "null"]
+                  },
+                  "answeredBy": {
+                    "type": "string"
+                  },
+                  "answeredAt": {
+                    "$ref": "#/components/schemas/Timestamp"
+                  }
+                }
+              }
+            ]
+          },
+          "createdAt": {
+            "$ref": "#/components/schemas/Timestamp"
+          }
+        }
+      },
+      "ExecutionExportHint": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schema_version",
+          "export_id",
+          "manifest_sha256",
+          "verification"
+        ],
+        "properties": {
+          "schema_version": {
+            "const": "agentpod-execution-export/v1"
+          },
+          "export_id": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+          },
+          "manifest_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "verification": {
+            "const": "unverified"
+          }
+        },
+        "description": "Where AgentPod's execution export for this reference is, as the agent attached it. Producer metadata only: it confers no authority and is not verified here."
+      },
+      "GateCheckSummary": {
+        "type": "object",
+        "required": ["name", "provider", "status"],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "provider": {
+            "enum": ["ci", "verdict"]
+          },
+          "status": {
+            "enum": ["pending", "passed", "failed", "overridden"]
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      },
+      "GateOption": {
+        "type": "object",
+        "description": "An option as the board stores it (GateOption, board/gate-option.ts). The pushed and pending bodies rename `name`/`title` to `id`/`label`; this is the board's own read shape.",
+        "required": ["name", "title"],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "promptFill": {
+            "type": "string"
+          },
+          "interactive": {
+            "type": "boolean"
+          },
+          "description": {
+            "type": "string"
+          },
+          "requires": {
+            "const": "workspace-admin"
+          },
+          "meaning": {
+            "$ref": "#/components/schemas/OptionMeaning"
+          },
+          "scope": {
+            "enum": ["once", "run", "always"]
+          }
+        }
+      },
+      "GateView": {
+        "type": "object",
+        "description": "One gate, including how it was decided (GateView, board/views.ts). `status` includes `cancelled`, which the board writes when a card is moved or archived with a review pending, though the producer's type leaves it out.",
+        "required": [
+          "id",
+          "cardId",
+          "stageKey",
+          "status",
+          "decision",
+          "options",
+          "producedBy",
+          "createdAt",
+          "decidedBy",
+          "comment",
+          "resolvedAt",
+          "references"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "cardId": {
+            "type": "string"
+          },
+          "stageKey": {
+            "type": "string"
+          },
+          "status": {
+            "enum": ["pending", "resolved", "cancelled"]
+          },
+          "decision": {
+            "type": ["string", "null"],
+            "description": "The decision recorded, or null while pending or once cancelled. A gate closed because its subject expired carries the board's expired marker."
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GateOption"
+            }
+          },
+          "producedBy": {
+            "type": "string"
+          },
+          "createdAt": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "decidedBy": {
+            "type": ["string", "null"]
+          },
+          "comment": {
+            "type": ["string", "null"]
+          },
+          "resolvedAt": {
+            "$ref": "#/components/schemas/NullableTimestamp"
+          },
+          "references": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReferenceView"
+            }
+          },
+          "summary": {
+            "type": ["string", "null"],
+            "description": "What is being approved, as plain text; absent when the gate binds a subject."
+          },
+          "approvalSubject": {
+            "$ref": "#/components/schemas/ApprovalSubjectView"
+          },
+          "variants": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "label",
+                "status",
+                "chosen",
+                "approvalSubject"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "label": {
+                  "type": "string"
+                },
+                "status": {
+                  "enum": ["active", "invalidated"]
+                },
+                "chosen": {
+                  "type": "boolean"
+                },
+                "approvalSubject": {
+                  "$ref": "#/components/schemas/ApprovalSubjectView"
+                }
+              }
+            }
+          },
+          "quorum": {
+            "type": "object",
+            "required": ["required", "from", "approvals"],
+            "properties": {
+              "required": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "from": {
+                "enum": ["deciders", "admins"]
+              },
+              "approvals": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["principalId", "at"],
+                  "properties": {
+                    "principalId": {
+                      "type": "string"
+                    },
+                    "at": {
+                      "$ref": "#/components/schemas/Timestamp"
+                    },
+                    "variantId": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "release": {
+            "type": "object",
+            "properties": {
+              "holdForMinutes": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "notBefore": {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            }
+          },
+          "heldUntil": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "releasedAt": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "pulledBack": {
+            "type": "object",
+            "required": ["by", "at", "comment"],
+            "properties": {
+              "by": {
+                "type": "string"
+              },
+              "at": {
+                "$ref": "#/components/schemas/Timestamp"
+              },
+              "comment": {
+                "type": "string"
+              }
+            }
+          },
+          "checks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GateCheckSummary"
+            }
+          },
+          "delivery": {
+            "$ref": "#/components/schemas/Delivery"
+          }
+        }
+      },
+      "JsonValue": {
+        "description": "Any JSON value, stored and returned as given."
+      },
+      "LinkKind": {
+        "type": "string",
+        "description": "An edge's kind. Open: a reader treats a kind it does not know as decoration. The kinds on 2026-11-24 are in x-treaty-known-values; only `blocks` and `relates` cross boards.",
+        "minLength": 1,
+        "x-treaty-known-values": ["blocks", "relates", "parent", "supersedes"]
+      },
+      "NullableTimestamp": {
+        "type": ["string", "null"],
+        "format": "date-time"
+      },
+      "OptionMeaning": {
+        "enum": ["approve", "reject", "revise", "choose", "defer"]
+      },
+      "PreviewBlock": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": ["type", "text"],
+            "properties": {
+              "type": {
+                "const": "text"
+              },
+              "label": {
+                "type": "string"
+              },
+              "text": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": ["type", "label", "value"],
+            "properties": {
+              "type": {
+                "const": "field"
+              },
+              "label": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": ["type", "label", "url"],
+            "properties": {
+              "type": {
+                "const": "link"
+              },
+              "label": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              }
+            }
+          }
+        ]
+      },
+      "ReferenceView": {
+        "type": "object",
+        "required": [
+          "id",
+          "cardId",
+          "url",
+          "title",
+          "subtitle",
+          "provider",
+          "sourceType",
+          "externalId",
+          "metadata",
+          "syncState",
+          "lastSyncedAt",
+          "addedBy",
+          "runId",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "cardId": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "title": {
+            "type": ["string", "null"]
+          },
+          "subtitle": {
+            "type": ["string", "null"]
+          },
+          "provider": {
+            "type": "string"
+          },
+          "sourceType": {
+            "type": "string"
+          },
+          "externalId": {
+            "type": ["string", "null"]
+          },
+          "metadata": {
+            "description": "Any JSON value, or null."
+          },
+          "syncState": {
+            "enum": ["synced", "stale", "error"]
+          },
+          "lastSyncedAt": {
+            "$ref": "#/components/schemas/NullableTimestamp"
+          },
+          "addedBy": {
+            "enum": ["agent", "user"]
+          },
+          "runId": {
+            "type": ["string", "null"]
+          },
+          "createdAt": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "updatedAt": {
+            "$ref": "#/components/schemas/NullableTimestamp"
+          }
+        }
+      },
+      "RunEvidence": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["run", "card", "gates", "usage", "as_of"],
+        "properties": {
+          "run": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "board_id",
+              "card_id",
+              "stage_key",
+              "agent_id",
+              "agent_principal_id",
+              "status",
+              "outcome",
+              "started_at",
+              "ended_at"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "board_id": {
+                "type": "string"
+              },
+              "card_id": {
+                "type": "string"
+              },
+              "stage_key": {
+                "type": "string"
+              },
+              "agent_id": {
+                "type": "string"
+              },
+              "agent_principal_id": {
+                "type": ["string", "null"],
+                "description": "`prn_\u2026`, or null when the agent is not linked to a principal."
+              },
+              "status": {
+                "type": "string"
+              },
+              "outcome": {
+                "type": ["string", "null"]
+              },
+              "started_at": {
+                "$ref": "#/components/schemas/Timestamp"
+              },
+              "ended_at": {
+                "$ref": "#/components/schemas/NullableTimestamp"
+              }
+            }
+          },
+          "card": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "title", "stage_key"],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "stage_key": {
+                "type": "string",
+                "description": "The card's current stage, which may be past the run's."
+              }
+            }
+          },
+          "gates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RunEvidenceGate"
+            },
+            "description": "The gates this run opened, and legacy gates on the card matched by stage, oldest first."
+          },
+          "usage": {
+            "description": "`reported` with summed numbers, or `unreported` with nulls: a run with no usage record cost something unknown, never zero.",
+            "oneOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "status",
+                  "input_tokens",
+                  "output_tokens",
+                  "cost_usd"
+                ],
+                "properties": {
+                  "status": {
+                    "const": "reported"
+                  },
+                  "input_tokens": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "output_tokens": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "cost_usd": {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "status",
+                  "input_tokens",
+                  "output_tokens",
+                  "cost_usd"
+                ],
+                "properties": {
+                  "status": {
+                    "const": "unreported"
+                  },
+                  "input_tokens": {
+                    "type": "null"
+                  },
+                  "output_tokens": {
+                    "type": "null"
+                  },
+                  "cost_usd": {
+                    "type": "null"
+                  }
+                }
+              }
+            ]
+          },
+          "as_of": {
+            "$ref": "#/components/schemas/Timestamp"
+          }
+        },
+        "description": "One run as evidence (RunEvidence, board/views.ts; contract C4), snake_case. Closed: this shape is frozen, and what is new goes in superpipeline-run-evidence/v1."
+      },
+      "RunEvidenceGate": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "run_id",
+          "stage_key",
+          "status",
+          "decision",
+          "decided_by",
+          "produced_by",
+          "produced_by_principal_id",
+          "decided_by_principal_id",
+          "decided_by_hub_sub",
+          "created_at",
+          "resolved_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "run_id": {
+            "type": ["string", "null"],
+            "description": "Null on a legacy gate, matched to the run by its stage or return stage."
+          },
+          "stage_key": {
+            "type": "string"
+          },
+          "status": {
+            "enum": ["pending", "resolved", "cancelled"]
+          },
+          "decision": {
+            "enum": ["approved", "changes_requested", "rejected", null],
+            "description": "In past tense; null while pending, once cancelled, or for a decision evidence does not name."
+          },
+          "decided_by": {
+            "type": ["string", "null"]
+          },
+          "produced_by": {
+            "type": "string"
+          },
+          "produced_by_principal_id": {
+            "type": ["string", "null"],
+            "description": "`prn_\u2026`, or null when the producer is not linked to a principal."
+          },
+          "decided_by_principal_id": {
+            "type": ["string", "null"],
+            "description": "`prn_\u2026`, or null when the decider is not linked to a principal."
+          },
+          "decided_by_hub_sub": {
+            "type": ["string", "null"],
+            "description": "The token subject the decider is known by, set only when `decided_by_principal_id` is null: one way to name the judge, never two."
+          },
+          "created_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "resolved_at": {
+            "$ref": "#/components/schemas/NullableTimestamp"
+          }
+        },
+        "description": "A gate as evidence (RunEvidenceGate, board/views.ts): decisions in past tense, the run it judged, nothing else."
+      },
+      "RunEvidenceV1": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schema_version",
+          "pipeline",
+          "provenance",
+          "usage",
+          "executor_evidence"
+        ],
+        "properties": {
+          "schema_version": {
+            "const": "superpipeline-run-evidence/v1"
+          },
+          "pipeline": {
+            "$ref": "#/components/schemas/RunEvidence"
+          },
+          "provenance": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "lease_epoch",
+              "queued_by",
+              "completion",
+              "handoff_recorded",
+              "references_truncated",
+              "references"
+            ],
+            "properties": {
+              "lease_epoch": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "queued_by": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "completion": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["met", "unchecked_count"],
+                    "properties": {
+                      "met": {
+                        "type": "boolean"
+                      },
+                      "unchecked_count": {
+                        "type": "integer",
+                        "minimum": 0
+                      }
+                    }
+                  }
+                ]
+              },
+              "handoff_recorded": {
+                "type": "boolean"
+              },
+              "references_truncated": {
+                "type": "boolean",
+                "description": "True when the run attached more than the 256 references carried."
+              },
+              "references": {
+                "type": "array",
+                "maxItems": 256,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "id",
+                    "cardId",
+                    "runId",
+                    "url",
+                    "provider",
+                    "sourceType",
+                    "externalId",
+                    "execution_export",
+                    "createdAt"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    "cardId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    "runId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    "url": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 8192
+                    },
+                    "provider": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    "sourceType": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    "externalId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 256
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "execution_export": {
+                      "oneOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "$ref": "#/components/schemas/ExecutionExportHint"
+                        }
+                      ]
+                    },
+                    "createdAt": {
+                      "$ref": "#/components/schemas/Timestamp"
+                    }
+                  }
+                },
+                "description": "The references this run attached, oldest first."
+              }
+            },
+            "description": "Producer metadata about the run (RunEvidenceProvenanceV1). It does not confer authority or independent verification."
+          },
+          "usage": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "status",
+              "recorded_cost_usd",
+              "estimated_cost_usd",
+              "cost_provenance"
+            ],
+            "properties": {
+              "status": {
+                "enum": [
+                  "known",
+                  "estimated",
+                  "unknown",
+                  "unreported",
+                  "partial"
+                ]
+              },
+              "recorded_cost_usd": {
+                "type": ["number", "null"],
+                "minimum": 0
+              },
+              "estimated_cost_usd": {
+                "type": ["number", "null"],
+                "minimum": 0
+              },
+              "cost_provenance": {
+                "enum": ["agent-reported-not-provider-bill", "unknown"]
+              }
+            },
+            "description": "What the run cost, and how much of that is known (RunUsageEvidenceV1). A recorded cost is what the agent reported, not a provider's bill."
+          },
+          "executor_evidence": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["external_source", "external_run_id", "agentpod_path"],
+            "properties": {
+              "external_source": {
+                "const": "superpipeline"
+              },
+              "external_run_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "agentpod_path": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The AgentPod evidence path for this run. Discovery only: a reader authenticates to AgentPod and checks the binding itself."
+              }
+            }
+          }
+        },
+        "description": "The versioned run evidence (RunEvidenceV1, board/views.ts; packages/contract run-evidence.ts): the C4 shape nested unchanged under `pipeline`, with provenance, usage and where the executor's evidence is. Closed at every level."
+      },
+      "StageDef": {
+        "type": "object",
+        "required": ["key", "name", "order"],
+        "properties": {
+          "checkpointPolicy": {
+            "$ref": "../../superpipeline-api/run-checkpoint-policy.v1.json"
+          },
+          "cardCheckpointPolicy": {
+            "$ref": "../../superpipeline-api/run-checkpoint-policy.v2.json",
+            "description": "Proposed. The checkpoint policy of a stage whose cards choose their repositories from its allowlist. Never together with `checkpointPolicy`. Offered only to a claimant whose `checkpointProtocols` lists superpipeline.checkpoint-claim.v2."
+          },
+          "key": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "order": {
+            "type": "number"
+          },
+          "ownerKind": {
+            "enum": ["capability", "agent", "human"]
+          },
+          "owner": {
+            "type": "string"
+          },
+          "requires": {
+            "type": "object",
+            "properties": {
+              "all": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "any": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "placement": {
+            "type": "object",
+            "properties": {
+              "isolation": {
+                "enum": ["host", "container", "sandbox"]
+              },
+              "models": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "tools": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "credentials": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "gate": {
+            "enum": ["none", "approval", "checks"]
+          },
+          "approvalSubjectSchema": {
+            "type": "string"
+          },
+          "approvalDeciderPrincipalIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "wipLimit": {
+            "type": "integer"
+          },
+          "completion": {
+            "type": "object",
+            "properties": {
+              "handoff": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "reference": {
+                "type": "object",
+                "properties": {
+                  "provider": {
+                    "type": "string"
+                  },
+                  "sourceType": {
+                    "type": "string"
+                  }
+                }
+              },
+              "live": {
+                "type": "string"
+              }
+            }
+          },
+          "returnStage": {
+            "type": "string"
+          },
+          "instructions": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "routing": {
+            "enum": ["pipeline", "manager"]
+          },
+          "timeout": {
+            "type": "object",
+            "properties": {
+              "remindAfterMinutes": {
+                "type": "integer"
+              },
+              "escalateAfterMinutes": {
+                "type": "integer"
+              }
+            }
+          },
+          "quorum": {
+            "type": "object",
+            "required": ["required"],
+            "properties": {
+              "required": {
+                "type": "integer"
+              },
+              "from": {
+                "enum": ["deciders", "admins"]
+              }
+            }
+          },
+          "holdFor": {
+            "type": "integer"
+          },
+          "checks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CheckDef"
+            }
+          }
+        }
+      },
+      "StrictDecision": {
+        "type": "object",
+        "required": ["version", "request_id", "decision_digest", "expires_at"],
+        "properties": {
+          "version": {
+            "const": 1
+          },
+          "request_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "decision_digest": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "expires_at": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Milliseconds since the epoch."
+          }
+        }
+      },
+      "TaskState": {
+        "enum": [
+          "submitted",
+          "working",
+          "input-required",
+          "auth-required",
+          "completed",
+          "rejected",
+          "failed",
+          "canceled"
+        ],
+        "description": "The A2A task states; `canceled` with one l, as A2A spells it."
+      },
+      "Timestamp": {
+        "type": "string",
+        "format": "date-time"
+      }
+    }
+  }
+}

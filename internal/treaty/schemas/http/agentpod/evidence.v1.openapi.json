@@ -1,0 +1,1341 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "AgentPod run evidence",
+    "version": "1",
+    "description": "The hub's evidence reads: a work run's dispatch and attempts, an execution's evidence and its export receipt, the run an attempt belongs to, a principal's kind, and a session's transcript (SuperWitness contract C5 and its transcripts spec §3.3). Written from AgentPod's routes on main (apps/hub/src/routes/evidence.ts, mounted ahead of authMiddleware), its zod (packages/contract/src/evidence.ts and execution-evidence.ts) and the transcript fold (packages/contract/src/transcript-evidence.ts, apps/hub/src/services/evidence/transcript.ts). Every read is tenant-scoped by the caller's token: another workspace's run, attempt, export or session is not_found, never forbidden. Every refusal is flat-error.v1. Authorisation comes first, on every route: a bearer token the hub's plane verifier accepts (401 unauthorized), an organization with AgentPod enabled (403 product_not_enabled, with `org`), and an agent or service token whose grant scopes hold the route's one scope (403 forbidden; a human's token is always forbidden). The versioned routes then check `schema_version` (400 unsupported_evidence_version). The export route `POST /api/evidence/runs/{source}/{externalRunId}/execution/export`, which only an agent's own token may call and no other product calls, is not in this document."
+  },
+  "x-treaty-error-envelope": "flat-error.v1",
+  "servers": [
+    {
+      "url": "https://hub.agentpod.dev",
+      "description": "An AgentPod hub. SuperPipeline builds the export read's URL on its HUB_ISSUER origin."
+    }
+  ],
+  "paths": {
+    "/api/evidence/exports/{exportId}": {
+      "parameters": [
+        {
+          "name": "exportId",
+          "in": "path",
+          "required": true,
+          "description": "The export's request id (a UUID), as SuperPipeline stores it on the run's evidence reference.",
+          "schema": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      ],
+      "get": {
+        "operationId": "readExecutionExport",
+        "summary": "An execution export's receipt",
+        "description": "The receipt for an export the hub committed and verified by download from SuperLibrary. SuperPipeline stores this read's URL, `<hub origin>/api/evidence/exports/<export_id>?schema_version=agentpod-execution-export%2Fv1`, on the run's evidence reference (apps/api/src/routes/boards/runs.ts); SuperWitness follows it and refuses a receipt whose `export_id` is not the one it asked for.",
+        "security": [
+          {
+            "planeGrantToken": ["evidence:read"]
+          }
+        ],
+        "x-treaty-error-codes": [
+          "unauthorized",
+          "forbidden",
+          "product_not_enabled",
+          "unsupported_evidence_version",
+          "not_found",
+          "artifact_export_unconfirmed"
+        ],
+        "parameters": [
+          {
+            "name": "schema_version",
+            "in": "query",
+            "required": true,
+            "description": "The one version this route answers. The receipt's own `schema_version`. Any other value, the key twice, or any other query key is 400 unsupported_evidence_version: a reader that asks for a version the hub does not have is refused, never answered in another.",
+            "schema": {
+              "type": "string",
+              "const": "agentpod-execution-export/v1"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The receipt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../../agentpod/execution-export.v1.json"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/UnsupportedVersion"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/ExportUnconfirmed"
+          }
+        }
+      }
+    },
+    "/api/evidence/runs/{source}/{externalRunId}/execution": {
+      "parameters": [
+        {
+          "name": "source",
+          "in": "path",
+          "required": true,
+          "description": "The orchestrator that dispatched the run, such as `superpipeline`.",
+          "schema": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        {
+          "name": "externalRunId",
+          "in": "path",
+          "required": true,
+          "description": "The run's id in its orchestrator (SuperPipeline's `run_…`).",
+          "schema": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      ],
+      "get": {
+        "operationId": "readExecutionEvidence",
+        "summary": "A run's execution evidence",
+        "description": "Every execution the hub holds for the dispatched run, as its stations reported them. 404 when the hub dispatched no such run. SuperPipeline names this path, with `schema_version=salaam-execution-evidence%2Fv1`, in a run's history (apps/api/src/board/run-history.ts); SuperWitness reads it and keeps an execution only when its task's board and card are the run's.",
+        "security": [
+          {
+            "planeGrantToken": ["evidence:read"]
+          }
+        ],
+        "x-treaty-error-codes": [
+          "unauthorized",
+          "forbidden",
+          "product_not_enabled",
+          "unsupported_evidence_version",
+          "not_found",
+          "execution_evidence_unavailable"
+        ],
+        "parameters": [
+          {
+            "name": "schema_version",
+            "in": "query",
+            "required": true,
+            "description": "The one version this route answers. The version of each execution in the answer; the envelope's own is `agentpod-execution-evidence/v1`. Any other value, the key twice, or any other query key is 400 unsupported_evidence_version: a reader that asks for a version the hub does not have is refused, never answered in another.",
+            "schema": {
+              "type": "string",
+              "const": "salaam-execution-evidence/v1"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The executions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecutionEvidenceResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/UnsupportedVersion"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "502": {
+            "$ref": "#/components/responses/EvidenceUnavailable"
+          }
+        }
+      }
+    },
+    "/api/evidence/runs/{source}/{externalRunId}": {
+      "parameters": [
+        {
+          "name": "source",
+          "in": "path",
+          "required": true,
+          "description": "The orchestrator that dispatched the run, such as `superpipeline`.",
+          "schema": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        {
+          "name": "externalRunId",
+          "in": "path",
+          "required": true,
+          "description": "The run's id in its orchestrator (SuperPipeline's `run_…`).",
+          "schema": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      ],
+      "get": {
+        "operationId": "readRunEvidence",
+        "summary": "A work run's dispatch and attempts",
+        "description": "The run's dispatch ledger row and every attempt (prompt-turn) the hub recorded for it, oldest first. 404 only when there is neither. SuperWitness reads it for every run view.",
+        "security": [
+          {
+            "planeGrantToken": ["evidence:read"]
+          }
+        ],
+        "x-treaty-error-codes": [
+          "unauthorized",
+          "forbidden",
+          "product_not_enabled",
+          "not_found"
+        ],
+        "responses": {
+          "200": {
+            "description": "The run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunEvidence"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/evidence/attempts/{attemptId}": {
+      "parameters": [
+        {
+          "name": "attemptId",
+          "in": "path",
+          "required": true,
+          "description": "An attempt id, `attempt_<uuid>`.",
+          "schema": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      ],
+      "get": {
+        "operationId": "readAttemptRun",
+        "summary": "The run an attempt belongs to",
+        "description": "What SuperWitness redirects an attempt link through. Nulls mean the attempt was not dispatched by an orchestrator, or its ledger row is gone.",
+        "security": [
+          {
+            "planeGrantToken": ["evidence:read"]
+          }
+        ],
+        "x-treaty-error-codes": [
+          "unauthorized",
+          "forbidden",
+          "product_not_enabled",
+          "not_found"
+        ],
+        "responses": {
+          "200": {
+            "description": "The run's ids",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttemptRun"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/evidence/principals/{principalId}": {
+      "parameters": [
+        {
+          "name": "principalId",
+          "in": "path",
+          "required": true,
+          "description": "A `prn_…` principal id, or a pre-cutover hub user id (SuperPipeline's `decided_by_hub_sub`) the hub maps to one. Anything else is not_found.",
+          "schema": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      ],
+      "get": {
+        "operationId": "readEvidencePrincipal",
+        "summary": "A principal's kind, handle and suspension",
+        "description": "Enough for SuperWitness to derive a verdict's judge kind (C5, C6b). Not tenant-scoped: principals belong to the organization. A suspended principal is still answered. `id` is always the principal id, never the user id that was asked for.",
+        "security": [
+          {
+            "planeGrantToken": ["evidence:read"]
+          }
+        ],
+        "x-treaty-error-codes": [
+          "unauthorized",
+          "forbidden",
+          "product_not_enabled",
+          "not_found",
+          "identity_unavailable"
+        ],
+        "responses": {
+          "200": {
+            "description": "The principal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvidencePrincipal"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "503": {
+            "$ref": "#/components/responses/IdentityUnavailable"
+          }
+        }
+      }
+    },
+    "/api/evidence/sessions/{sessionId}/transcript": {
+      "parameters": [
+        {
+          "name": "sessionId",
+          "in": "path",
+          "required": true,
+          "description": "An ACP session id, `acps_<uuid>`.",
+          "schema": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      ],
+      "get": {
+        "operationId": "readTranscript",
+        "summary": "One page of a session's transcript",
+        "description": "Items folded from the session's persisted events over the range, redacted, and with every field over 16 KiB cut to a marker. A page never splits an item: the fold always starts at the range's first seq, and the cursor only skips items already served. Each read writes one audit row of ids and counts.",
+        "security": [
+          {
+            "planeGrantToken": ["transcripts:read"]
+          }
+        ],
+        "x-treaty-error-codes": [
+          "unauthorized",
+          "forbidden",
+          "product_not_enabled",
+          "not_found",
+          "bad_range"
+        ],
+        "parameters": [
+          {
+            "name": "seq_from",
+            "in": "query",
+            "required": false,
+            "description": "The range's first seq; default the session's first. Outside the session, or after seq_to, is bad_range.",
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{1,9}$"
+            }
+          },
+          {
+            "name": "seq_to",
+            "in": "query",
+            "required": false,
+            "description": "The range's last seq; default the session's last. A session with no events answers only the range 0 to 0.",
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{1,9}$"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "`next_cursor` from the previous page, sent back with the same seq_from and seq_to. One that does not decode, or points outside the range, is bad_range.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Items per page, clamped into 1 to 200; absent or unreadable is 200. Never an error.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-On-Behalf-Of",
+            "in": "header",
+            "required": false,
+            "description": "The person a service reads for. Recorded in the hub's audit row when it is a principal id, ignored otherwise; never used to authorise.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TranscriptPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRange"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/evidence/sessions/{sessionId}/transcript/items/{seqFrom}": {
+      "parameters": [
+        {
+          "name": "sessionId",
+          "in": "path",
+          "required": true,
+          "description": "An ACP session id, `acps_<uuid>`.",
+          "schema": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        {
+          "name": "seqFrom",
+          "in": "path",
+          "required": true,
+          "description": "The seq the item starts at within the range (its `seq_from`, or `seq`; a partial permission starts at its `answer_seq`). Not digits, or no item starts there, is not_found.",
+          "schema": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      ],
+      "get": {
+        "operationId": "readTranscriptItem",
+        "summary": "One transcript item",
+        "description": "The item as its page cut it, or with `full=1` whole (redacted) up to 1 MiB serialised, else 413.",
+        "security": [
+          {
+            "planeGrantToken": ["transcripts:read"]
+          }
+        ],
+        "x-treaty-error-codes": [
+          "unauthorized",
+          "forbidden",
+          "product_not_enabled",
+          "not_found",
+          "bad_range",
+          "item_too_large"
+        ],
+        "parameters": [
+          {
+            "name": "seq_from",
+            "in": "query",
+            "required": false,
+            "description": "The range's first seq; default the session's first. Outside the session, or after seq_to, is bad_range.",
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{1,9}$"
+            }
+          },
+          {
+            "name": "seq_to",
+            "in": "query",
+            "required": false,
+            "description": "The range's last seq; default the session's last. A session with no events answers only the range 0 to 0.",
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{1,9}$"
+            }
+          },
+          {
+            "name": "full",
+            "in": "query",
+            "required": false,
+            "description": "`1` answers the item uncut; any other value is ignored.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-On-Behalf-Of",
+            "in": "header",
+            "required": false,
+            "description": "The person a service reads for. Recorded in the hub's audit row when it is a principal id, ignored otherwise; never used to authorise.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The item",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TranscriptItemResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRange"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "413": {
+            "$ref": "#/components/responses/ItemTooLarge"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "planeGrantToken": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "An Organization-plane access token for an agent or a service principal, audience the hub. Its grant scopes (`scope`, space-separated) must hold the route's one scope, listed on each operation: `evidence:read` or `transcripts:read`; holding another never stands in for it. A human's `scope` is an OAuth scope string and is never a grant, so a human token is always forbidden."
+      }
+    },
+    "responses": {
+      "Unauthorized": {
+        "description": "unauthorized: no bearer token, or one the hub's verifier does not accept",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../../common/flat-error.v1.json",
+              "properties": {
+                "error": {
+                  "enum": ["unauthorized"]
+                }
+              }
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "forbidden: a human token, or a grant without the route's scope; product_not_enabled: the token's organization has not enabled AgentPod, and `org` names it",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../../common/flat-error.v1.json",
+              "properties": {
+                "error": {
+                  "enum": ["forbidden", "product_not_enabled"]
+                }
+              }
+            }
+          }
+        }
+      },
+      "UnsupportedVersion": {
+        "description": "unsupported_evidence_version: `schema_version` is not the one version the route answers, is repeated, or has another query key beside it",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../../common/flat-error.v1.json",
+              "properties": {
+                "error": {
+                  "enum": ["unsupported_evidence_version"]
+                }
+              }
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "not_found: nothing by that id in the caller's workspace",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../../common/flat-error.v1.json",
+              "properties": {
+                "error": {
+                  "enum": ["not_found"]
+                }
+              }
+            }
+          }
+        }
+      },
+      "ExportUnconfirmed": {
+        "description": "artifact_export_unconfirmed: the export is recorded but not committed and verified, so it has no receipt yet",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../../common/flat-error.v1.json",
+              "properties": {
+                "error": {
+                  "enum": ["artifact_export_unconfirmed"]
+                }
+              }
+            }
+          }
+        }
+      },
+      "EvidenceUnavailable": {
+        "description": "execution_evidence_unavailable: the hub could not read the run's executions",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../../common/flat-error.v1.json",
+              "properties": {
+                "error": {
+                  "enum": ["execution_evidence_unavailable"]
+                }
+              }
+            }
+          }
+        }
+      },
+      "IdentityUnavailable": {
+        "description": "identity_unavailable: the Organization plane did not answer. Down is not nobody: a reader must not record the principal as unknown",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../../common/flat-error.v1.json",
+              "properties": {
+                "error": {
+                  "enum": ["identity_unavailable"]
+                }
+              }
+            }
+          }
+        }
+      },
+      "BadRange": {
+        "description": "bad_range: seq_from or seq_to is not digits, outside the session or reversed, or the cursor does not decode or points outside the range",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../../common/flat-error.v1.json",
+              "properties": {
+                "error": {
+                  "enum": ["bad_range"]
+                }
+              }
+            }
+          }
+        }
+      },
+      "ItemTooLarge": {
+        "description": "item_too_large: the whole item is over 1 MiB serialised",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "../../common/flat-error.v1.json",
+              "properties": {
+                "error": {
+                  "enum": ["item_too_large"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "ExecutionEvidenceResponse": {
+        "type": "object",
+        "required": [
+          "schema_version",
+          "external_source",
+          "external_run_id",
+          "board_id",
+          "card_id",
+          "executions",
+          "as_of"
+        ],
+        "description": "AgentPodExecutionEvidenceResponse. SuperWitness reads `external_run_id`, `board_id`, `card_id` and each execution's task.",
+        "properties": {
+          "schema_version": {
+            "const": "agentpod-execution-evidence/v1"
+          },
+          "external_source": {
+            "type": "string",
+            "minLength": 1
+          },
+          "external_run_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "board_id": {
+            "type": ["string", "null"]
+          },
+          "card_id": {
+            "type": ["string", "null"]
+          },
+          "executions": {
+            "type": "array",
+            "maxItems": 256,
+            "items": {
+              "$ref": "../../agentpod/execution-evidence.v1.json"
+            }
+          },
+          "as_of": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Fingerprint": {
+        "type": "object",
+        "required": [
+          "digest",
+          "harness",
+          "harness_version",
+          "model",
+          "profile",
+          "skill_release",
+          "reported_by"
+        ],
+        "description": "What ran an attempt. A digest of `unknown` with every field `unknown` and reported_by `hub` is an attempt recorded before fingerprints existed, not one whose fields were all unknown, which has a real digest.",
+        "properties": {
+          "digest": {
+            "anyOf": [
+              {
+                "const": "unknown"
+              },
+              {
+                "type": "string",
+                "pattern": "^sha256:[0-9a-f]{64}$"
+              }
+            ]
+          },
+          "harness": {
+            "type": "string",
+            "minLength": 1
+          },
+          "harness_version": {
+            "type": "string",
+            "minLength": 1
+          },
+          "model": {
+            "type": "string",
+            "minLength": 1
+          },
+          "profile": {
+            "type": "string",
+            "minLength": 1
+          },
+          "skill_release": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reported_by": {
+            "type": "string",
+            "enum": ["harness", "station", "hub"]
+          }
+        }
+      },
+      "Attempt": {
+        "type": "object",
+        "required": [
+          "id",
+          "station_id",
+          "session_id",
+          "state",
+          "start_seq",
+          "end_seq",
+          "started_at",
+          "ended_at",
+          "agent_principal_id",
+          "fingerprint"
+        ],
+        "description": "One prompt-turn on a station.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^attempt_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "station_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "session_id": {
+            "type": "string",
+            "pattern": "^acps_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "state": {
+            "type": "string",
+            "minLength": 1
+          },
+          "start_seq": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "end_seq": {
+            "type": ["integer", "null"],
+            "minimum": 0,
+            "description": "Null while the attempt is live."
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ended_at": {
+            "type": ["string", "null"],
+            "format": "date-time",
+            "description": "Null while the attempt is live."
+          },
+          "agent_principal_id": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string",
+                "pattern": "^prn_[0-9a-f]{20}$"
+              }
+            ],
+            "description": "The station's occupant when the attempt opened, not now. Null for an unoccupied station, and for attempts recorded before the hub kept it."
+          },
+          "fingerprint": {
+            "$ref": "#/components/schemas/Fingerprint"
+          }
+        }
+      },
+      "Dispatch": {
+        "type": "object",
+        "required": ["outcome", "detail", "station_id", "updated_at"],
+        "properties": {
+          "outcome": {
+            "type": "string",
+            "minLength": 1,
+            "x-treaty-known-values": [
+              "working",
+              "produced",
+              "reported",
+              "released",
+              "abandoned",
+              "parked"
+            ],
+            "description": "The dispatch ledger's outcome. The hub's table allows these six; AgentPod's zod lists five, without `parked`. Open to readers: SuperWitness shows it as the run's state."
+          },
+          "detail": {
+            "type": ["string", "null"]
+          },
+          "station_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "RunEvidence": {
+        "type": "object",
+        "required": [
+          "external_source",
+          "external_run_id",
+          "board_id",
+          "card_id",
+          "dispatch",
+          "attempts",
+          "as_of"
+        ],
+        "description": "SuperWitness refuses an answer whose source and run id are not the ones it asked for, and treats a board_id other than the run's as not found. board_id, card_id and dispatch are null when the ledger holds no row for the run.",
+        "properties": {
+          "external_source": {
+            "type": "string",
+            "minLength": 1
+          },
+          "external_run_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "board_id": {
+            "type": ["string", "null"]
+          },
+          "card_id": {
+            "type": ["string", "null"]
+          },
+          "dispatch": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Dispatch"
+              }
+            ]
+          },
+          "attempts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Attempt"
+            }
+          },
+          "as_of": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "AttemptRun": {
+        "type": "object",
+        "required": ["external_source", "external_run_id", "board_id"],
+        "properties": {
+          "external_source": {
+            "type": ["string", "null"]
+          },
+          "external_run_id": {
+            "type": ["string", "null"]
+          },
+          "board_id": {
+            "type": ["string", "null"]
+          }
+        }
+      },
+      "EvidencePrincipal": {
+        "type": "object",
+        "required": ["id", "kind", "handle", "suspended"],
+        "description": "SuperWitness reads id, kind and suspended, and maps a service to the judge kind `grader`.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^prn_[0-9a-f]{20}$"
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["human", "agent", "service"]
+          },
+          "handle": {
+            "type": "string",
+            "minLength": 1
+          },
+          "suspended": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Redactions": {
+        "type": "integer",
+        "minimum": 0,
+        "description": "How many values the hub's rules redacted in this item."
+      },
+      "TruncatedField": {
+        "type": "object",
+        "required": ["truncated", "bytes", "head"],
+        "description": "A field the page cut at 16 KiB, after redaction, so the head never carries a secret. `bytes` is the whole field's size; the item route with full=1 answers it whole.",
+        "properties": {
+          "truncated": {
+            "const": true
+          },
+          "bytes": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "head": {
+            "type": "string"
+          }
+        }
+      },
+      "Text": {
+        "oneOf": [
+          {
+            "type": "string"
+          },
+          {
+            "$ref": "#/components/schemas/TruncatedField"
+          }
+        ]
+      },
+      "WireItem": {
+        "description": "One transcript item as it leaves the hub (`WireItem` in apps/hub/src/services/evidence/transcript.ts): an item of the evidence fold, redacted, with its fields cut, and its redaction count. Every item records the seqs it was built from: `seq`, or `seq_from` to `seq_to`. A tool call or permission whose start lies before the range is `partial`. Nothing is dropped: an event the fold does not understand is `other`, naming its type.",
+        "oneOf": [
+          {
+            "type": "object",
+            "required": ["kind", "seq", "text", "images", "redactions"],
+            "properties": {
+              "kind": {
+                "const": "prompt"
+              },
+              "seq": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "text": {
+                "$ref": "#/components/schemas/Text"
+              },
+              "images": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["name", "mimeType"],
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "mimeType": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "redactions": {
+                "$ref": "#/components/schemas/Redactions"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": ["kind", "seq_from", "seq_to", "text", "redactions"],
+            "properties": {
+              "kind": {
+                "const": "message"
+              },
+              "seq_from": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "seq_to": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "text": {
+                "$ref": "#/components/schemas/Text"
+              },
+              "redactions": {
+                "$ref": "#/components/schemas/Redactions"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": ["kind", "seq_from", "seq_to", "text", "redactions"],
+            "properties": {
+              "kind": {
+                "const": "reasoning"
+              },
+              "seq_from": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "seq_to": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "text": {
+                "$ref": "#/components/schemas/Text"
+              },
+              "redactions": {
+                "$ref": "#/components/schemas/Redactions"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "kind",
+              "id",
+              "seq_from",
+              "seq_to",
+              "title",
+              "tool_kind",
+              "status",
+              "input",
+              "output",
+              "redactions"
+            ],
+            "properties": {
+              "kind": {
+                "const": "tool_call"
+              },
+              "id": {
+                "type": "string"
+              },
+              "seq_from": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "seq_to": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "title": {
+                "$ref": "#/components/schemas/Text"
+              },
+              "tool_kind": {
+                "type": ["string", "null"]
+              },
+              "status": {
+                "type": "string",
+                "enum": ["pending", "in_progress", "completed", "failed"]
+              },
+              "input": {
+                "description": "Any JSON: the harness's own rawInput, null when none was sent, or a truncation marker."
+              },
+              "output": {
+                "type": "object",
+                "required": ["content", "raw"],
+                "properties": {
+                  "content": {
+                    "description": "The call's content verbatim, null when none, or a truncation marker."
+                  },
+                  "raw": {
+                    "description": "The harness's rawOutput, null when none, or a truncation marker."
+                  }
+                }
+              },
+              "partial": {
+                "const": true
+              },
+              "redactions": {
+                "$ref": "#/components/schemas/Redactions"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "kind",
+              "seq",
+              "title",
+              "options",
+              "outcome",
+              "redactions"
+            ],
+            "properties": {
+              "kind": {
+                "const": "permission"
+              },
+              "seq": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "answer_seq": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "tool_call_id": {
+                "type": "string"
+              },
+              "title": {
+                "$ref": "#/components/schemas/Text"
+              },
+              "options": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["optionId", "name", "kind"],
+                  "properties": {
+                    "optionId": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "kind": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "outcome": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": ["cancelled", "auto", "pending"]
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^selected:.+$"
+                  }
+                ]
+              },
+              "partial": {
+                "const": true
+              },
+              "redactions": {
+                "$ref": "#/components/schemas/Redactions"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": ["kind", "seq", "status", "redactions"],
+            "properties": {
+              "kind": {
+                "const": "state"
+              },
+              "seq": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "status": {
+                "type": "string"
+              },
+              "reason": {
+                "$ref": "#/components/schemas/Text"
+              },
+              "redactions": {
+                "$ref": "#/components/schemas/Redactions"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": ["kind", "seq", "error_kind", "message", "redactions"],
+            "properties": {
+              "kind": {
+                "const": "error"
+              },
+              "seq": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "error_kind": {
+                "type": "string"
+              },
+              "message": {
+                "$ref": "#/components/schemas/Text"
+              },
+              "redactions": {
+                "$ref": "#/components/schemas/Redactions"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": ["kind", "seq", "type", "redactions"],
+            "properties": {
+              "kind": {
+                "const": "other"
+              },
+              "seq": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "type": {
+                "type": "string"
+              },
+              "redactions": {
+                "$ref": "#/components/schemas/Redactions"
+              }
+            }
+          }
+        ]
+      },
+      "TranscriptPage": {
+        "type": "object",
+        "required": [
+          "session_id",
+          "seq_from",
+          "seq_to",
+          "items",
+          "next_cursor",
+          "redactions",
+          "truncated_fields"
+        ],
+        "description": "`seq_from` and `seq_to` are the range, not the page; 0 and 0 only for a session with no events.",
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "pattern": "^acps_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "seq_from": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "seq_to": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "items": {
+            "type": "array",
+            "maxItems": 200,
+            "items": {
+              "$ref": "#/components/schemas/WireItem"
+            }
+          },
+          "next_cursor": {
+            "type": ["string", "null"],
+            "minLength": 1,
+            "description": "Opaque. Send it back with the same seq_from and seq_to for the next page; null on the last."
+          },
+          "redactions": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "truncated_fields": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "TranscriptItemResponse": {
+        "type": "object",
+        "required": ["session_id", "item"],
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "pattern": "^acps_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "item": {
+            "$ref": "#/components/schemas/WireItem"
+          }
+        }
+      }
+    }
+  }
+}

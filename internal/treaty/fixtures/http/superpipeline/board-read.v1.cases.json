@@ -1,0 +1,4742 @@
+{
+  "operations": {
+    "listBoards": {
+      "responses": {
+        "200": {
+          "valid": {
+            "two boards": {
+              "boards": [
+                {
+                  "id": "brd_9c1d4e5f6a7b8c9d",
+                  "name": "Web",
+                  "updatedAt": "2026-11-23T10:05:00Z"
+                },
+                {
+                  "id": "brd_0a1b2c3d4e5f6a7b",
+                  "name": "Docs",
+                  "updatedAt": null
+                }
+              ]
+            },
+            "none": {
+              "boards": []
+            }
+          },
+          "invalid": [
+            {
+              "why": "boards is required",
+              "body": {}
+            },
+            {
+              "why": "a board has a name",
+              "body": {
+                "boards": [
+                  {
+                    "id": "brd_9c1d4e5f6a7b8c9d",
+                    "updatedAt": null
+                  }
+                ]
+              }
+            },
+            {
+              "why": "a board id is brd_ and 16 hex digits",
+              "body": {
+                "boards": [
+                  {
+                    "id": "board-1",
+                    "name": "Web",
+                    "updatedAt": null
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "readBoard": {
+      "responses": {
+        "200": {
+          "valid": {
+            "a board with a held card, a card in review and an archived card": {
+              "boardId": "brd_9c1d4e5f6a7b8c9d",
+              "tenantId": "tnt_5a6b7c8d9e0f1a2b",
+              "name": "Web",
+              "stages": [
+                {
+                  "key": "build",
+                  "name": "Build",
+                  "order": 0,
+                  "ownerKind": "capability",
+                  "owner": "code",
+                  "requires": {
+                    "all": [
+                      "code"
+                    ],
+                    "any": [
+                      "typescript",
+                      "go"
+                    ]
+                  },
+                  "placement": {
+                    "isolation": "container",
+                    "tools": [
+                      "mcp:superpipeline",
+                      "cli:stk"
+                    ],
+                    "credentials": [
+                      "forge:github"
+                    ]
+                  }
+                },
+                {
+                  "key": "review",
+                  "name": "Review",
+                  "order": 1,
+                  "ownerKind": "human",
+                  "gate": "approval"
+                },
+                {
+                  "key": "done",
+                  "name": "Done",
+                  "order": 2
+                }
+              ],
+              "cards": [
+                {
+                  "id": "card_1a2b3c4d5e6f7a8b",
+                  "title": "Add OAuth login",
+                  "spec": {
+                    "goal": "Sign in with the workspace's identity provider"
+                  },
+                  "ownerUserId": "usr_0f1e2d3c4b5a6978",
+                  "queuedBy": "prn_0123456789abcdef0b01",
+                  "queuedByAgentId": null,
+                  "queuedGrant": null,
+                  "labels": [],
+                  "projectId": null,
+                  "milestoneId": null,
+                  "dueAt": null,
+                  "archivedAt": null,
+                  "currentStageKey": "build",
+                  "state": "submitted",
+                  "delegateAgentId": null,
+                  "lastAgentId": null,
+                  "queuedGrantOwner": null,
+                  "stageSince": "2026-11-23T09:00:00.000Z",
+                  "currentRunId": null,
+                  "priority": 0,
+                  "contextId": "ctx_1a2b3c4d5e6f7a8b",
+                  "createdAt": "2026-11-23T09:00:00.000Z",
+                  "updatedAt": null,
+                  "stateSince": "2026-11-23T09:00:00.000Z",
+                  "costUsd": 0,
+                  "overBudget": false,
+                  "attemptCount": 0,
+                  "parentCardId": null,
+                  "openChildCount": 0,
+                  "costUsdRollup": 0,
+                  "blockedBy": [],
+                  "reservation": {
+                    "agentId": "agt_3f9a1c0b7e24d5a6",
+                    "reservedUntil": "2026-11-23T09:01:00.000Z",
+                    "decisionId": "dec_01JDX4Q7Z8",
+                    "reservedBy": "prn_0123456789abcdef0c01"
+                  },
+                  "placementWindowUntil": "2026-11-23T09:00:10.000Z"
+                },
+                {
+                  "id": "card_2b3c4d5e6f7a8b9c",
+                  "title": "Write the migration guide",
+                  "spec": {
+                    "goal": "Sign in with the workspace's identity provider"
+                  },
+                  "ownerUserId": "usr_0f1e2d3c4b5a6978",
+                  "queuedBy": "prn_0123456789abcdef0b01",
+                  "queuedByAgentId": null,
+                  "queuedGrant": null,
+                  "labels": [],
+                  "projectId": null,
+                  "milestoneId": null,
+                  "dueAt": null,
+                  "archivedAt": null,
+                  "currentStageKey": "review",
+                  "state": "input-required",
+                  "delegateAgentId": null,
+                  "lastAgentId": "agt_7b1e2d3c4a5f6e70",
+                  "queuedGrantOwner": null,
+                  "stageSince": "2026-11-23T09:00:00.000Z",
+                  "currentRunId": "run_e074a2160c4b4f28",
+                  "priority": 1,
+                  "contextId": "ctx_1a2b3c4d5e6f7a8b",
+                  "createdAt": "2026-11-23T09:00:00.000Z",
+                  "updatedAt": "2026-11-23T10:05:00.000Z",
+                  "stateSince": "2026-11-23T09:00:00.000Z",
+                  "costUsd": 0.42,
+                  "overBudget": false,
+                  "attemptCount": 2,
+                  "parentCardId": null,
+                  "openChildCount": 0,
+                  "costUsdRollup": 0.42,
+                  "blockedBy": [],
+                  "needsHuman": {
+                    "reason": "review"
+                  }
+                },
+                {
+                  "id": "card_3c4d5e6f7a8b9c0d",
+                  "title": "Retire the old login",
+                  "spec": {
+                    "goal": "Sign in with the workspace's identity provider"
+                  },
+                  "ownerUserId": "usr_0f1e2d3c4b5a6978",
+                  "queuedBy": "prn_0123456789abcdef0b01",
+                  "queuedByAgentId": null,
+                  "queuedGrant": null,
+                  "labels": [],
+                  "projectId": null,
+                  "milestoneId": null,
+                  "dueAt": null,
+                  "archivedAt": "2026-11-22T17:00:00.000Z",
+                  "currentStageKey": "done",
+                  "state": "completed",
+                  "delegateAgentId": null,
+                  "lastAgentId": null,
+                  "queuedGrantOwner": null,
+                  "stageSince": "2026-11-23T09:00:00.000Z",
+                  "currentRunId": null,
+                  "priority": 0,
+                  "contextId": "ctx_1a2b3c4d5e6f7a8b",
+                  "createdAt": "2026-11-23T09:00:00.000Z",
+                  "updatedAt": null,
+                  "stateSince": "2026-11-23T09:00:00.000Z",
+                  "costUsd": 0,
+                  "overBudget": false,
+                  "attemptCount": 0,
+                  "parentCardId": null,
+                  "openChildCount": 0,
+                  "costUsdRollup": 0,
+                  "blockedBy": []
+                }
+              ],
+              "gates": [
+                {
+                  "id": "gate_3c4d5e6f7a8b9c0d",
+                  "cardId": "card_2b3c4d5e6f7a8b9c",
+                  "stageKey": "review",
+                  "status": "pending",
+                  "decision": null,
+                  "options": [
+                    {
+                      "name": "approve",
+                      "title": "Approve"
+                    },
+                    {
+                      "name": "request_changes",
+                      "title": "Request changes"
+                    }
+                  ],
+                  "producedBy": "agt_7b1e2d3c4a5f6e70",
+                  "createdAt": "2026-11-23T10:05:00.000Z",
+                  "decidedBy": null,
+                  "comment": null,
+                  "resolvedAt": null,
+                  "references": [
+                    {
+                      "id": "ref_5e6f7a8b9c0d1e2f",
+                      "cardId": "card_2b3c4d5e6f7a8b9c",
+                      "url": "https://forge.example.com/acme/web/pulls/42",
+                      "title": "Migration guide",
+                      "subtitle": null,
+                      "provider": "url",
+                      "sourceType": "pull-request",
+                      "externalId": "42",
+                      "metadata": null,
+                      "syncState": "synced",
+                      "lastSyncedAt": null,
+                      "addedBy": "agent",
+                      "runId": "run_e074a2160c4b4f28",
+                      "createdAt": "2026-11-23T10:00:00.000Z",
+                      "updatedAt": null
+                    }
+                  ],
+                  "summary": "The guide covers both upgrade paths."
+                }
+              ],
+              "elicitations": [],
+              "references": [
+                {
+                  "id": "ref_5e6f7a8b9c0d1e2f",
+                  "cardId": "card_2b3c4d5e6f7a8b9c",
+                  "url": "https://forge.example.com/acme/web/pulls/42",
+                  "title": "Migration guide",
+                  "subtitle": null,
+                  "provider": "url",
+                  "sourceType": "pull-request",
+                  "externalId": "42",
+                  "metadata": null,
+                  "syncState": "synced",
+                  "lastSyncedAt": null,
+                  "addedBy": "agent",
+                  "runId": "run_e074a2160c4b4f28",
+                  "createdAt": "2026-11-23T10:00:00.000Z",
+                  "updatedAt": null
+                }
+              ],
+              "usage": {
+                "totalCostUsd": 0.42,
+                "estimatedCostUsd": 0,
+                "budgetUsd": 50,
+                "cardUsdCap": null,
+                "overBudget": false
+              },
+              "github": {
+                "issueTrigger": false,
+                "webhookConfigured": false,
+                "webhookUrl": "https://app.superpipeline.dev/v1/boards/brd_9c1d4e5f6a7b8c9d/webhooks/github?tenant=tnt_5a6b7c8d9e0f1a2b",
+                "triggerGrantCount": null
+              },
+              "stale": {
+                "enabled": true,
+                "afterHours": 48
+              }
+            },
+            "an empty board with an intro and a decision timeout": {
+              "boardId": "brd_9c1d4e5f6a7b8c9d",
+              "tenantId": "tnt_5a6b7c8d9e0f1a2b",
+              "name": "Web",
+              "stages": [],
+              "cards": [],
+              "gates": [],
+              "elicitations": [],
+              "references": [],
+              "usage": {
+                "totalCostUsd": 0,
+                "estimatedCostUsd": 0,
+                "budgetUsd": null,
+                "cardUsdCap": null,
+                "overBudget": false
+              },
+              "github": {
+                "issueTrigger": false,
+                "webhookConfigured": false,
+                "webhookUrl": "https://app.superpipeline.dev/v1/boards/brd_9c1d4e5f6a7b8c9d/webhooks/github?tenant=tnt_5a6b7c8d9e0f1a2b",
+                "triggerGrantCount": null
+              },
+              "stale": {
+                "enabled": true,
+                "afterHours": 48
+              },
+              "intro": {
+                "lede": "Ship the web app.",
+                "composeHint": "Describe a change"
+              },
+              "decisionTimeout": {
+                "remindAfterMinutes": 60,
+                "escalateAfterMinutes": 240
+              }
+            }
+          },
+          "invalid": [
+            {
+              "why": "stages is required",
+              "body": {
+                "boardId": "brd_9c1d4e5f6a7b8c9d",
+                "tenantId": "tnt_5a6b7c8d9e0f1a2b",
+                "name": "Web",
+                "cards": [
+                  {
+                    "id": "card_1a2b3c4d5e6f7a8b",
+                    "title": "Add OAuth login",
+                    "spec": {
+                      "goal": "Sign in with the workspace's identity provider"
+                    },
+                    "ownerUserId": "usr_0f1e2d3c4b5a6978",
+                    "queuedBy": "prn_0123456789abcdef0b01",
+                    "queuedByAgentId": null,
+                    "queuedGrant": null,
+                    "labels": [],
+                    "projectId": null,
+                    "milestoneId": null,
+                    "dueAt": null,
+                    "archivedAt": null,
+                    "currentStageKey": "build",
+                    "state": "submitted",
+                    "delegateAgentId": null,
+                    "lastAgentId": null,
+                    "queuedGrantOwner": null,
+                    "stageSince": "2026-11-23T09:00:00.000Z",
+                    "currentRunId": null,
+                    "priority": 0,
+                    "contextId": "ctx_1a2b3c4d5e6f7a8b",
+                    "createdAt": "2026-11-23T09:00:00.000Z",
+                    "updatedAt": null,
+                    "stateSince": "2026-11-23T09:00:00.000Z",
+                    "costUsd": 0,
+                    "overBudget": false,
+                    "attemptCount": 0,
+                    "parentCardId": null,
+                    "openChildCount": 0,
+                    "costUsdRollup": 0,
+                    "blockedBy": [],
+                    "reservation": {
+                      "agentId": "agt_3f9a1c0b7e24d5a6",
+                      "reservedUntil": "2026-11-23T09:01:00.000Z",
+                      "decisionId": "dec_01JDX4Q7Z8",
+                      "reservedBy": "prn_0123456789abcdef0c01"
+                    },
+                    "placementWindowUntil": "2026-11-23T09:00:10.000Z"
+                  },
+                  {
+                    "id": "card_2b3c4d5e6f7a8b9c",
+                    "title": "Write the migration guide",
+                    "spec": {
+                      "goal": "Sign in with the workspace's identity provider"
+                    },
+                    "ownerUserId": "usr_0f1e2d3c4b5a6978",
+                    "queuedBy": "prn_0123456789abcdef0b01",
+                    "queuedByAgentId": null,
+                    "queuedGrant": null,
+                    "labels": [],
+                    "projectId": null,
+                    "milestoneId": null,
+                    "dueAt": null,
+                    "archivedAt": null,
+                    "currentStageKey": "review",
+                    "state": "input-required",
+                    "delegateAgentId": null,
+                    "lastAgentId": "agt_7b1e2d3c4a5f6e70",
+                    "queuedGrantOwner": null,
+                    "stageSince": "2026-11-23T09:00:00.000Z",
+                    "currentRunId": "run_e074a2160c4b4f28",
+                    "priority": 1,
+                    "contextId": "ctx_1a2b3c4d5e6f7a8b",
+                    "createdAt": "2026-11-23T09:00:00.000Z",
+                    "updatedAt": "2026-11-23T10:05:00.000Z",
+                    "stateSince": "2026-11-23T09:00:00.000Z",
+                    "costUsd": 0.42,
+                    "overBudget": false,
+                    "attemptCount": 2,
+                    "parentCardId": null,
+                    "openChildCount": 0,
+                    "costUsdRollup": 0.42,
+                    "blockedBy": [],
+                    "needsHuman": {
+                      "reason": "review"
+                    }
+                  },
+                  {
+                    "id": "card_3c4d5e6f7a8b9c0d",
+                    "title": "Retire the old login",
+                    "spec": {
+                      "goal": "Sign in with the workspace's identity provider"
+                    },
+                    "ownerUserId": "usr_0f1e2d3c4b5a6978",
+                    "queuedBy": "prn_0123456789abcdef0b01",
+                    "queuedByAgentId": null,
+                    "queuedGrant": null,
+                    "labels": [],
+                    "projectId": null,
+                    "milestoneId": null,
+                    "dueAt": null,
+                    "archivedAt": "2026-11-22T17:00:00.000Z",
+                    "currentStageKey": "done",
+                    "state": "completed",
+                    "delegateAgentId": null,
+                    "lastAgentId": null,
+                    "queuedGrantOwner": null,
+                    "stageSince": "2026-11-23T09:00:00.000Z",
+                    "currentRunId": null,
+                    "priority": 0,
+                    "contextId": "ctx_1a2b3c4d5e6f7a8b",
+                    "createdAt": "2026-11-23T09:00:00.000Z",
+                    "updatedAt": null,
+                    "stateSince": "2026-11-23T09:00:00.000Z",
+                    "costUsd": 0,
+                    "overBudget": false,
+                    "attemptCount": 0,
+                    "parentCardId": null,
+                    "openChildCount": 0,
+                    "costUsdRollup": 0,
+                    "blockedBy": []
+                  }
+                ],
+                "gates": [
+                  {
+                    "id": "gate_3c4d5e6f7a8b9c0d",
+                    "cardId": "card_2b3c4d5e6f7a8b9c",
+                    "stageKey": "review",
+                    "status": "pending",
+                    "decision": null,
+                    "options": [
+                      {
+                        "name": "approve",
+                        "title": "Approve"
+                      },
+                      {
+                        "name": "request_changes",
+                        "title": "Request changes"
+                      }
+                    ],
+                    "producedBy": "agt_7b1e2d3c4a5f6e70",
+                    "createdAt": "2026-11-23T10:05:00.000Z",
+                    "decidedBy": null,
+                    "comment": null,
+                    "resolvedAt": null,
+                    "references": [
+                      {
+                        "id": "ref_5e6f7a8b9c0d1e2f",
+                        "cardId": "card_2b3c4d5e6f7a8b9c",
+                        "url": "https://forge.example.com/acme/web/pulls/42",
+                        "title": "Migration guide",
+                        "subtitle": null,
+                        "provider": "url",
+                        "sourceType": "pull-request",
+                        "externalId": "42",
+                        "metadata": null,
+                        "syncState": "synced",
+                        "lastSyncedAt": null,
+                        "addedBy": "agent",
+                        "runId": "run_e074a2160c4b4f28",
+                        "createdAt": "2026-11-23T10:00:00.000Z",
+                        "updatedAt": null
+                      }
+                    ],
+                    "summary": "The guide covers both upgrade paths."
+                  }
+                ],
+                "elicitations": [],
+                "references": [
+                  {
+                    "id": "ref_5e6f7a8b9c0d1e2f",
+                    "cardId": "card_2b3c4d5e6f7a8b9c",
+                    "url": "https://forge.example.com/acme/web/pulls/42",
+                    "title": "Migration guide",
+                    "subtitle": null,
+                    "provider": "url",
+                    "sourceType": "pull-request",
+                    "externalId": "42",
+                    "metadata": null,
+                    "syncState": "synced",
+                    "lastSyncedAt": null,
+                    "addedBy": "agent",
+                    "runId": "run_e074a2160c4b4f28",
+                    "createdAt": "2026-11-23T10:00:00.000Z",
+                    "updatedAt": null
+                  }
+                ],
+                "usage": {
+                  "totalCostUsd": 0.42,
+                  "estimatedCostUsd": 0,
+                  "budgetUsd": 50,
+                  "cardUsdCap": null,
+                  "overBudget": false
+                },
+                "github": {
+                  "issueTrigger": false,
+                  "webhookConfigured": false,
+                  "webhookUrl": "https://app.superpipeline.dev/v1/boards/brd_9c1d4e5f6a7b8c9d/webhooks/github?tenant=tnt_5a6b7c8d9e0f1a2b",
+                  "triggerGrantCount": null
+                },
+                "stale": {
+                  "enabled": true,
+                  "afterHours": 48
+                }
+              }
+            },
+            {
+              "why": "cards is required",
+              "body": {
+                "boardId": "brd_9c1d4e5f6a7b8c9d",
+                "tenantId": "tnt_5a6b7c8d9e0f1a2b",
+                "name": "Web",
+                "stages": [
+                  {
+                    "key": "build",
+                    "name": "Build",
+                    "order": 0,
+                    "ownerKind": "capability",
+                    "owner": "code",
+                    "requires": {
+                      "all": [
+                        "code"
+                      ],
+                      "any": [
+                        "typescript",
+                        "go"
+                      ]
+                    },
+                    "placement": {
+                      "isolation": "container",
+                      "tools": [
+                        "mcp:superpipeline",
+                        "cli:stk"
+                      ],
+                      "credentials": [
+                        "forge:github"
+                      ]
+                    }
+                  },
+                  {
+                    "key": "review",
+                    "name": "Review",
+                    "order": 1,
+                    "ownerKind": "human",
+                    "gate": "approval"
+                  },
+                  {
+                    "key": "done",
+                    "name": "Done",
+                    "order": 2
+                  }
+                ],
+                "gates": [
+                  {
+                    "id": "gate_3c4d5e6f7a8b9c0d",
+                    "cardId": "card_2b3c4d5e6f7a8b9c",
+                    "stageKey": "review",
+                    "status": "pending",
+                    "decision": null,
+                    "options": [
+                      {
+                        "name": "approve",
+                        "title": "Approve"
+                      },
+                      {
+                        "name": "request_changes",
+                        "title": "Request changes"
+                      }
+                    ],
+                    "producedBy": "agt_7b1e2d3c4a5f6e70",
+                    "createdAt": "2026-11-23T10:05:00.000Z",
+                    "decidedBy": null,
+                    "comment": null,
+                    "resolvedAt": null,
+                    "references": [
+                      {
+                        "id": "ref_5e6f7a8b9c0d1e2f",
+                        "cardId": "card_2b3c4d5e6f7a8b9c",
+                        "url": "https://forge.example.com/acme/web/pulls/42",
+                        "title": "Migration guide",
+                        "subtitle": null,
+                        "provider": "url",
+                        "sourceType": "pull-request",
+                        "externalId": "42",
+                        "metadata": null,
+                        "syncState": "synced",
+                        "lastSyncedAt": null,
+                        "addedBy": "agent",
+                        "runId": "run_e074a2160c4b4f28",
+                        "createdAt": "2026-11-23T10:00:00.000Z",
+                        "updatedAt": null
+                      }
+                    ],
+                    "summary": "The guide covers both upgrade paths."
+                  }
+                ],
+                "elicitations": [],
+                "references": [
+                  {
+                    "id": "ref_5e6f7a8b9c0d1e2f",
+                    "cardId": "card_2b3c4d5e6f7a8b9c",
+                    "url": "https://forge.example.com/acme/web/pulls/42",
+                    "title": "Migration guide",
+                    "subtitle": null,
+                    "provider": "url",
+                    "sourceType": "pull-request",
+                    "externalId": "42",
+                    "metadata": null,
+                    "syncState": "synced",
+                    "lastSyncedAt": null,
+                    "addedBy": "agent",
+                    "runId": "run_e074a2160c4b4f28",
+                    "createdAt": "2026-11-23T10:00:00.000Z",
+                    "updatedAt": null
+                  }
+                ],
+                "usage": {
+                  "totalCostUsd": 0.42,
+                  "estimatedCostUsd": 0,
+                  "budgetUsd": 50,
+                  "cardUsdCap": null,
+                  "overBudget": false
+                },
+                "github": {
+                  "issueTrigger": false,
+                  "webhookConfigured": false,
+                  "webhookUrl": "https://app.superpipeline.dev/v1/boards/brd_9c1d4e5f6a7b8c9d/webhooks/github?tenant=tnt_5a6b7c8d9e0f1a2b",
+                  "triggerGrantCount": null
+                },
+                "stale": {
+                  "enabled": true,
+                  "afterHours": 48
+                }
+              }
+            },
+            {
+              "why": "references is required",
+              "body": {
+                "boardId": "brd_9c1d4e5f6a7b8c9d",
+                "tenantId": "tnt_5a6b7c8d9e0f1a2b",
+                "name": "Web",
+                "stages": [
+                  {
+                    "key": "build",
+                    "name": "Build",
+                    "order": 0,
+                    "ownerKind": "capability",
+                    "owner": "code",
+                    "requires": {
+                      "all": [
+                        "code"
+                      ],
+                      "any": [
+                        "typescript",
+                        "go"
+                      ]
+                    },
+                    "placement": {
+                      "isolation": "container",
+                      "tools": [
+                        "mcp:superpipeline",
+                        "cli:stk"
+                      ],
+                      "credentials": [
+                        "forge:github"
+                      ]
+                    }
+                  },
+                  {
+                    "key": "review",
+                    "name": "Review",
+                    "order": 1,
+                    "ownerKind": "human",
+                    "gate": "approval"
+                  },
+                  {
+                    "key": "done",
+                    "name": "Done",
+                    "order": 2
+                  }
+                ],
+                "cards": [
+                  {
+                    "id": "card_1a2b3c4d5e6f7a8b",
+                    "title": "Add OAuth login",
+                    "spec": {
+                      "goal": "Sign in with the workspace's identity provider"
+                    },
+                    "ownerUserId": "usr_0f1e2d3c4b5a6978",
+                    "queuedBy": "prn_0123456789abcdef0b01",
+                    "queuedByAgentId": null,
+                    "queuedGrant": null,
+                    "labels": [],
+                    "projectId": null,
+                    "milestoneId": null,
+                    "dueAt": null,
+                    "archivedAt": null,
+                    "currentStageKey": "build",
+                    "state": "submitted",
+                    "delegateAgentId": null,
+                    "lastAgentId": null,
+                    "queuedGrantOwner": null,
+                    "stageSince": "2026-11-23T09:00:00.000Z",
+                    "currentRunId": null,
+                    "priority": 0,
+                    "contextId": "ctx_1a2b3c4d5e6f7a8b",
+                    "createdAt": "2026-11-23T09:00:00.000Z",
+                    "updatedAt": null,
+                    "stateSince": "2026-11-23T09:00:00.000Z",
+                    "costUsd": 0,
+                    "overBudget": false,
+                    "attemptCount": 0,
+                    "parentCardId": null,
+                    "openChildCount": 0,
+                    "costUsdRollup": 0,
+                    "blockedBy": [],
+                    "reservation": {
+                      "agentId": "agt_3f9a1c0b7e24d5a6",
+                      "reservedUntil": "2026-11-23T09:01:00.000Z",
+                      "decisionId": "dec_01JDX4Q7Z8",
+                      "reservedBy": "prn_0123456789abcdef0c01"
+                    },
+                    "placementWindowUntil": "2026-11-23T09:00:10.000Z"
+                  },
+                  {
+                    "id": "card_2b3c4d5e6f7a8b9c",
+                    "title": "Write the migration guide",
+                    "spec": {
+                      "goal": "Sign in with the workspace's identity provider"
+                    },
+                    "ownerUserId": "usr_0f1e2d3c4b5a6978",
+                    "queuedBy": "prn_0123456789abcdef0b01",
+                    "queuedByAgentId": null,
+                    "queuedGrant": null,
+                    "labels": [],
+                    "projectId": null,
+                    "milestoneId": null,
+                    "dueAt": null,
+                    "archivedAt": null,
+                    "currentStageKey": "review",
+                    "state": "input-required",
+                    "delegateAgentId": null,
+                    "lastAgentId": "agt_7b1e2d3c4a5f6e70",
+                    "queuedGrantOwner": null,
+                    "stageSince": "2026-11-23T09:00:00.000Z",
+                    "currentRunId": "run_e074a2160c4b4f28",
+                    "priority": 1,
+                    "contextId": "ctx_1a2b3c4d5e6f7a8b",
+                    "createdAt": "2026-11-23T09:00:00.000Z",
+                    "updatedAt": "2026-11-23T10:05:00.000Z",
+                    "stateSince": "2026-11-23T09:00:00.000Z",
+                    "costUsd": 0.42,
+                    "overBudget": false,
+                    "attemptCount": 2,
+                    "parentCardId": null,
+                    "openChildCount": 0,
+                    "costUsdRollup": 0.42,
+                    "blockedBy": [],
+                    "needsHuman": {
+                      "reason": "review"
+                    }
+                  },
+                  {
+                    "id": "card_3c4d5e6f7a8b9c0d",
+                    "title": "Retire the old login",
+                    "spec": {
+                      "goal": "Sign in with the workspace's identity provider"
+                    },
+                    "ownerUserId": "usr_0f1e2d3c4b5a6978",
+                    "queuedBy": "prn_0123456789abcdef0b01",
+                    "queuedByAgentId": null,
+                    "queuedGrant": null,
+                    "labels": [],
+                    "projectId": null,
+                    "milestoneId": null,
+                    "dueAt": null,
+                    "archivedAt": "2026-11-22T17:00:00.000Z",
+                    "currentStageKey": "done",
+                    "state": "completed",
+                    "delegateAgentId": null,
+                    "lastAgentId": null,
+                    "queuedGrantOwner": null,
+                    "stageSince": "2026-11-23T09:00:00.000Z",
+                    "currentRunId": null,
+                    "priority": 0,
+                    "contextId": "ctx_1a2b3c4d5e6f7a8b",
+                    "createdAt": "2026-11-23T09:00:00.000Z",
+                    "updatedAt": null,
+                    "stateSince": "2026-11-23T09:00:00.000Z",
+                    "costUsd": 0,
+                    "overBudget": false,
+                    "attemptCount": 0,
+                    "parentCardId": null,
+                    "openChildCount": 0,
+                    "costUsdRollup": 0,
+                    "blockedBy": []
+                  }
+                ],
+                "gates": [
+                  {
+                    "id": "gate_3c4d5e6f7a8b9c0d",
+                    "cardId": "card_2b3c4d5e6f7a8b9c",
+                    "stageKey": "review",
+                    "status": "pending",
+                    "decision": null,
+                    "options": [
+                      {
+                        "name": "approve",
+                        "title": "Approve"
+                      },
+                      {
+                        "name": "request_changes",
+                        "title": "Request changes"
+                      }
+                    ],
+                    "producedBy": "agt_7b1e2d3c4a5f6e70",
+                    "createdAt": "2026-11-23T10:05:00.000Z",
+                    "decidedBy": null,
+                    "comment": null,
+                    "resolvedAt": null,
+                    "references": [
+                      {
+                        "id": "ref_5e6f7a8b9c0d1e2f",
+                        "cardId": "card_2b3c4d5e6f7a8b9c",
+                        "url": "https://forge.example.com/acme/web/pulls/42",
+                        "title": "Migration guide",
+                        "subtitle": null,
+                        "provider": "url",
+                        "sourceType": "pull-request",
+                        "externalId": "42",
+                        "metadata": null,
+                        "syncState": "synced",
+                        "lastSyncedAt": null,
+                        "addedBy": "agent",
+                        "runId": "run_e074a2160c4b4f28",
+                        "createdAt": "2026-11-23T10:00:00.000Z",
+                        "updatedAt": null
+                      }
+                    ],
+                    "summary": "The guide covers both upgrade paths."
+                  }
+                ],
+                "elicitations": [],
+                "usage": {
+                  "totalCostUsd": 0.42,
+                  "estimatedCostUsd": 0,
+                  "budgetUsd": 50,
+                  "cardUsdCap": null,
+                  "overBudget": false
+                },
+                "github": {
+                  "issueTrigger": false,
+                  "webhookConfigured": false,
+                  "webhookUrl": "https://app.superpipeline.dev/v1/boards/brd_9c1d4e5f6a7b8c9d/webhooks/github?tenant=tnt_5a6b7c8d9e0f1a2b",
+                  "triggerGrantCount": null
+                },
+                "stale": {
+                  "enabled": true,
+                  "afterHours": 48
+                }
+              }
+            },
+            {
+              "why": "an initialised board has an id",
+              "body": {
+                "boardId": null,
+                "tenantId": "tnt_5a6b7c8d9e0f1a2b",
+                "name": "Web",
+                "stages": [
+                  {
+                    "key": "build",
+                    "name": "Build",
+                    "order": 0,
+                    "ownerKind": "capability",
+                    "owner": "code",
+                    "requires": {
+                      "all": [
+                        "code"
+                      ],
+                      "any": [
+                        "typescript",
+                        "go"
+                      ]
+                    },
+                    "placement": {
+                      "isolation": "container",
+                      "tools": [
+                        "mcp:superpipeline",
+                        "cli:stk"
+                      ],
+                      "credentials": [
+                        "forge:github"
+                      ]
+                    }
+                  },
+                  {
+                    "key": "review",
+                    "name": "Review",
+                    "order": 1,
+                    "ownerKind": "human",
+                    "gate": "approval"
+                  },
+                  {
+                    "key": "done",
+                    "name": "Done",
+                    "order": 2
+                  }
+                ],
+                "cards": [
+                  {
+                    "id": "card_1a2b3c4d5e6f7a8b",
+                    "title": "Add OAuth login",
+                    "spec": {
+                      "goal": "Sign in with the workspace's identity provider"
+                    },
+                    "ownerUserId": "usr_0f1e2d3c4b5a6978",
+                    "queuedBy": "prn_0123456789abcdef0b01",
+                    "queuedByAgentId": null,
+                    "queuedGrant": null,
+                    "labels": [],
+                    "projectId": null,
+                    "milestoneId": null,
+                    "dueAt": null,
+                    "archivedAt": null,
+                    "currentStageKey": "build",
+                    "state": "submitted",
+                    "delegateAgentId": null,
+                    "lastAgentId": null,
+                    "queuedGrantOwner": null,
+                    "stageSince": "2026-11-23T09:00:00.000Z",
+                    "currentRunId": null,
+                    "priority": 0,
+                    "contextId": "ctx_1a2b3c4d5e6f7a8b",
+                    "createdAt": "2026-11-23T09:00:00.000Z",
+                    "updatedAt": null,
+                    "stateSince": "2026-11-23T09:00:00.000Z",
+                    "costUsd": 0,
+                    "overBudget": false,
+                    "attemptCount": 0,
+                    "parentCardId": null,
+                    "openChildCount": 0,
+                    "costUsdRollup": 0,
+                    "blockedBy": [],
+                    "reservation": {
+                      "agentId": "agt_3f9a1c0b7e24d5a6",
+                      "reservedUntil": "2026-11-23T09:01:00.000Z",
+                      "decisionId": "dec_01JDX4Q7Z8",
+                      "reservedBy": "prn_0123456789abcdef0c01"
+                    },
+                    "placementWindowUntil": "2026-11-23T09:00:10.000Z"
+                  },
+                  {
+                    "id": "card_2b3c4d5e6f7a8b9c",
+                    "title": "Write the migration guide",
+                    "spec": {
+                      "goal": "Sign in with the workspace's identity provider"
+                    },
+                    "ownerUserId": "usr_0f1e2d3c4b5a6978",
+                    "queuedBy": "prn_0123456789abcdef0b01",
+                    "queuedByAgentId": null,
+                    "queuedGrant": null,
+                    "labels": [],
+                    "projectId": null,
+                    "milestoneId": null,
+                    "dueAt": null,
+                    "archivedAt": null,
+                    "currentStageKey": "review",
+                    "state": "input-required",
+                    "delegateAgentId": null,
+                    "lastAgentId": "agt_7b1e2d3c4a5f6e70",
+                    "queuedGrantOwner": null,
+                    "stageSince": "2026-11-23T09:00:00.000Z",
+                    "currentRunId": "run_e074a2160c4b4f28",
+                    "priority": 1,
+                    "contextId": "ctx_1a2b3c4d5e6f7a8b",
+                    "createdAt": "2026-11-23T09:00:00.000Z",
+                    "updatedAt": "2026-11-23T10:05:00.000Z",
+                    "stateSince": "2026-11-23T09:00:00.000Z",
+                    "costUsd": 0.42,
+                    "overBudget": false,
+                    "attemptCount": 2,
+                    "parentCardId": null,
+                    "openChildCount": 0,
+                    "costUsdRollup": 0.42,
+                    "blockedBy": [],
+                    "needsHuman": {
+                      "reason": "review"
+                    }
+                  },
+                  {
+                    "id": "card_3c4d5e6f7a8b9c0d",
+                    "title": "Retire the old login",
+                    "spec": {
+                      "goal": "Sign in with the workspace's identity provider"
+                    },
+                    "ownerUserId": "usr_0f1e2d3c4b5a6978",
+                    "queuedBy": "prn_0123456789abcdef0b01",
+                    "queuedByAgentId": null,
+                    "queuedGrant": null,
+                    "labels": [],
+                    "projectId": null,
+                    "milestoneId": null,
+                    "dueAt": null,
+                    "archivedAt": "2026-11-22T17:00:00.000Z",
+                    "currentStageKey": "done",
+                    "state": "completed",
+                    "delegateAgentId": null,
+                    "lastAgentId": null,
+                    "queuedGrantOwner": null,
+                    "stageSince": "2026-11-23T09:00:00.000Z",
+                    "currentRunId": null,
+                    "priority": 0,
+                    "contextId": "ctx_1a2b3c4d5e6f7a8b",
+                    "createdAt": "2026-11-23T09:00:00.000Z",
+                    "updatedAt": null,
+                    "stateSince": "2026-11-23T09:00:00.000Z",
+                    "costUsd": 0,
+                    "overBudget": false,
+                    "attemptCount": 0,
+                    "parentCardId": null,
+                    "openChildCount": 0,
+                    "costUsdRollup": 0,
+                    "blockedBy": []
+                  }
+                ],
+                "gates": [
+                  {
+                    "id": "gate_3c4d5e6f7a8b9c0d",
+                    "cardId": "card_2b3c4d5e6f7a8b9c",
+                    "stageKey": "review",
+                    "status": "pending",
+                    "decision": null,
+                    "options": [
+                      {
+                        "name": "approve",
+                        "title": "Approve"
+                      },
+                      {
+                        "name": "request_changes",
+                        "title": "Request changes"
+                      }
+                    ],
+                    "producedBy": "agt_7b1e2d3c4a5f6e70",
+                    "createdAt": "2026-11-23T10:05:00.000Z",
+                    "decidedBy": null,
+                    "comment": null,
+                    "resolvedAt": null,
+                    "references": [
+                      {
+                        "id": "ref_5e6f7a8b9c0d1e2f",
+                        "cardId": "card_2b3c4d5e6f7a8b9c",
+                        "url": "https://forge.example.com/acme/web/pulls/42",
+                        "title": "Migration guide",
+                        "subtitle": null,
+                        "provider": "url",
+                        "sourceType": "pull-request",
+                        "externalId": "42",
+                        "metadata": null,
+                        "syncState": "synced",
+                        "lastSyncedAt": null,
+                        "addedBy": "agent",
+                        "runId": "run_e074a2160c4b4f28",
+                        "createdAt": "2026-11-23T10:00:00.000Z",
+                        "updatedAt": null
+                      }
+                    ],
+                    "summary": "The guide covers both upgrade paths."
+                  }
+                ],
+                "elicitations": [],
+                "references": [
+                  {
+                    "id": "ref_5e6f7a8b9c0d1e2f",
+                    "cardId": "card_2b3c4d5e6f7a8b9c",
+                    "url": "https://forge.example.com/acme/web/pulls/42",
+                    "title": "Migration guide",
+                    "subtitle": null,
+                    "provider": "url",
+                    "sourceType": "pull-request",
+                    "externalId": "42",
+                    "metadata": null,
+                    "syncState": "synced",
+                    "lastSyncedAt": null,
+                    "addedBy": "agent",
+                    "runId": "run_e074a2160c4b4f28",
+                    "createdAt": "2026-11-23T10:00:00.000Z",
+                    "updatedAt": null
+                  }
+                ],
+                "usage": {
+                  "totalCostUsd": 0.42,
+                  "estimatedCostUsd": 0,
+                  "budgetUsd": 50,
+                  "cardUsdCap": null,
+                  "overBudget": false
+                },
+                "github": {
+                  "issueTrigger": false,
+                  "webhookConfigured": false,
+                  "webhookUrl": "https://app.superpipeline.dev/v1/boards/brd_9c1d4e5f6a7b8c9d/webhooks/github?tenant=tnt_5a6b7c8d9e0f1a2b",
+                  "triggerGrantCount": null
+                },
+                "stale": {
+                  "enabled": true,
+                  "afterHours": 48
+                }
+              }
+            },
+            {
+              "why": "a card names its current stage",
+              "body": {
+                "boardId": "brd_9c1d4e5f6a7b8c9d",
+                "tenantId": "tnt_5a6b7c8d9e0f1a2b",
+                "name": "Web",
+                "stages": [
+                  {
+                    "key": "build",
+                    "name": "Build",
+                    "order": 0,
+                    "ownerKind": "capability",
+                    "owner": "code",
+                    "requires": {
+                      "all": [
+                        "code"
+                      ],
+                      "any": [
+                        "typescript",
+                        "go"
+                      ]
+                    },
+                    "placement": {
+                      "isolation": "container",
+                      "tools": [
+                        "mcp:superpipeline",
+                        "cli:stk"
+                      ],
+                      "credentials": [
+                        "forge:github"
+                      ]
+                    }
+                  },
+                  {
+                    "key": "review",
+                    "name": "Review",
+                    "order": 1,
+                    "ownerKind": "human",
+                    "gate": "approval"
+                  },
+                  {
+                    "key": "done",
+                    "name": "Done",
+                    "order": 2
+                  }
+                ],
+                "cards": [
+                  {
+                    "id": "card_1a2b3c4d5e6f7a8b",
+                    "title": "Add OAuth login",
+                    "spec": {
+                      "goal": "Sign in with the workspace's identity provider"
+                    },
+                    "ownerUserId": "usr_0f1e2d3c4b5a6978",
+                    "queuedBy": "prn_0123456789abcdef0b01",
+                    "queuedByAgentId": null,
+                    "queuedGrant": null,
+                    "labels": [],
+                    "projectId": null,
+                    "milestoneId": null,
+                    "dueAt": null,
+                    "archivedAt": null,
+                    "state": "submitted",
+                    "delegateAgentId": null,
+                    "lastAgentId": null,
+                    "queuedGrantOwner": null,
+                    "stageSince": "2026-11-23T09:00:00.000Z",
+                    "currentRunId": null,
+                    "priority": 0,
+                    "contextId": "ctx_1a2b3c4d5e6f7a8b",
+                    "createdAt": "2026-11-23T09:00:00.000Z",
+                    "updatedAt": null,
+                    "stateSince": "2026-11-23T09:00:00.000Z",
+                    "costUsd": 0,
+                    "overBudget": false,
+                    "attemptCount": 0,
+                    "parentCardId": null,
+                    "openChildCount": 0,
+                    "costUsdRollup": 0,
+                    "blockedBy": [],
+                    "reservation": {
+                      "agentId": "agt_3f9a1c0b7e24d5a6",
+                      "reservedUntil": "2026-11-23T09:01:00.000Z",
+                      "decisionId": "dec_01JDX4Q7Z8",
+                      "reservedBy": "prn_0123456789abcdef0c01"
+                    },
+                    "placementWindowUntil": "2026-11-23T09:00:10.000Z"
+                  }
+                ],
+                "gates": [
+                  {
+                    "id": "gate_3c4d5e6f7a8b9c0d",
+                    "cardId": "card_2b3c4d5e6f7a8b9c",
+                    "stageKey": "review",
+                    "status": "pending",
+                    "decision": null,
+                    "options": [
+                      {
+                        "name": "approve",
+                        "title": "Approve"
+                      },
+                      {
+                        "name": "request_changes",
+                        "title": "Request changes"
+                      }
+                    ],
+                    "producedBy": "agt_7b1e2d3c4a5f6e70",
+                    "createdAt": "2026-11-23T10:05:00.000Z",
+                    "decidedBy": null,
+                    "comment": null,
+                    "resolvedAt": null,
+                    "references": [
+                      {
+                        "id": "ref_5e6f7a8b9c0d1e2f",
+                        "cardId": "card_2b3c4d5e6f7a8b9c",
+                        "url": "https://forge.example.com/acme/web/pulls/42",
+                        "title": "Migration guide",
+                        "subtitle": null,
+                        "provider": "url",
+                        "sourceType": "pull-request",
+                        "externalId": "42",
+                        "metadata": null,
+                        "syncState": "synced",
+                        "lastSyncedAt": null,
+                        "addedBy": "agent",
+                        "runId": "run_e074a2160c4b4f28",
+                        "createdAt": "2026-11-23T10:00:00.000Z",
+                        "updatedAt": null
+                      }
+                    ],
+                    "summary": "The guide covers both upgrade paths."
+                  }
+                ],
+                "elicitations": [],
+                "references": [
+                  {
+                    "id": "ref_5e6f7a8b9c0d1e2f",
+                    "cardId": "card_2b3c4d5e6f7a8b9c",
+                    "url": "https://forge.example.com/acme/web/pulls/42",
+                    "title": "Migration guide",
+                    "subtitle": null,
+                    "provider": "url",
+                    "sourceType": "pull-request",
+                    "externalId": "42",
+                    "metadata": null,
+                    "syncState": "synced",
+                    "lastSyncedAt": null,
+                    "addedBy": "agent",
+                    "runId": "run_e074a2160c4b4f28",
+                    "createdAt": "2026-11-23T10:00:00.000Z",
+                    "updatedAt": null
+                  }
+                ],
+                "usage": {
+                  "totalCostUsd": 0.42,
+                  "estimatedCostUsd": 0,
+                  "budgetUsd": 50,
+                  "cardUsdCap": null,
+                  "overBudget": false
+                },
+                "github": {
+                  "issueTrigger": false,
+                  "webhookConfigured": false,
+                  "webhookUrl": "https://app.superpipeline.dev/v1/boards/brd_9c1d4e5f6a7b8c9d/webhooks/github?tenant=tnt_5a6b7c8d9e0f1a2b",
+                  "triggerGrantCount": null
+                },
+                "stale": {
+                  "enabled": true,
+                  "afterHours": 48
+                }
+              }
+            },
+            {
+              "why": "a card's state is a task state",
+              "body": {
+                "boardId": "brd_9c1d4e5f6a7b8c9d",
+                "tenantId": "tnt_5a6b7c8d9e0f1a2b",
+                "name": "Web",
+                "stages": [
+                  {
+                    "key": "build",
+                    "name": "Build",
+                    "order": 0,
+                    "ownerKind": "capability",
+                    "owner": "code",
+                    "requires": {
+                      "all": [
+                        "code"
+                      ],
+                      "any": [
+                        "typescript",
+                        "go"
+                      ]
+                    },
+                    "placement": {
+                      "isolation": "container",
+                      "tools": [
+                        "mcp:superpipeline",
+                        "cli:stk"
+                      ],
+                      "credentials": [
+                        "forge:github"
+                      ]
+                    }
+                  },
+                  {
+                    "key": "review",
+                    "name": "Review",
+                    "order": 1,
+                    "ownerKind": "human",
+                    "gate": "approval"
+                  },
+                  {
+                    "key": "done",
+                    "name": "Done",
+                    "order": 2
+                  }
+                ],
+                "cards": [
+                  {
+                    "id": "card_1a2b3c4d5e6f7a8b",
+                    "title": "Add OAuth login",
+                    "spec": {
+                      "goal": "Sign in with the workspace's identity provider"
+                    },
+                    "ownerUserId": "usr_0f1e2d3c4b5a6978",
+                    "queuedBy": "prn_0123456789abcdef0b01",
+                    "queuedByAgentId": null,
+                    "queuedGrant": null,
+                    "labels": [],
+                    "projectId": null,
+                    "milestoneId": null,
+                    "dueAt": null,
+                    "archivedAt": null,
+                    "currentStageKey": "build",
+                    "state": "ready",
+                    "delegateAgentId": null,
+                    "lastAgentId": null,
+                    "queuedGrantOwner": null,
+                    "stageSince": "2026-11-23T09:00:00.000Z",
+                    "currentRunId": null,
+                    "priority": 0,
+                    "contextId": "ctx_1a2b3c4d5e6f7a8b",
+                    "createdAt": "2026-11-23T09:00:00.000Z",
+                    "updatedAt": null,
+                    "stateSince": "2026-11-23T09:00:00.000Z",
+                    "costUsd": 0,
+                    "overBudget": false,
+                    "attemptCount": 0,
+                    "parentCardId": null,
+                    "openChildCount": 0,
+                    "costUsdRollup": 0,
+                    "blockedBy": []
+                  }
+                ],
+                "gates": [
+                  {
+                    "id": "gate_3c4d5e6f7a8b9c0d",
+                    "cardId": "card_2b3c4d5e6f7a8b9c",
+                    "stageKey": "review",
+                    "status": "pending",
+                    "decision": null,
+                    "options": [
+                      {
+                        "name": "approve",
+                        "title": "Approve"
+                      },
+                      {
+                        "name": "request_changes",
+                        "title": "Request changes"
+                      }
+                    ],
+                    "producedBy": "agt_7b1e2d3c4a5f6e70",
+                    "createdAt": "2026-11-23T10:05:00.000Z",
+                    "decidedBy": null,
+                    "comment": null,
+                    "resolvedAt": null,
+                    "references": [
+                      {
+                        "id": "ref_5e6f7a8b9c0d1e2f",
+                        "cardId": "card_2b3c4d5e6f7a8b9c",
+                        "url": "https://forge.example.com/acme/web/pulls/42",
+                        "title": "Migration guide",
+                        "subtitle": null,
+                        "provider": "url",
+                        "sourceType": "pull-request",
+                        "externalId": "42",
+                        "metadata": null,
+                        "syncState": "synced",
+                        "lastSyncedAt": null,
+                        "addedBy": "agent",
+                        "runId": "run_e074a2160c4b4f28",
+                        "createdAt": "2026-11-23T10:00:00.000Z",
+                        "updatedAt": null
+                      }
+                    ],
+                    "summary": "The guide covers both upgrade paths."
+                  }
+                ],
+                "elicitations": [],
+                "references": [
+                  {
+                    "id": "ref_5e6f7a8b9c0d1e2f",
+                    "cardId": "card_2b3c4d5e6f7a8b9c",
+                    "url": "https://forge.example.com/acme/web/pulls/42",
+                    "title": "Migration guide",
+                    "subtitle": null,
+                    "provider": "url",
+                    "sourceType": "pull-request",
+                    "externalId": "42",
+                    "metadata": null,
+                    "syncState": "synced",
+                    "lastSyncedAt": null,
+                    "addedBy": "agent",
+                    "runId": "run_e074a2160c4b4f28",
+                    "createdAt": "2026-11-23T10:00:00.000Z",
+                    "updatedAt": null
+                  }
+                ],
+                "usage": {
+                  "totalCostUsd": 0.42,
+                  "estimatedCostUsd": 0,
+                  "budgetUsd": 50,
+                  "cardUsdCap": null,
+                  "overBudget": false
+                },
+                "github": {
+                  "issueTrigger": false,
+                  "webhookConfigured": false,
+                  "webhookUrl": "https://app.superpipeline.dev/v1/boards/brd_9c1d4e5f6a7b8c9d/webhooks/github?tenant=tnt_5a6b7c8d9e0f1a2b",
+                  "triggerGrantCount": null
+                },
+                "stale": {
+                  "enabled": true,
+                  "afterHours": 48
+                }
+              }
+            },
+            {
+              "why": "a reservation says until when",
+              "body": {
+                "boardId": "brd_9c1d4e5f6a7b8c9d",
+                "tenantId": "tnt_5a6b7c8d9e0f1a2b",
+                "name": "Web",
+                "stages": [
+                  {
+                    "key": "build",
+                    "name": "Build",
+                    "order": 0,
+                    "ownerKind": "capability",
+                    "owner": "code",
+                    "requires": {
+                      "all": [
+                        "code"
+                      ],
+                      "any": [
+                        "typescript",
+                        "go"
+                      ]
+                    },
+                    "placement": {
+                      "isolation": "container",
+                      "tools": [
+                        "mcp:superpipeline",
+                        "cli:stk"
+                      ],
+                      "credentials": [
+                        "forge:github"
+                      ]
+                    }
+                  },
+                  {
+                    "key": "review",
+                    "name": "Review",
+                    "order": 1,
+                    "ownerKind": "human",
+                    "gate": "approval"
+                  },
+                  {
+                    "key": "done",
+                    "name": "Done",
+                    "order": 2
+                  }
+                ],
+                "cards": [
+                  {
+                    "id": "card_1a2b3c4d5e6f7a8b",
+                    "title": "Add OAuth login",
+                    "spec": {
+                      "goal": "Sign in with the workspace's identity provider"
+                    },
+                    "ownerUserId": "usr_0f1e2d3c4b5a6978",
+                    "queuedBy": "prn_0123456789abcdef0b01",
+                    "queuedByAgentId": null,
+                    "queuedGrant": null,
+                    "labels": [],
+                    "projectId": null,
+                    "milestoneId": null,
+                    "dueAt": null,
+                    "archivedAt": null,
+                    "currentStageKey": "build",
+                    "state": "submitted",
+                    "delegateAgentId": null,
+                    "lastAgentId": null,
+                    "queuedGrantOwner": null,
+                    "stageSince": "2026-11-23T09:00:00.000Z",
+                    "currentRunId": null,
+                    "priority": 0,
+                    "contextId": "ctx_1a2b3c4d5e6f7a8b",
+                    "createdAt": "2026-11-23T09:00:00.000Z",
+                    "updatedAt": null,
+                    "stateSince": "2026-11-23T09:00:00.000Z",
+                    "costUsd": 0,
+                    "overBudget": false,
+                    "attemptCount": 0,
+                    "parentCardId": null,
+                    "openChildCount": 0,
+                    "costUsdRollup": 0,
+                    "blockedBy": [],
+                    "reservation": {
+                      "agentId": "agt_3f9a1c0b7e24d5a6",
+                      "decisionId": "dec_01JDX4Q7Z8",
+                      "reservedBy": "prn_0123456789abcdef0c01"
+                    }
+                  }
+                ],
+                "gates": [
+                  {
+                    "id": "gate_3c4d5e6f7a8b9c0d",
+                    "cardId": "card_2b3c4d5e6f7a8b9c",
+                    "stageKey": "review",
+                    "status": "pending",
+                    "decision": null,
+                    "options": [
+                      {
+                        "name": "approve",
+                        "title": "Approve"
+                      },
+                      {
+                        "name": "request_changes",
+                        "title": "Request changes"
+                      }
+                    ],
+                    "producedBy": "agt_7b1e2d3c4a5f6e70",
+                    "createdAt": "2026-11-23T10:05:00.000Z",
+                    "decidedBy": null,
+                    "comment": null,
+                    "resolvedAt": null,
+                    "references": [
+                      {
+                        "id": "ref_5e6f7a8b9c0d1e2f",
+                        "cardId": "card_2b3c4d5e6f7a8b9c",
+                        "url": "https://forge.example.com/acme/web/pulls/42",
+                        "title": "Migration guide",
+                        "subtitle": null,
+                        "provider": "url",
+                        "sourceType": "pull-request",
+                        "externalId": "42",
+                        "metadata": null,
+                        "syncState": "synced",
+                        "lastSyncedAt": null,
+                        "addedBy": "agent",
+                        "runId": "run_e074a2160c4b4f28",
+                        "createdAt": "2026-11-23T10:00:00.000Z",
+                        "updatedAt": null
+                      }
+                    ],
+                    "summary": "The guide covers both upgrade paths."
+                  }
+                ],
+                "elicitations": [],
+                "references": [
+                  {
+                    "id": "ref_5e6f7a8b9c0d1e2f",
+                    "cardId": "card_2b3c4d5e6f7a8b9c",
+                    "url": "https://forge.example.com/acme/web/pulls/42",
+                    "title": "Migration guide",
+                    "subtitle": null,
+                    "provider": "url",
+                    "sourceType": "pull-request",
+                    "externalId": "42",
+                    "metadata": null,
+                    "syncState": "synced",
+                    "lastSyncedAt": null,
+                    "addedBy": "agent",
+                    "runId": "run_e074a2160c4b4f28",
+                    "createdAt": "2026-11-23T10:00:00.000Z",
+                    "updatedAt": null
+                  }
+                ],
+                "usage": {
+                  "totalCostUsd": 0.42,
+                  "estimatedCostUsd": 0,
+                  "budgetUsd": 50,
+                  "cardUsdCap": null,
+                  "overBudget": false
+                },
+                "github": {
+                  "issueTrigger": false,
+                  "webhookConfigured": false,
+                  "webhookUrl": "https://app.superpipeline.dev/v1/boards/brd_9c1d4e5f6a7b8c9d/webhooks/github?tenant=tnt_5a6b7c8d9e0f1a2b",
+                  "triggerGrantCount": null
+                },
+                "stale": {
+                  "enabled": true,
+                  "afterHours": 48
+                }
+              }
+            },
+            {
+              "why": "a stage has a key",
+              "body": {
+                "boardId": "brd_9c1d4e5f6a7b8c9d",
+                "tenantId": "tnt_5a6b7c8d9e0f1a2b",
+                "name": "Web",
+                "stages": [
+                  {
+                    "name": "Build",
+                    "order": 0,
+                    "ownerKind": "capability",
+                    "owner": "code",
+                    "requires": {
+                      "all": [
+                        "code"
+                      ],
+                      "any": [
+                        "typescript",
+                        "go"
+                      ]
+                    },
+                    "placement": {
+                      "isolation": "container",
+                      "tools": [
+                        "mcp:superpipeline",
+                        "cli:stk"
+                      ],
+                      "credentials": [
+                        "forge:github"
+                      ]
+                    }
+                  }
+                ],
+                "cards": [
+                  {
+                    "id": "card_1a2b3c4d5e6f7a8b",
+                    "title": "Add OAuth login",
+                    "spec": {
+                      "goal": "Sign in with the workspace's identity provider"
+                    },
+                    "ownerUserId": "usr_0f1e2d3c4b5a6978",
+                    "queuedBy": "prn_0123456789abcdef0b01",
+                    "queuedByAgentId": null,
+                    "queuedGrant": null,
+                    "labels": [],
+                    "projectId": null,
+                    "milestoneId": null,
+                    "dueAt": null,
+                    "archivedAt": null,
+                    "currentStageKey": "build",
+                    "state": "submitted",
+                    "delegateAgentId": null,
+                    "lastAgentId": null,
+                    "queuedGrantOwner": null,
+                    "stageSince": "2026-11-23T09:00:00.000Z",
+                    "currentRunId": null,
+                    "priority": 0,
+                    "contextId": "ctx_1a2b3c4d5e6f7a8b",
+                    "createdAt": "2026-11-23T09:00:00.000Z",
+                    "updatedAt": null,
+                    "stateSince": "2026-11-23T09:00:00.000Z",
+                    "costUsd": 0,
+                    "overBudget": false,
+                    "attemptCount": 0,
+                    "parentCardId": null,
+                    "openChildCount": 0,
+                    "costUsdRollup": 0,
+                    "blockedBy": [],
+                    "reservation": {
+                      "agentId": "agt_3f9a1c0b7e24d5a6",
+                      "reservedUntil": "2026-11-23T09:01:00.000Z",
+                      "decisionId": "dec_01JDX4Q7Z8",
+                      "reservedBy": "prn_0123456789abcdef0c01"
+                    },
+                    "placementWindowUntil": "2026-11-23T09:00:10.000Z"
+                  },
+                  {
+                    "id": "card_2b3c4d5e6f7a8b9c",
+                    "title": "Write the migration guide",
+                    "spec": {
+                      "goal": "Sign in with the workspace's identity provider"
+                    },
+                    "ownerUserId": "usr_0f1e2d3c4b5a6978",
+                    "queuedBy": "prn_0123456789abcdef0b01",
+                    "queuedByAgentId": null,
+                    "queuedGrant": null,
+                    "labels": [],
+                    "projectId": null,
+                    "milestoneId": null,
+                    "dueAt": null,
+                    "archivedAt": null,
+                    "currentStageKey": "review",
+                    "state": "input-required",
+                    "delegateAgentId": null,
+                    "lastAgentId": "agt_7b1e2d3c4a5f6e70",
+                    "queuedGrantOwner": null,
+                    "stageSince": "2026-11-23T09:00:00.000Z",
+                    "currentRunId": "run_e074a2160c4b4f28",
+                    "priority": 1,
+                    "contextId": "ctx_1a2b3c4d5e6f7a8b",
+                    "createdAt": "2026-11-23T09:00:00.000Z",
+                    "updatedAt": "2026-11-23T10:05:00.000Z",
+                    "stateSince": "2026-11-23T09:00:00.000Z",
+                    "costUsd": 0.42,
+                    "overBudget": false,
+                    "attemptCount": 2,
+                    "parentCardId": null,
+                    "openChildCount": 0,
+                    "costUsdRollup": 0.42,
+                    "blockedBy": [],
+                    "needsHuman": {
+                      "reason": "review"
+                    }
+                  },
+                  {
+                    "id": "card_3c4d5e6f7a8b9c0d",
+                    "title": "Retire the old login",
+                    "spec": {
+                      "goal": "Sign in with the workspace's identity provider"
+                    },
+                    "ownerUserId": "usr_0f1e2d3c4b5a6978",
+                    "queuedBy": "prn_0123456789abcdef0b01",
+                    "queuedByAgentId": null,
+                    "queuedGrant": null,
+                    "labels": [],
+                    "projectId": null,
+                    "milestoneId": null,
+                    "dueAt": null,
+                    "archivedAt": "2026-11-22T17:00:00.000Z",
+                    "currentStageKey": "done",
+                    "state": "completed",
+                    "delegateAgentId": null,
+                    "lastAgentId": null,
+                    "queuedGrantOwner": null,
+                    "stageSince": "2026-11-23T09:00:00.000Z",
+                    "currentRunId": null,
+                    "priority": 0,
+                    "contextId": "ctx_1a2b3c4d5e6f7a8b",
+                    "createdAt": "2026-11-23T09:00:00.000Z",
+                    "updatedAt": null,
+                    "stateSince": "2026-11-23T09:00:00.000Z",
+                    "costUsd": 0,
+                    "overBudget": false,
+                    "attemptCount": 0,
+                    "parentCardId": null,
+                    "openChildCount": 0,
+                    "costUsdRollup": 0,
+                    "blockedBy": []
+                  }
+                ],
+                "gates": [
+                  {
+                    "id": "gate_3c4d5e6f7a8b9c0d",
+                    "cardId": "card_2b3c4d5e6f7a8b9c",
+                    "stageKey": "review",
+                    "status": "pending",
+                    "decision": null,
+                    "options": [
+                      {
+                        "name": "approve",
+                        "title": "Approve"
+                      },
+                      {
+                        "name": "request_changes",
+                        "title": "Request changes"
+                      }
+                    ],
+                    "producedBy": "agt_7b1e2d3c4a5f6e70",
+                    "createdAt": "2026-11-23T10:05:00.000Z",
+                    "decidedBy": null,
+                    "comment": null,
+                    "resolvedAt": null,
+                    "references": [
+                      {
+                        "id": "ref_5e6f7a8b9c0d1e2f",
+                        "cardId": "card_2b3c4d5e6f7a8b9c",
+                        "url": "https://forge.example.com/acme/web/pulls/42",
+                        "title": "Migration guide",
+                        "subtitle": null,
+                        "provider": "url",
+                        "sourceType": "pull-request",
+                        "externalId": "42",
+                        "metadata": null,
+                        "syncState": "synced",
+                        "lastSyncedAt": null,
+                        "addedBy": "agent",
+                        "runId": "run_e074a2160c4b4f28",
+                        "createdAt": "2026-11-23T10:00:00.000Z",
+                        "updatedAt": null
+                      }
+                    ],
+                    "summary": "The guide covers both upgrade paths."
+                  }
+                ],
+                "elicitations": [],
+                "references": [
+                  {
+                    "id": "ref_5e6f7a8b9c0d1e2f",
+                    "cardId": "card_2b3c4d5e6f7a8b9c",
+                    "url": "https://forge.example.com/acme/web/pulls/42",
+                    "title": "Migration guide",
+                    "subtitle": null,
+                    "provider": "url",
+                    "sourceType": "pull-request",
+                    "externalId": "42",
+                    "metadata": null,
+                    "syncState": "synced",
+                    "lastSyncedAt": null,
+                    "addedBy": "agent",
+                    "runId": "run_e074a2160c4b4f28",
+                    "createdAt": "2026-11-23T10:00:00.000Z",
+                    "updatedAt": null
+                  }
+                ],
+                "usage": {
+                  "totalCostUsd": 0.42,
+                  "estimatedCostUsd": 0,
+                  "budgetUsd": 50,
+                  "cardUsdCap": null,
+                  "overBudget": false
+                },
+                "github": {
+                  "issueTrigger": false,
+                  "webhookConfigured": false,
+                  "webhookUrl": "https://app.superpipeline.dev/v1/boards/brd_9c1d4e5f6a7b8c9d/webhooks/github?tenant=tnt_5a6b7c8d9e0f1a2b",
+                  "triggerGrantCount": null
+                },
+                "stale": {
+                  "enabled": true,
+                  "afterHours": 48
+                }
+              }
+            },
+            {
+              "why": "a stage's isolation is host, container or sandbox",
+              "body": {
+                "boardId": "brd_9c1d4e5f6a7b8c9d",
+                "tenantId": "tnt_5a6b7c8d9e0f1a2b",
+                "name": "Web",
+                "stages": [
+                  {
+                    "key": "build",
+                    "name": "Build",
+                    "order": 0,
+                    "ownerKind": "capability",
+                    "owner": "code",
+                    "requires": {
+                      "all": [
+                        "code"
+                      ],
+                      "any": [
+                        "typescript",
+                        "go"
+                      ]
+                    },
+                    "placement": {
+                      "isolation": "vm",
+                      "tools": [
+                        "mcp:superpipeline",
+                        "cli:stk"
+                      ],
+                      "credentials": [
+                        "forge:github"
+                      ]
+                    }
+                  }
+                ],
+                "cards": [
+                  {
+                    "id": "card_1a2b3c4d5e6f7a8b",
+                    "title": "Add OAuth login",
+                    "spec": {
+                      "goal": "Sign in with the workspace's identity provider"
+                    },
+                    "ownerUserId": "usr_0f1e2d3c4b5a6978",
+                    "queuedBy": "prn_0123456789abcdef0b01",
+                    "queuedByAgentId": null,
+                    "queuedGrant": null,
+                    "labels": [],
+                    "projectId": null,
+                    "milestoneId": null,
+                    "dueAt": null,
+                    "archivedAt": null,
+                    "currentStageKey": "build",
+                    "state": "submitted",
+                    "delegateAgentId": null,
+                    "lastAgentId": null,
+                    "queuedGrantOwner": null,
+                    "stageSince": "2026-11-23T09:00:00.000Z",
+                    "currentRunId": null,
+                    "priority": 0,
+                    "contextId": "ctx_1a2b3c4d5e6f7a8b",
+                    "createdAt": "2026-11-23T09:00:00.000Z",
+                    "updatedAt": null,
+                    "stateSince": "2026-11-23T09:00:00.000Z",
+                    "costUsd": 0,
+                    "overBudget": false,
+                    "attemptCount": 0,
+                    "parentCardId": null,
+                    "openChildCount": 0,
+                    "costUsdRollup": 0,
+                    "blockedBy": [],
+                    "reservation": {
+                      "agentId": "agt_3f9a1c0b7e24d5a6",
+                      "reservedUntil": "2026-11-23T09:01:00.000Z",
+                      "decisionId": "dec_01JDX4Q7Z8",
+                      "reservedBy": "prn_0123456789abcdef0c01"
+                    },
+                    "placementWindowUntil": "2026-11-23T09:00:10.000Z"
+                  },
+                  {
+                    "id": "card_2b3c4d5e6f7a8b9c",
+                    "title": "Write the migration guide",
+                    "spec": {
+                      "goal": "Sign in with the workspace's identity provider"
+                    },
+                    "ownerUserId": "usr_0f1e2d3c4b5a6978",
+                    "queuedBy": "prn_0123456789abcdef0b01",
+                    "queuedByAgentId": null,
+                    "queuedGrant": null,
+                    "labels": [],
+                    "projectId": null,
+                    "milestoneId": null,
+                    "dueAt": null,
+                    "archivedAt": null,
+                    "currentStageKey": "review",
+                    "state": "input-required",
+                    "delegateAgentId": null,
+                    "lastAgentId": "agt_7b1e2d3c4a5f6e70",
+                    "queuedGrantOwner": null,
+                    "stageSince": "2026-11-23T09:00:00.000Z",
+                    "currentRunId": "run_e074a2160c4b4f28",
+                    "priority": 1,
+                    "contextId": "ctx_1a2b3c4d5e6f7a8b",
+                    "createdAt": "2026-11-23T09:00:00.000Z",
+                    "updatedAt": "2026-11-23T10:05:00.000Z",
+                    "stateSince": "2026-11-23T09:00:00.000Z",
+                    "costUsd": 0.42,
+                    "overBudget": false,
+                    "attemptCount": 2,
+                    "parentCardId": null,
+                    "openChildCount": 0,
+                    "costUsdRollup": 0.42,
+                    "blockedBy": [],
+                    "needsHuman": {
+                      "reason": "review"
+                    }
+                  },
+                  {
+                    "id": "card_3c4d5e6f7a8b9c0d",
+                    "title": "Retire the old login",
+                    "spec": {
+                      "goal": "Sign in with the workspace's identity provider"
+                    },
+                    "ownerUserId": "usr_0f1e2d3c4b5a6978",
+                    "queuedBy": "prn_0123456789abcdef0b01",
+                    "queuedByAgentId": null,
+                    "queuedGrant": null,
+                    "labels": [],
+                    "projectId": null,
+                    "milestoneId": null,
+                    "dueAt": null,
+                    "archivedAt": "2026-11-22T17:00:00.000Z",
+                    "currentStageKey": "done",
+                    "state": "completed",
+                    "delegateAgentId": null,
+                    "lastAgentId": null,
+                    "queuedGrantOwner": null,
+                    "stageSince": "2026-11-23T09:00:00.000Z",
+                    "currentRunId": null,
+                    "priority": 0,
+                    "contextId": "ctx_1a2b3c4d5e6f7a8b",
+                    "createdAt": "2026-11-23T09:00:00.000Z",
+                    "updatedAt": null,
+                    "stateSince": "2026-11-23T09:00:00.000Z",
+                    "costUsd": 0,
+                    "overBudget": false,
+                    "attemptCount": 0,
+                    "parentCardId": null,
+                    "openChildCount": 0,
+                    "costUsdRollup": 0,
+                    "blockedBy": []
+                  }
+                ],
+                "gates": [
+                  {
+                    "id": "gate_3c4d5e6f7a8b9c0d",
+                    "cardId": "card_2b3c4d5e6f7a8b9c",
+                    "stageKey": "review",
+                    "status": "pending",
+                    "decision": null,
+                    "options": [
+                      {
+                        "name": "approve",
+                        "title": "Approve"
+                      },
+                      {
+                        "name": "request_changes",
+                        "title": "Request changes"
+                      }
+                    ],
+                    "producedBy": "agt_7b1e2d3c4a5f6e70",
+                    "createdAt": "2026-11-23T10:05:00.000Z",
+                    "decidedBy": null,
+                    "comment": null,
+                    "resolvedAt": null,
+                    "references": [
+                      {
+                        "id": "ref_5e6f7a8b9c0d1e2f",
+                        "cardId": "card_2b3c4d5e6f7a8b9c",
+                        "url": "https://forge.example.com/acme/web/pulls/42",
+                        "title": "Migration guide",
+                        "subtitle": null,
+                        "provider": "url",
+                        "sourceType": "pull-request",
+                        "externalId": "42",
+                        "metadata": null,
+                        "syncState": "synced",
+                        "lastSyncedAt": null,
+                        "addedBy": "agent",
+                        "runId": "run_e074a2160c4b4f28",
+                        "createdAt": "2026-11-23T10:00:00.000Z",
+                        "updatedAt": null
+                      }
+                    ],
+                    "summary": "The guide covers both upgrade paths."
+                  }
+                ],
+                "elicitations": [],
+                "references": [
+                  {
+                    "id": "ref_5e6f7a8b9c0d1e2f",
+                    "cardId": "card_2b3c4d5e6f7a8b9c",
+                    "url": "https://forge.example.com/acme/web/pulls/42",
+                    "title": "Migration guide",
+                    "subtitle": null,
+                    "provider": "url",
+                    "sourceType": "pull-request",
+                    "externalId": "42",
+                    "metadata": null,
+                    "syncState": "synced",
+                    "lastSyncedAt": null,
+                    "addedBy": "agent",
+                    "runId": "run_e074a2160c4b4f28",
+                    "createdAt": "2026-11-23T10:00:00.000Z",
+                    "updatedAt": null
+                  }
+                ],
+                "usage": {
+                  "totalCostUsd": 0.42,
+                  "estimatedCostUsd": 0,
+                  "budgetUsd": 50,
+                  "cardUsdCap": null,
+                  "overBudget": false
+                },
+                "github": {
+                  "issueTrigger": false,
+                  "webhookConfigured": false,
+                  "webhookUrl": "https://app.superpipeline.dev/v1/boards/brd_9c1d4e5f6a7b8c9d/webhooks/github?tenant=tnt_5a6b7c8d9e0f1a2b",
+                  "triggerGrantCount": null
+                },
+                "stale": {
+                  "enabled": true,
+                  "afterHours": 48
+                }
+              }
+            },
+            {
+              "why": "a reference names its card",
+              "body": {
+                "boardId": "brd_9c1d4e5f6a7b8c9d",
+                "tenantId": "tnt_5a6b7c8d9e0f1a2b",
+                "name": "Web",
+                "stages": [
+                  {
+                    "key": "build",
+                    "name": "Build",
+                    "order": 0,
+                    "ownerKind": "capability",
+                    "owner": "code",
+                    "requires": {
+                      "all": [
+                        "code"
+                      ],
+                      "any": [
+                        "typescript",
+                        "go"
+                      ]
+                    },
+                    "placement": {
+                      "isolation": "container",
+                      "tools": [
+                        "mcp:superpipeline",
+                        "cli:stk"
+                      ],
+                      "credentials": [
+                        "forge:github"
+                      ]
+                    }
+                  },
+                  {
+                    "key": "review",
+                    "name": "Review",
+                    "order": 1,
+                    "ownerKind": "human",
+                    "gate": "approval"
+                  },
+                  {
+                    "key": "done",
+                    "name": "Done",
+                    "order": 2
+                  }
+                ],
+                "cards": [
+                  {
+                    "id": "card_1a2b3c4d5e6f7a8b",
+                    "title": "Add OAuth login",
+                    "spec": {
+                      "goal": "Sign in with the workspace's identity provider"
+                    },
+                    "ownerUserId": "usr_0f1e2d3c4b5a6978",
+                    "queuedBy": "prn_0123456789abcdef0b01",
+                    "queuedByAgentId": null,
+                    "queuedGrant": null,
+                    "labels": [],
+                    "projectId": null,
+                    "milestoneId": null,
+                    "dueAt": null,
+                    "archivedAt": null,
+                    "currentStageKey": "build",
+                    "state": "submitted",
+                    "delegateAgentId": null,
+                    "lastAgentId": null,
+                    "queuedGrantOwner": null,
+                    "stageSince": "2026-11-23T09:00:00.000Z",
+                    "currentRunId": null,
+                    "priority": 0,
+                    "contextId": "ctx_1a2b3c4d5e6f7a8b",
+                    "createdAt": "2026-11-23T09:00:00.000Z",
+                    "updatedAt": null,
+                    "stateSince": "2026-11-23T09:00:00.000Z",
+                    "costUsd": 0,
+                    "overBudget": false,
+                    "attemptCount": 0,
+                    "parentCardId": null,
+                    "openChildCount": 0,
+                    "costUsdRollup": 0,
+                    "blockedBy": [],
+                    "reservation": {
+                      "agentId": "agt_3f9a1c0b7e24d5a6",
+                      "reservedUntil": "2026-11-23T09:01:00.000Z",
+                      "decisionId": "dec_01JDX4Q7Z8",
+                      "reservedBy": "prn_0123456789abcdef0c01"
+                    },
+                    "placementWindowUntil": "2026-11-23T09:00:10.000Z"
+                  },
+                  {
+                    "id": "card_2b3c4d5e6f7a8b9c",
+                    "title": "Write the migration guide",
+                    "spec": {
+                      "goal": "Sign in with the workspace's identity provider"
+                    },
+                    "ownerUserId": "usr_0f1e2d3c4b5a6978",
+                    "queuedBy": "prn_0123456789abcdef0b01",
+                    "queuedByAgentId": null,
+                    "queuedGrant": null,
+                    "labels": [],
+                    "projectId": null,
+                    "milestoneId": null,
+                    "dueAt": null,
+                    "archivedAt": null,
+                    "currentStageKey": "review",
+                    "state": "input-required",
+                    "delegateAgentId": null,
+                    "lastAgentId": "agt_7b1e2d3c4a5f6e70",
+                    "queuedGrantOwner": null,
+                    "stageSince": "2026-11-23T09:00:00.000Z",
+                    "currentRunId": "run_e074a2160c4b4f28",
+                    "priority": 1,
+                    "contextId": "ctx_1a2b3c4d5e6f7a8b",
+                    "createdAt": "2026-11-23T09:00:00.000Z",
+                    "updatedAt": "2026-11-23T10:05:00.000Z",
+                    "stateSince": "2026-11-23T09:00:00.000Z",
+                    "costUsd": 0.42,
+                    "overBudget": false,
+                    "attemptCount": 2,
+                    "parentCardId": null,
+                    "openChildCount": 0,
+                    "costUsdRollup": 0.42,
+                    "blockedBy": [],
+                    "needsHuman": {
+                      "reason": "review"
+                    }
+                  },
+                  {
+                    "id": "card_3c4d5e6f7a8b9c0d",
+                    "title": "Retire the old login",
+                    "spec": {
+                      "goal": "Sign in with the workspace's identity provider"
+                    },
+                    "ownerUserId": "usr_0f1e2d3c4b5a6978",
+                    "queuedBy": "prn_0123456789abcdef0b01",
+                    "queuedByAgentId": null,
+                    "queuedGrant": null,
+                    "labels": [],
+                    "projectId": null,
+                    "milestoneId": null,
+                    "dueAt": null,
+                    "archivedAt": "2026-11-22T17:00:00.000Z",
+                    "currentStageKey": "done",
+                    "state": "completed",
+                    "delegateAgentId": null,
+                    "lastAgentId": null,
+                    "queuedGrantOwner": null,
+                    "stageSince": "2026-11-23T09:00:00.000Z",
+                    "currentRunId": null,
+                    "priority": 0,
+                    "contextId": "ctx_1a2b3c4d5e6f7a8b",
+                    "createdAt": "2026-11-23T09:00:00.000Z",
+                    "updatedAt": null,
+                    "stateSince": "2026-11-23T09:00:00.000Z",
+                    "costUsd": 0,
+                    "overBudget": false,
+                    "attemptCount": 0,
+                    "parentCardId": null,
+                    "openChildCount": 0,
+                    "costUsdRollup": 0,
+                    "blockedBy": []
+                  }
+                ],
+                "gates": [
+                  {
+                    "id": "gate_3c4d5e6f7a8b9c0d",
+                    "cardId": "card_2b3c4d5e6f7a8b9c",
+                    "stageKey": "review",
+                    "status": "pending",
+                    "decision": null,
+                    "options": [
+                      {
+                        "name": "approve",
+                        "title": "Approve"
+                      },
+                      {
+                        "name": "request_changes",
+                        "title": "Request changes"
+                      }
+                    ],
+                    "producedBy": "agt_7b1e2d3c4a5f6e70",
+                    "createdAt": "2026-11-23T10:05:00.000Z",
+                    "decidedBy": null,
+                    "comment": null,
+                    "resolvedAt": null,
+                    "references": [
+                      {
+                        "id": "ref_5e6f7a8b9c0d1e2f",
+                        "cardId": "card_2b3c4d5e6f7a8b9c",
+                        "url": "https://forge.example.com/acme/web/pulls/42",
+                        "title": "Migration guide",
+                        "subtitle": null,
+                        "provider": "url",
+                        "sourceType": "pull-request",
+                        "externalId": "42",
+                        "metadata": null,
+                        "syncState": "synced",
+                        "lastSyncedAt": null,
+                        "addedBy": "agent",
+                        "runId": "run_e074a2160c4b4f28",
+                        "createdAt": "2026-11-23T10:00:00.000Z",
+                        "updatedAt": null
+                      }
+                    ],
+                    "summary": "The guide covers both upgrade paths."
+                  }
+                ],
+                "elicitations": [],
+                "references": [
+                  {
+                    "id": "ref_5e6f7a8b9c0d1e2f",
+                    "url": "https://forge.example.com/acme/web/pulls/42",
+                    "title": "Migration guide",
+                    "subtitle": null,
+                    "provider": "url",
+                    "sourceType": "pull-request",
+                    "externalId": "42",
+                    "metadata": null,
+                    "syncState": "synced",
+                    "lastSyncedAt": null,
+                    "addedBy": "agent",
+                    "runId": "run_e074a2160c4b4f28",
+                    "createdAt": "2026-11-23T10:00:00.000Z",
+                    "updatedAt": null
+                  }
+                ],
+                "usage": {
+                  "totalCostUsd": 0.42,
+                  "estimatedCostUsd": 0,
+                  "budgetUsd": 50,
+                  "cardUsdCap": null,
+                  "overBudget": false
+                },
+                "github": {
+                  "issueTrigger": false,
+                  "webhookConfigured": false,
+                  "webhookUrl": "https://app.superpipeline.dev/v1/boards/brd_9c1d4e5f6a7b8c9d/webhooks/github?tenant=tnt_5a6b7c8d9e0f1a2b",
+                  "triggerGrantCount": null
+                },
+                "stale": {
+                  "enabled": true,
+                  "afterHours": 48
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "readCard": {
+      "responses": {
+        "200": {
+          "valid": {
+            "a card held for an agent": {
+              "card": {
+                "id": "card_1a2b3c4d5e6f7a8b",
+                "title": "Add OAuth login",
+                "spec": {
+                  "goal": "Sign in with the workspace's identity provider"
+                },
+                "ownerUserId": "usr_0f1e2d3c4b5a6978",
+                "queuedBy": "prn_0123456789abcdef0b01",
+                "queuedByAgentId": null,
+                "queuedGrant": null,
+                "labels": [],
+                "projectId": null,
+                "milestoneId": null,
+                "dueAt": null,
+                "archivedAt": null,
+                "currentStageKey": "build",
+                "state": "submitted",
+                "delegateAgentId": null,
+                "lastAgentId": null,
+                "queuedGrantOwner": null,
+                "stageSince": "2026-11-23T09:00:00.000Z",
+                "currentRunId": null,
+                "priority": 0,
+                "contextId": "ctx_1a2b3c4d5e6f7a8b",
+                "createdAt": "2026-11-23T09:00:00.000Z",
+                "updatedAt": null,
+                "stateSince": "2026-11-23T09:00:00.000Z",
+                "costUsd": 0,
+                "overBudget": false,
+                "attemptCount": 0,
+                "parentCardId": null,
+                "openChildCount": 0,
+                "costUsdRollup": 0,
+                "blockedBy": [],
+                "reservation": {
+                  "agentId": "agt_3f9a1c0b7e24d5a6",
+                  "reservedUntil": "2026-11-23T09:01:00.000Z",
+                  "decisionId": "dec_01JDX4Q7Z8",
+                  "reservedBy": "prn_0123456789abcdef0c01"
+                },
+                "placementWindowUntil": "2026-11-23T09:00:10.000Z"
+              }
+            },
+            "a card waiting on a review": {
+              "card": {
+                "id": "card_2b3c4d5e6f7a8b9c",
+                "title": "Write the migration guide",
+                "spec": {
+                  "goal": "Sign in with the workspace's identity provider"
+                },
+                "ownerUserId": "usr_0f1e2d3c4b5a6978",
+                "queuedBy": "prn_0123456789abcdef0b01",
+                "queuedByAgentId": null,
+                "queuedGrant": null,
+                "labels": [],
+                "projectId": null,
+                "milestoneId": null,
+                "dueAt": null,
+                "archivedAt": null,
+                "currentStageKey": "review",
+                "state": "input-required",
+                "delegateAgentId": null,
+                "lastAgentId": "agt_7b1e2d3c4a5f6e70",
+                "queuedGrantOwner": null,
+                "stageSince": "2026-11-23T09:00:00.000Z",
+                "currentRunId": "run_e074a2160c4b4f28",
+                "priority": 1,
+                "contextId": "ctx_1a2b3c4d5e6f7a8b",
+                "createdAt": "2026-11-23T09:00:00.000Z",
+                "updatedAt": "2026-11-23T10:05:00.000Z",
+                "stateSince": "2026-11-23T09:00:00.000Z",
+                "costUsd": 0.42,
+                "overBudget": false,
+                "attemptCount": 2,
+                "parentCardId": null,
+                "openChildCount": 0,
+                "costUsdRollup": 0.42,
+                "blockedBy": [],
+                "needsHuman": {
+                  "reason": "review"
+                }
+              }
+            }
+          },
+          "invalid": [
+            {
+              "why": "the card is under card",
+              "body": {
+                "id": "card_1a2b3c4d5e6f7a8b",
+                "title": "Add OAuth login",
+                "spec": {
+                  "goal": "Sign in with the workspace's identity provider"
+                },
+                "ownerUserId": "usr_0f1e2d3c4b5a6978",
+                "queuedBy": "prn_0123456789abcdef0b01",
+                "queuedByAgentId": null,
+                "queuedGrant": null,
+                "labels": [],
+                "projectId": null,
+                "milestoneId": null,
+                "dueAt": null,
+                "archivedAt": null,
+                "currentStageKey": "build",
+                "state": "submitted",
+                "delegateAgentId": null,
+                "lastAgentId": null,
+                "queuedGrantOwner": null,
+                "stageSince": "2026-11-23T09:00:00.000Z",
+                "currentRunId": null,
+                "priority": 0,
+                "contextId": "ctx_1a2b3c4d5e6f7a8b",
+                "createdAt": "2026-11-23T09:00:00.000Z",
+                "updatedAt": null,
+                "stateSince": "2026-11-23T09:00:00.000Z",
+                "costUsd": 0,
+                "overBudget": false,
+                "attemptCount": 0,
+                "parentCardId": null,
+                "openChildCount": 0,
+                "costUsdRollup": 0,
+                "blockedBy": [],
+                "reservation": {
+                  "agentId": "agt_3f9a1c0b7e24d5a6",
+                  "reservedUntil": "2026-11-23T09:01:00.000Z",
+                  "decisionId": "dec_01JDX4Q7Z8",
+                  "reservedBy": "prn_0123456789abcdef0c01"
+                },
+                "placementWindowUntil": "2026-11-23T09:00:10.000Z"
+              }
+            },
+            {
+              "why": "archivedAt is present, null when not archived",
+              "body": {
+                "card": {
+                  "id": "card_1a2b3c4d5e6f7a8b",
+                  "title": "Add OAuth login",
+                  "spec": {
+                    "goal": "Sign in with the workspace's identity provider"
+                  },
+                  "ownerUserId": "usr_0f1e2d3c4b5a6978",
+                  "queuedBy": "prn_0123456789abcdef0b01",
+                  "queuedByAgentId": null,
+                  "queuedGrant": null,
+                  "labels": [],
+                  "projectId": null,
+                  "milestoneId": null,
+                  "dueAt": null,
+                  "currentStageKey": "build",
+                  "state": "submitted",
+                  "delegateAgentId": null,
+                  "lastAgentId": null,
+                  "queuedGrantOwner": null,
+                  "stageSince": "2026-11-23T09:00:00.000Z",
+                  "currentRunId": null,
+                  "priority": 0,
+                  "contextId": "ctx_1a2b3c4d5e6f7a8b",
+                  "createdAt": "2026-11-23T09:00:00.000Z",
+                  "updatedAt": null,
+                  "stateSince": "2026-11-23T09:00:00.000Z",
+                  "costUsd": 0,
+                  "overBudget": false,
+                  "attemptCount": 0,
+                  "parentCardId": null,
+                  "openChildCount": 0,
+                  "costUsdRollup": 0,
+                  "blockedBy": [],
+                  "reservation": {
+                    "agentId": "agt_3f9a1c0b7e24d5a6",
+                    "reservedUntil": "2026-11-23T09:01:00.000Z",
+                    "decisionId": "dec_01JDX4Q7Z8",
+                    "reservedBy": "prn_0123456789abcdef0c01"
+                  },
+                  "placementWindowUntil": "2026-11-23T09:00:10.000Z"
+                }
+              }
+            },
+            {
+              "why": "attemptCount is a whole number",
+              "body": {
+                "card": {
+                  "id": "card_1a2b3c4d5e6f7a8b",
+                  "title": "Add OAuth login",
+                  "spec": {
+                    "goal": "Sign in with the workspace's identity provider"
+                  },
+                  "ownerUserId": "usr_0f1e2d3c4b5a6978",
+                  "queuedBy": "prn_0123456789abcdef0b01",
+                  "queuedByAgentId": null,
+                  "queuedGrant": null,
+                  "labels": [],
+                  "projectId": null,
+                  "milestoneId": null,
+                  "dueAt": null,
+                  "archivedAt": null,
+                  "currentStageKey": "build",
+                  "state": "submitted",
+                  "delegateAgentId": null,
+                  "lastAgentId": null,
+                  "queuedGrantOwner": null,
+                  "stageSince": "2026-11-23T09:00:00.000Z",
+                  "currentRunId": null,
+                  "priority": 0,
+                  "contextId": "ctx_1a2b3c4d5e6f7a8b",
+                  "createdAt": "2026-11-23T09:00:00.000Z",
+                  "updatedAt": null,
+                  "stateSince": "2026-11-23T09:00:00.000Z",
+                  "costUsd": 0,
+                  "overBudget": false,
+                  "attemptCount": 1.5,
+                  "parentCardId": null,
+                  "openChildCount": 0,
+                  "costUsdRollup": 0,
+                  "blockedBy": []
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "listCardAttempts": {
+      "responses": {
+        "200": {
+          "valid": {
+            "a failed run, then a completed one": {
+              "attempts": [
+                {
+                  "runId": "run_a1b2c3d4e5f60718",
+                  "cardId": "card_2b3c4d5e6f7a8b9c",
+                  "stageKey": "build",
+                  "agentId": "agt_7b1e2d3c4a5f6e70",
+                  "status": "ended",
+                  "outcome": "failed",
+                  "startedAt": "2026-11-23T09:01:00.000Z",
+                  "endedAt": "2026-11-23T09:09:00.000Z",
+                  "costUsd": 0,
+                  "model": null,
+                  "profileKey": null,
+                  "completion": null,
+                  "handoff": null,
+                  "failureReason": "the build would not compile"
+                },
+                {
+                  "runId": "run_e074a2160c4b4f28",
+                  "cardId": "card_2b3c4d5e6f7a8b9c",
+                  "stageKey": "build",
+                  "agentId": "agt_7b1e2d3c4a5f6e70",
+                  "status": "ended",
+                  "outcome": "completed",
+                  "startedAt": "2026-11-23T09:10:00.000Z",
+                  "endedAt": "2026-11-23T10:04:00.000Z",
+                  "costUsd": 0.42,
+                  "model": "gpt-5.1-codex",
+                  "profileKey": null,
+                  "completion": {
+                    "met": true,
+                    "unchecked": []
+                  },
+                  "handoff": {
+                    "summary": "Guide drafted"
+                  },
+                  "failureReason": null
+                }
+              ]
+            },
+            "a card with no runs": {
+              "attempts": []
+            }
+          },
+          "invalid": [
+            {
+              "why": "attempts is required",
+              "body": {}
+            },
+            {
+              "why": "an attempt names its stage",
+              "body": {
+                "attempts": [
+                  {
+                    "runId": "run_e074a2160c4b4f28",
+                    "cardId": "card_2b3c4d5e6f7a8b9c",
+                    "agentId": "agt_7b1e2d3c4a5f6e70",
+                    "status": "ended",
+                    "outcome": "completed",
+                    "startedAt": "2026-11-23T09:10:00.000Z",
+                    "endedAt": "2026-11-23T10:04:00.000Z",
+                    "costUsd": 0.42,
+                    "model": "gpt-5.1-codex",
+                    "profileKey": null,
+                    "completion": {
+                      "met": true,
+                      "unchecked": []
+                    },
+                    "handoff": {
+                      "summary": "Guide drafted"
+                    },
+                    "failureReason": null
+                  }
+                ]
+              }
+            },
+            {
+              "why": "an attempt's handoff is present, null when none",
+              "body": {
+                "attempts": [
+                  {
+                    "runId": "run_e074a2160c4b4f28",
+                    "cardId": "card_2b3c4d5e6f7a8b9c",
+                    "stageKey": "build",
+                    "agentId": "agt_7b1e2d3c4a5f6e70",
+                    "status": "ended",
+                    "outcome": "completed",
+                    "startedAt": "2026-11-23T09:10:00.000Z",
+                    "endedAt": "2026-11-23T10:04:00.000Z",
+                    "costUsd": 0.42,
+                    "model": "gpt-5.1-codex",
+                    "profileKey": null,
+                    "completion": {
+                      "met": true,
+                      "unchecked": []
+                    },
+                    "failureReason": null
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "listCardComments": {
+      "responses": {
+        "200": {
+          "valid": {
+            "a comment and a deleted one": {
+              "comments": [
+                {
+                  "id": "cmt_6f7a8b9c0d1e2f3a",
+                  "cardId": "card_2b3c4d5e6f7a8b9c",
+                  "author": {
+                    "kind": "human",
+                    "id": "usr_0f1e2d3c4b5a6978",
+                    "name": "Asha"
+                  },
+                  "body": "Mention the **rollback** too.",
+                  "createdAt": "2026-11-23T10:10:00.000Z",
+                  "deletedAt": null
+                },
+                {
+                  "id": "cmt_7a8b9c0d1e2f3a4b",
+                  "cardId": "card_2b3c4d5e6f7a8b9c",
+                  "author": {
+                    "kind": "agent",
+                    "id": "agt_7b1e2d3c4a5f6e70",
+                    "name": null
+                  },
+                  "body": "",
+                  "createdAt": "2026-11-23T10:10:00.000Z",
+                  "deletedAt": "2026-11-23T10:12:00.000Z"
+                }
+              ]
+            },
+            "none": {
+              "comments": []
+            }
+          },
+          "invalid": [
+            {
+              "why": "comments is required",
+              "body": {}
+            },
+            {
+              "why": "an author is a human or an agent",
+              "body": {
+                "comments": [
+                  {
+                    "id": "cmt_6f7a8b9c0d1e2f3a",
+                    "cardId": "card_2b3c4d5e6f7a8b9c",
+                    "author": {
+                      "kind": "service",
+                      "id": "usr_0f1e2d3c4b5a6978",
+                      "name": "Asha"
+                    },
+                    "body": "Mention the **rollback** too.",
+                    "createdAt": "2026-11-23T10:10:00.000Z",
+                    "deletedAt": null
+                  }
+                ]
+              }
+            },
+            {
+              "why": "deletedAt is present, null when not deleted",
+              "body": {
+                "comments": [
+                  {
+                    "id": "cmt_6f7a8b9c0d1e2f3a",
+                    "cardId": "card_2b3c4d5e6f7a8b9c",
+                    "author": {
+                      "kind": "human",
+                      "id": "usr_0f1e2d3c4b5a6978",
+                      "name": "Asha"
+                    },
+                    "body": "Mention the **rollback** too.",
+                    "createdAt": "2026-11-23T10:10:00.000Z"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "listCardLinks": {
+      "responses": {
+        "200": {
+          "valid": {
+            "a blocker on the board and an advisory edge across boards": {
+              "links": [
+                {
+                  "fromCardId": "card_1a2b3c4d5e6f7a8b",
+                  "toCardId": "card_2b3c4d5e6f7a8b9c",
+                  "kind": "blocks",
+                  "createdAt": "2026-11-23T09:00:00.000Z",
+                  "createdBy": "usr_0f1e2d3c4b5a6978",
+                  "enforced": true
+                }
+              ],
+              "externalLinks": [
+                {
+                  "fromBoardId": "brd_9c1d4e5f6a7b8c9d",
+                  "fromCardId": "card_2b3c4d5e6f7a8b9c",
+                  "toBoardId": "brd_0a1b2c3d4e5f6a7b",
+                  "toCardId": "card_8b9c0d1e2f3a4b5c",
+                  "kind": "relates",
+                  "enforced": false,
+                  "otherBoardName": "Docs",
+                  "otherCardTitle": null
+                }
+              ]
+            },
+            "none": {
+              "links": [],
+              "externalLinks": []
+            }
+          },
+          "invalid": [
+            {
+              "why": "externalLinks is required",
+              "body": {
+                "links": []
+              }
+            },
+            {
+              "why": "a link has a kind",
+              "body": {
+                "links": [
+                  {
+                    "fromCardId": "card_1a2b3c4d5e6f7a8b",
+                    "toCardId": "card_2b3c4d5e6f7a8b9c",
+                    "createdAt": "2026-11-23T09:00:00.000Z",
+                    "createdBy": "usr_0f1e2d3c4b5a6978",
+                    "enforced": true
+                  }
+                ],
+                "externalLinks": []
+              }
+            },
+            {
+              "why": "a cross-board edge is never enforced",
+              "body": {
+                "links": [],
+                "externalLinks": [
+                  {
+                    "fromBoardId": "brd_9c1d4e5f6a7b8c9d",
+                    "fromCardId": "card_2b3c4d5e6f7a8b9c",
+                    "toBoardId": "brd_0a1b2c3d4e5f6a7b",
+                    "toCardId": "card_8b9c0d1e2f3a4b5c",
+                    "kind": "relates",
+                    "enforced": true,
+                    "otherBoardName": "Docs",
+                    "otherCardTitle": null
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "listCardActivities": {
+      "responses": {
+        "200": {
+          "valid": {
+            "a timeline with a decided and a pending gate": {
+              "activities": [
+                {
+                  "seq": 1,
+                  "runId": "run_e074a2160c4b4f28",
+                  "type": "message",
+                  "ts": "2026-11-23T09:12:00.000Z",
+                  "body": "Reading the current login flow",
+                  "action": null,
+                  "parameter": null,
+                  "result": null,
+                  "signal": null
+                },
+                {
+                  "seq": 2,
+                  "runId": "run_e074a2160c4b4f28",
+                  "type": "tool_call",
+                  "ts": "2026-11-23T09:13:00.000Z",
+                  "body": null,
+                  "action": "read_file",
+                  "parameter": {
+                    "path": "docs/upgrade.md"
+                  },
+                  "result": {
+                    "ok": true
+                  },
+                  "signal": null
+                }
+              ],
+              "handoff": {
+                "summary": "Guide drafted"
+              },
+              "gates": [
+                {
+                  "id": "gate_4d5e6f7a8b9c0d1e",
+                  "cardId": "card_2b3c4d5e6f7a8b9c",
+                  "stageKey": "review",
+                  "status": "resolved",
+                  "decision": "request_changes",
+                  "options": [
+                    {
+                      "name": "approve",
+                      "title": "Approve"
+                    },
+                    {
+                      "name": "request_changes",
+                      "title": "Request changes"
+                    }
+                  ],
+                  "producedBy": "agt_7b1e2d3c4a5f6e70",
+                  "createdAt": "2026-11-23T09:30:00.000Z",
+                  "decidedBy": "usr_0f1e2d3c4b5a6978",
+                  "comment": "Add the rollback steps.",
+                  "resolvedAt": "2026-11-23T09:40:00.000Z",
+                  "references": []
+                },
+                {
+                  "id": "gate_3c4d5e6f7a8b9c0d",
+                  "cardId": "card_2b3c4d5e6f7a8b9c",
+                  "stageKey": "review",
+                  "status": "pending",
+                  "decision": null,
+                  "options": [
+                    {
+                      "name": "approve",
+                      "title": "Approve"
+                    },
+                    {
+                      "name": "request_changes",
+                      "title": "Request changes"
+                    }
+                  ],
+                  "producedBy": "agt_7b1e2d3c4a5f6e70",
+                  "createdAt": "2026-11-23T10:05:00.000Z",
+                  "decidedBy": null,
+                  "comment": null,
+                  "resolvedAt": null,
+                  "references": [
+                    {
+                      "id": "ref_5e6f7a8b9c0d1e2f",
+                      "cardId": "card_2b3c4d5e6f7a8b9c",
+                      "url": "https://forge.example.com/acme/web/pulls/42",
+                      "title": "Migration guide",
+                      "subtitle": null,
+                      "provider": "url",
+                      "sourceType": "pull-request",
+                      "externalId": "42",
+                      "metadata": null,
+                      "syncState": "synced",
+                      "lastSyncedAt": null,
+                      "addedBy": "agent",
+                      "runId": "run_e074a2160c4b4f28",
+                      "createdAt": "2026-11-23T10:00:00.000Z",
+                      "updatedAt": null
+                    }
+                  ],
+                  "summary": "The guide covers both upgrade paths."
+                }
+              ]
+            },
+            "a card with no history": {
+              "activities": [],
+              "handoff": null,
+              "gates": []
+            }
+          },
+          "invalid": [
+            {
+              "why": "gates is required",
+              "body": {
+                "activities": [
+                  {
+                    "seq": 1,
+                    "runId": "run_e074a2160c4b4f28",
+                    "type": "message",
+                    "ts": "2026-11-23T09:12:00.000Z",
+                    "body": "Reading the current login flow",
+                    "action": null,
+                    "parameter": null,
+                    "result": null,
+                    "signal": null
+                  },
+                  {
+                    "seq": 2,
+                    "runId": "run_e074a2160c4b4f28",
+                    "type": "tool_call",
+                    "ts": "2026-11-23T09:13:00.000Z",
+                    "body": null,
+                    "action": "read_file",
+                    "parameter": {
+                      "path": "docs/upgrade.md"
+                    },
+                    "result": {
+                      "ok": true
+                    },
+                    "signal": null
+                  }
+                ],
+                "handoff": {
+                  "summary": "Guide drafted"
+                }
+              }
+            },
+            {
+              "why": "an activity has a sequence number",
+              "body": {
+                "activities": [
+                  {
+                    "runId": "run_e074a2160c4b4f28",
+                    "type": "message",
+                    "ts": "2026-11-23T09:12:00.000Z",
+                    "body": "Reading the current login flow",
+                    "action": null,
+                    "parameter": null,
+                    "result": null,
+                    "signal": null
+                  }
+                ],
+                "handoff": {
+                  "summary": "Guide drafted"
+                },
+                "gates": [
+                  {
+                    "id": "gate_4d5e6f7a8b9c0d1e",
+                    "cardId": "card_2b3c4d5e6f7a8b9c",
+                    "stageKey": "review",
+                    "status": "resolved",
+                    "decision": "request_changes",
+                    "options": [
+                      {
+                        "name": "approve",
+                        "title": "Approve"
+                      },
+                      {
+                        "name": "request_changes",
+                        "title": "Request changes"
+                      }
+                    ],
+                    "producedBy": "agt_7b1e2d3c4a5f6e70",
+                    "createdAt": "2026-11-23T09:30:00.000Z",
+                    "decidedBy": "usr_0f1e2d3c4b5a6978",
+                    "comment": "Add the rollback steps.",
+                    "resolvedAt": "2026-11-23T09:40:00.000Z",
+                    "references": []
+                  },
+                  {
+                    "id": "gate_3c4d5e6f7a8b9c0d",
+                    "cardId": "card_2b3c4d5e6f7a8b9c",
+                    "stageKey": "review",
+                    "status": "pending",
+                    "decision": null,
+                    "options": [
+                      {
+                        "name": "approve",
+                        "title": "Approve"
+                      },
+                      {
+                        "name": "request_changes",
+                        "title": "Request changes"
+                      }
+                    ],
+                    "producedBy": "agt_7b1e2d3c4a5f6e70",
+                    "createdAt": "2026-11-23T10:05:00.000Z",
+                    "decidedBy": null,
+                    "comment": null,
+                    "resolvedAt": null,
+                    "references": [
+                      {
+                        "id": "ref_5e6f7a8b9c0d1e2f",
+                        "cardId": "card_2b3c4d5e6f7a8b9c",
+                        "url": "https://forge.example.com/acme/web/pulls/42",
+                        "title": "Migration guide",
+                        "subtitle": null,
+                        "provider": "url",
+                        "sourceType": "pull-request",
+                        "externalId": "42",
+                        "metadata": null,
+                        "syncState": "synced",
+                        "lastSyncedAt": null,
+                        "addedBy": "agent",
+                        "runId": "run_e074a2160c4b4f28",
+                        "createdAt": "2026-11-23T10:00:00.000Z",
+                        "updatedAt": null
+                      }
+                    ],
+                    "summary": "The guide covers both upgrade paths."
+                  }
+                ]
+              }
+            },
+            {
+              "why": "a gate's status is pending, resolved or cancelled",
+              "body": {
+                "activities": [
+                  {
+                    "seq": 1,
+                    "runId": "run_e074a2160c4b4f28",
+                    "type": "message",
+                    "ts": "2026-11-23T09:12:00.000Z",
+                    "body": "Reading the current login flow",
+                    "action": null,
+                    "parameter": null,
+                    "result": null,
+                    "signal": null
+                  },
+                  {
+                    "seq": 2,
+                    "runId": "run_e074a2160c4b4f28",
+                    "type": "tool_call",
+                    "ts": "2026-11-23T09:13:00.000Z",
+                    "body": null,
+                    "action": "read_file",
+                    "parameter": {
+                      "path": "docs/upgrade.md"
+                    },
+                    "result": {
+                      "ok": true
+                    },
+                    "signal": null
+                  }
+                ],
+                "handoff": {
+                  "summary": "Guide drafted"
+                },
+                "gates": [
+                  {
+                    "id": "gate_4d5e6f7a8b9c0d1e",
+                    "cardId": "card_2b3c4d5e6f7a8b9c",
+                    "stageKey": "review",
+                    "status": "decided",
+                    "decision": "request_changes",
+                    "options": [
+                      {
+                        "name": "approve",
+                        "title": "Approve"
+                      },
+                      {
+                        "name": "request_changes",
+                        "title": "Request changes"
+                      }
+                    ],
+                    "producedBy": "agt_7b1e2d3c4a5f6e70",
+                    "createdAt": "2026-11-23T09:30:00.000Z",
+                    "decidedBy": "usr_0f1e2d3c4b5a6978",
+                    "comment": "Add the rollback steps.",
+                    "resolvedAt": "2026-11-23T09:40:00.000Z",
+                    "references": []
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "readRunEvidence": {
+      "responses": {
+        "200": {
+          "valid": {
+            "a completed run that opened a review gate, usage reported": {
+              "run": {
+                "id": "run_e074a2160c4b4f28",
+                "board_id": "brd_9c1d4e5f6a7b8c9d",
+                "card_id": "card_1a2b3c4d5e6f7a8b",
+                "stage_key": "research",
+                "agent_id": "agt_researcher",
+                "agent_principal_id": "prn_0123456789abcdef0a01",
+                "status": "ended",
+                "outcome": "completed",
+                "started_at": "2026-10-04T10:12:38.000Z",
+                "ended_at": "2026-10-04T10:15:00.000Z"
+              },
+              "card": {
+                "id": "card_1a2b3c4d5e6f7a8b",
+                "title": "Add OAuth login",
+                "stage_key": "review"
+              },
+              "gates": [
+                {
+                  "id": "gate_3c4d5e6f7a8b9c0d",
+                  "run_id": "run_e074a2160c4b4f28",
+                  "stage_key": "review",
+                  "status": "resolved",
+                  "decision": "rejected",
+                  "decided_by": "usr_the_actual_person",
+                  "produced_by": "agt_researcher",
+                  "produced_by_principal_id": "prn_0123456789abcdef0a01",
+                  "decided_by_principal_id": "prn_0123456789abcdef0b01",
+                  "decided_by_hub_sub": null,
+                  "created_at": "2026-10-04T10:15:00.000Z",
+                  "resolved_at": "2026-10-04T11:02:10.000Z"
+                }
+              ],
+              "usage": {
+                "status": "reported",
+                "input_tokens": 120,
+                "output_tokens": 40,
+                "cost_usd": 0.002
+              },
+              "as_of": "2026-10-04T11:05:00.000Z"
+            },
+            "a bridge-dispatched run: no usage reported, so no numbers": {
+              "run": {
+                "id": "run_a1b2c3d4e5f60718",
+                "board_id": "brd_9c1d4e5f6a7b8c9d",
+                "card_id": "card_1a2b3c4d5e6f7a8b",
+                "stage_key": "research",
+                "agent_id": "agt_hermes",
+                "agent_principal_id": null,
+                "status": "active",
+                "outcome": null,
+                "started_at": "2026-10-04T10:12:38.000Z",
+                "ended_at": null
+              },
+              "card": {
+                "id": "card_1a2b3c4d5e6f7a8b",
+                "title": "Add OAuth login",
+                "stage_key": "research"
+              },
+              "gates": [],
+              "usage": {
+                "status": "unreported",
+                "input_tokens": null,
+                "output_tokens": null,
+                "cost_usd": null
+              },
+              "as_of": "2026-10-04T11:05:00.000Z"
+            },
+            "gates resolved, decided by an unlinked person, pending and cancelled": {
+              "run": {
+                "id": "run_01",
+                "board_id": "brd_01",
+                "card_id": "crd_01",
+                "stage_key": "draft",
+                "agent_id": "agt_01",
+                "agent_principal_id": "prn_agent01",
+                "status": "ended",
+                "outcome": "completed",
+                "started_at": "2026-10-04T10:00:00Z",
+                "ended_at": "2026-10-04T10:05:00Z"
+              },
+              "card": {
+                "id": "crd_01",
+                "title": "Write the release note",
+                "stage_key": "review"
+              },
+              "gates": [
+                {
+                  "id": "gate_01",
+                  "run_id": "run_01",
+                  "stage_key": "draft",
+                  "status": "resolved",
+                  "decision": "rejected",
+                  "decided_by": "usr_reviewer",
+                  "produced_by": "agt_01",
+                  "decided_by_principal_id": "prn_human01",
+                  "decided_by_hub_sub": null,
+                  "produced_by_principal_id": "prn_agent01",
+                  "created_at": "2026-10-04T10:05:00Z",
+                  "resolved_at": "2026-10-04T10:20:00Z"
+                },
+                {
+                  "id": "gate_02",
+                  "run_id": null,
+                  "stage_key": "draft",
+                  "status": "resolved",
+                  "decision": "changes_requested",
+                  "decided_by": "hubuser_7f3a",
+                  "produced_by": "agt_01",
+                  "decided_by_principal_id": null,
+                  "decided_by_hub_sub": "hubuser_7f3a",
+                  "produced_by_principal_id": "prn_agent01",
+                  "created_at": "2026-10-04T10:21:00Z",
+                  "resolved_at": "2026-10-04T10:30:00Z"
+                },
+                {
+                  "id": "gate_03",
+                  "run_id": "run_01",
+                  "stage_key": "draft",
+                  "status": "pending",
+                  "decision": null,
+                  "decided_by": null,
+                  "produced_by": "agt_01",
+                  "decided_by_principal_id": null,
+                  "decided_by_hub_sub": null,
+                  "produced_by_principal_id": "prn_agent01",
+                  "created_at": "2026-10-04T10:31:00Z",
+                  "resolved_at": null
+                },
+                {
+                  "id": "gate_04",
+                  "run_id": "run_01",
+                  "stage_key": "draft",
+                  "status": "cancelled",
+                  "decision": null,
+                  "decided_by": null,
+                  "produced_by": "agt_01",
+                  "decided_by_principal_id": null,
+                  "decided_by_hub_sub": null,
+                  "produced_by_principal_id": "prn_agent01",
+                  "created_at": "2026-10-04T10:40:00Z",
+                  "resolved_at": "2026-10-04T10:45:00Z"
+                }
+              ],
+              "usage": {
+                "status": "unreported",
+                "input_tokens": null,
+                "output_tokens": null,
+                "cost_usd": null
+              },
+              "as_of": "2026-10-04T11:00:00Z"
+            }
+          },
+          "invalid": [
+            {
+              "why": "as_of is required",
+              "body": {
+                "run": {
+                  "id": "run_e074a2160c4b4f28",
+                  "board_id": "brd_9c1d4e5f6a7b8c9d",
+                  "card_id": "card_1a2b3c4d5e6f7a8b",
+                  "stage_key": "research",
+                  "agent_id": "agt_researcher",
+                  "agent_principal_id": "prn_0123456789abcdef0a01",
+                  "status": "ended",
+                  "outcome": "completed",
+                  "started_at": "2026-10-04T10:12:38.000Z",
+                  "ended_at": "2026-10-04T10:15:00.000Z"
+                },
+                "card": {
+                  "id": "card_1a2b3c4d5e6f7a8b",
+                  "title": "Add OAuth login",
+                  "stage_key": "review"
+                },
+                "gates": [
+                  {
+                    "id": "gate_3c4d5e6f7a8b9c0d",
+                    "run_id": "run_e074a2160c4b4f28",
+                    "stage_key": "review",
+                    "status": "resolved",
+                    "decision": "rejected",
+                    "decided_by": "usr_the_actual_person",
+                    "produced_by": "agt_researcher",
+                    "produced_by_principal_id": "prn_0123456789abcdef0a01",
+                    "decided_by_principal_id": "prn_0123456789abcdef0b01",
+                    "decided_by_hub_sub": null,
+                    "created_at": "2026-10-04T10:15:00.000Z",
+                    "resolved_at": "2026-10-04T11:02:10.000Z"
+                  }
+                ],
+                "usage": {
+                  "status": "reported",
+                  "input_tokens": 120,
+                  "output_tokens": 40,
+                  "cost_usd": 0.002
+                }
+              }
+            },
+            {
+              "why": "the shape is closed: new fields go in v1",
+              "body": {
+                "run": {
+                  "id": "run_e074a2160c4b4f28",
+                  "board_id": "brd_9c1d4e5f6a7b8c9d",
+                  "card_id": "card_1a2b3c4d5e6f7a8b",
+                  "stage_key": "research",
+                  "agent_id": "agt_researcher",
+                  "agent_principal_id": "prn_0123456789abcdef0a01",
+                  "status": "ended",
+                  "outcome": "completed",
+                  "started_at": "2026-10-04T10:12:38.000Z",
+                  "ended_at": "2026-10-04T10:15:00.000Z"
+                },
+                "card": {
+                  "id": "card_1a2b3c4d5e6f7a8b",
+                  "title": "Add OAuth login",
+                  "stage_key": "review"
+                },
+                "gates": [
+                  {
+                    "id": "gate_3c4d5e6f7a8b9c0d",
+                    "run_id": "run_e074a2160c4b4f28",
+                    "stage_key": "review",
+                    "status": "resolved",
+                    "decision": "rejected",
+                    "decided_by": "usr_the_actual_person",
+                    "produced_by": "agt_researcher",
+                    "produced_by_principal_id": "prn_0123456789abcdef0a01",
+                    "decided_by_principal_id": "prn_0123456789abcdef0b01",
+                    "decided_by_hub_sub": null,
+                    "created_at": "2026-10-04T10:15:00.000Z",
+                    "resolved_at": "2026-10-04T11:02:10.000Z"
+                  }
+                ],
+                "usage": {
+                  "status": "reported",
+                  "input_tokens": 120,
+                  "output_tokens": 40,
+                  "cost_usd": 0.002
+                },
+                "as_of": "2026-10-04T11:05:00.000Z",
+                "provenance": {}
+              }
+            },
+            {
+              "why": "a run's fields are closed too",
+              "body": {
+                "run": {
+                  "id": "run_e074a2160c4b4f28",
+                  "board_id": "brd_9c1d4e5f6a7b8c9d",
+                  "card_id": "card_1a2b3c4d5e6f7a8b",
+                  "stage_key": "research",
+                  "agent_id": "agt_researcher",
+                  "agent_principal_id": "prn_0123456789abcdef0a01",
+                  "status": "ended",
+                  "outcome": "completed",
+                  "started_at": "2026-10-04T10:12:38.000Z",
+                  "ended_at": "2026-10-04T10:15:00.000Z",
+                  "lease_epoch": 1
+                },
+                "card": {
+                  "id": "card_1a2b3c4d5e6f7a8b",
+                  "title": "Add OAuth login",
+                  "stage_key": "review"
+                },
+                "gates": [
+                  {
+                    "id": "gate_3c4d5e6f7a8b9c0d",
+                    "run_id": "run_e074a2160c4b4f28",
+                    "stage_key": "review",
+                    "status": "resolved",
+                    "decision": "rejected",
+                    "decided_by": "usr_the_actual_person",
+                    "produced_by": "agt_researcher",
+                    "produced_by_principal_id": "prn_0123456789abcdef0a01",
+                    "decided_by_principal_id": "prn_0123456789abcdef0b01",
+                    "decided_by_hub_sub": null,
+                    "created_at": "2026-10-04T10:15:00.000Z",
+                    "resolved_at": "2026-10-04T11:02:10.000Z"
+                  }
+                ],
+                "usage": {
+                  "status": "reported",
+                  "input_tokens": 120,
+                  "output_tokens": 40,
+                  "cost_usd": 0.002
+                },
+                "as_of": "2026-10-04T11:05:00.000Z"
+              }
+            },
+            {
+              "why": "reported usage has numbers",
+              "body": {
+                "run": {
+                  "id": "run_e074a2160c4b4f28",
+                  "board_id": "brd_9c1d4e5f6a7b8c9d",
+                  "card_id": "card_1a2b3c4d5e6f7a8b",
+                  "stage_key": "research",
+                  "agent_id": "agt_researcher",
+                  "agent_principal_id": "prn_0123456789abcdef0a01",
+                  "status": "ended",
+                  "outcome": "completed",
+                  "started_at": "2026-10-04T10:12:38.000Z",
+                  "ended_at": "2026-10-04T10:15:00.000Z"
+                },
+                "card": {
+                  "id": "card_1a2b3c4d5e6f7a8b",
+                  "title": "Add OAuth login",
+                  "stage_key": "review"
+                },
+                "gates": [
+                  {
+                    "id": "gate_3c4d5e6f7a8b9c0d",
+                    "run_id": "run_e074a2160c4b4f28",
+                    "stage_key": "review",
+                    "status": "resolved",
+                    "decision": "rejected",
+                    "decided_by": "usr_the_actual_person",
+                    "produced_by": "agt_researcher",
+                    "produced_by_principal_id": "prn_0123456789abcdef0a01",
+                    "decided_by_principal_id": "prn_0123456789abcdef0b01",
+                    "decided_by_hub_sub": null,
+                    "created_at": "2026-10-04T10:15:00.000Z",
+                    "resolved_at": "2026-10-04T11:02:10.000Z"
+                  }
+                ],
+                "usage": {
+                  "status": "reported",
+                  "input_tokens": null,
+                  "output_tokens": null,
+                  "cost_usd": null
+                },
+                "as_of": "2026-10-04T11:05:00.000Z"
+              }
+            },
+            {
+              "why": "unreported usage has no numbers",
+              "body": {
+                "run": {
+                  "id": "run_e074a2160c4b4f28",
+                  "board_id": "brd_9c1d4e5f6a7b8c9d",
+                  "card_id": "card_1a2b3c4d5e6f7a8b",
+                  "stage_key": "research",
+                  "agent_id": "agt_researcher",
+                  "agent_principal_id": "prn_0123456789abcdef0a01",
+                  "status": "ended",
+                  "outcome": "completed",
+                  "started_at": "2026-10-04T10:12:38.000Z",
+                  "ended_at": "2026-10-04T10:15:00.000Z"
+                },
+                "card": {
+                  "id": "card_1a2b3c4d5e6f7a8b",
+                  "title": "Add OAuth login",
+                  "stage_key": "review"
+                },
+                "gates": [
+                  {
+                    "id": "gate_3c4d5e6f7a8b9c0d",
+                    "run_id": "run_e074a2160c4b4f28",
+                    "stage_key": "review",
+                    "status": "resolved",
+                    "decision": "rejected",
+                    "decided_by": "usr_the_actual_person",
+                    "produced_by": "agt_researcher",
+                    "produced_by_principal_id": "prn_0123456789abcdef0a01",
+                    "decided_by_principal_id": "prn_0123456789abcdef0b01",
+                    "decided_by_hub_sub": null,
+                    "created_at": "2026-10-04T10:15:00.000Z",
+                    "resolved_at": "2026-10-04T11:02:10.000Z"
+                  }
+                ],
+                "usage": {
+                  "status": "unreported",
+                  "input_tokens": 0,
+                  "output_tokens": 0,
+                  "cost_usd": 0
+                },
+                "as_of": "2026-10-04T11:05:00.000Z"
+              }
+            },
+            {
+              "why": "a decision is in past tense",
+              "body": {
+                "run": {
+                  "id": "run_e074a2160c4b4f28",
+                  "board_id": "brd_9c1d4e5f6a7b8c9d",
+                  "card_id": "card_1a2b3c4d5e6f7a8b",
+                  "stage_key": "research",
+                  "agent_id": "agt_researcher",
+                  "agent_principal_id": "prn_0123456789abcdef0a01",
+                  "status": "ended",
+                  "outcome": "completed",
+                  "started_at": "2026-10-04T10:12:38.000Z",
+                  "ended_at": "2026-10-04T10:15:00.000Z"
+                },
+                "card": {
+                  "id": "card_1a2b3c4d5e6f7a8b",
+                  "title": "Add OAuth login",
+                  "stage_key": "review"
+                },
+                "gates": [
+                  {
+                    "id": "gate_3c4d5e6f7a8b9c0d",
+                    "run_id": "run_e074a2160c4b4f28",
+                    "stage_key": "review",
+                    "status": "resolved",
+                    "decision": "reject",
+                    "decided_by": "usr_the_actual_person",
+                    "produced_by": "agt_researcher",
+                    "produced_by_principal_id": "prn_0123456789abcdef0a01",
+                    "decided_by_principal_id": "prn_0123456789abcdef0b01",
+                    "decided_by_hub_sub": null,
+                    "created_at": "2026-10-04T10:15:00.000Z",
+                    "resolved_at": "2026-10-04T11:02:10.000Z"
+                  }
+                ],
+                "usage": {
+                  "status": "reported",
+                  "input_tokens": 120,
+                  "output_tokens": 40,
+                  "cost_usd": 0.002
+                },
+                "as_of": "2026-10-04T11:05:00.000Z"
+              }
+            },
+            {
+              "why": "a gate names its decider's principal, or null",
+              "body": {
+                "run": {
+                  "id": "run_e074a2160c4b4f28",
+                  "board_id": "brd_9c1d4e5f6a7b8c9d",
+                  "card_id": "card_1a2b3c4d5e6f7a8b",
+                  "stage_key": "research",
+                  "agent_id": "agt_researcher",
+                  "agent_principal_id": "prn_0123456789abcdef0a01",
+                  "status": "ended",
+                  "outcome": "completed",
+                  "started_at": "2026-10-04T10:12:38.000Z",
+                  "ended_at": "2026-10-04T10:15:00.000Z"
+                },
+                "card": {
+                  "id": "card_1a2b3c4d5e6f7a8b",
+                  "title": "Add OAuth login",
+                  "stage_key": "review"
+                },
+                "gates": [
+                  {
+                    "id": "gate_3c4d5e6f7a8b9c0d",
+                    "run_id": "run_e074a2160c4b4f28",
+                    "stage_key": "review",
+                    "status": "resolved",
+                    "decision": "rejected",
+                    "decided_by": "usr_the_actual_person",
+                    "produced_by": "agt_researcher",
+                    "produced_by_principal_id": "prn_0123456789abcdef0a01",
+                    "decided_by_hub_sub": null,
+                    "created_at": "2026-10-04T10:15:00.000Z",
+                    "resolved_at": "2026-10-04T11:02:10.000Z"
+                  }
+                ],
+                "usage": {
+                  "status": "reported",
+                  "input_tokens": 120,
+                  "output_tokens": 40,
+                  "cost_usd": 0.002
+                },
+                "as_of": "2026-10-04T11:05:00.000Z"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "readRunEvidenceV1": {
+      "responses": {
+        "200": {
+          "valid": {
+            "superpipeline's run-evidence-v1 fixture": {
+              "schema_version": "superpipeline-run-evidence/v1",
+              "pipeline": {
+                "run": {
+                  "id": "run_01",
+                  "board_id": "brd_01",
+                  "card_id": "card_01",
+                  "stage_key": "research",
+                  "agent_id": "agt_researcher",
+                  "agent_principal_id": "prn_agent01",
+                  "status": "ended",
+                  "outcome": "completed",
+                  "started_at": "2026-10-04T10:12:38.000Z",
+                  "ended_at": "2026-10-04T10:15:00.000Z"
+                },
+                "card": {
+                  "id": "card_01",
+                  "title": "Add OAuth login",
+                  "stage_key": "review"
+                },
+                "gates": [
+                  {
+                    "id": "gate_01",
+                    "run_id": "run_01",
+                    "stage_key": "review",
+                    "status": "resolved",
+                    "decision": "rejected",
+                    "decided_by": "usr_the_actual_person",
+                    "produced_by": "agt_researcher",
+                    "produced_by_principal_id": "prn_agent01",
+                    "decided_by_principal_id": "prn_human01",
+                    "decided_by_hub_sub": null,
+                    "created_at": "2026-10-04T10:15:00.000Z",
+                    "resolved_at": "2026-10-04T11:02:10.000Z"
+                  }
+                ],
+                "usage": {
+                  "status": "reported",
+                  "input_tokens": 120,
+                  "output_tokens": 40,
+                  "cost_usd": 0.002
+                },
+                "as_of": "2026-10-04T11:05:00.000Z"
+              },
+              "provenance": {
+                "lease_epoch": 1,
+                "queued_by": null,
+                "completion": {
+                  "met": true,
+                  "unchecked_count": 0
+                },
+                "handoff_recorded": true,
+                "references_truncated": false,
+                "references": [
+                  {
+                    "id": "ref_evidence",
+                    "cardId": "card_01",
+                    "runId": "run_01",
+                    "url": "https://library.test/artifacts/example",
+                    "provider": "superlibrary",
+                    "sourceType": "artifact",
+                    "externalId": "artifact_example",
+                    "createdAt": "2026-10-04T11:05:00.000Z",
+                    "execution_export": {
+                      "schema_version": "agentpod-execution-export/v1",
+                      "export_id": "00000000-0000-4000-8000-000000000001",
+                      "manifest_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+                      "verification": "unverified"
+                    }
+                  }
+                ]
+              },
+              "usage": {
+                "status": "known",
+                "recorded_cost_usd": 0.002,
+                "estimated_cost_usd": null,
+                "cost_provenance": "agent-reported-not-provider-bill"
+              },
+              "executor_evidence": {
+                "external_source": "superpipeline",
+                "external_run_id": "run_01",
+                "agentpod_path": "/api/evidence/runs/superpipeline/run_01/execution?schema_version=salaam-execution-evidence%2Fv1"
+              }
+            },
+            "a run with no references, no completion and no usage": {
+              "schema_version": "superpipeline-run-evidence/v1",
+              "pipeline": {
+                "run": {
+                  "id": "run_a1b2c3d4e5f60718",
+                  "board_id": "brd_9c1d4e5f6a7b8c9d",
+                  "card_id": "card_1a2b3c4d5e6f7a8b",
+                  "stage_key": "research",
+                  "agent_id": "agt_hermes",
+                  "agent_principal_id": null,
+                  "status": "active",
+                  "outcome": null,
+                  "started_at": "2026-10-04T10:12:38.000Z",
+                  "ended_at": null
+                },
+                "card": {
+                  "id": "card_1a2b3c4d5e6f7a8b",
+                  "title": "Add OAuth login",
+                  "stage_key": "research"
+                },
+                "gates": [],
+                "usage": {
+                  "status": "unreported",
+                  "input_tokens": null,
+                  "output_tokens": null,
+                  "cost_usd": null
+                },
+                "as_of": "2026-10-04T11:05:00.000Z"
+              },
+              "provenance": {
+                "lease_epoch": 3,
+                "queued_by": "prn_0123456789abcdef0b01",
+                "completion": null,
+                "handoff_recorded": false,
+                "references_truncated": false,
+                "references": []
+              },
+              "usage": {
+                "status": "unreported",
+                "recorded_cost_usd": null,
+                "estimated_cost_usd": null,
+                "cost_provenance": "unknown"
+              },
+              "executor_evidence": {
+                "external_source": "superpipeline",
+                "external_run_id": "run_a1b2c3d4e5f60718",
+                "agentpod_path": "/api/evidence/runs/superpipeline/run_a1b2c3d4e5f60718/execution?schema_version=salaam-execution-evidence%2Fv1"
+              }
+            }
+          },
+          "invalid": [
+            {
+              "why": "schema_version is superpipeline-run-evidence/v1",
+              "body": {
+                "schema_version": "superpipeline-run-evidence/v2",
+                "pipeline": {
+                  "run": {
+                    "id": "run_01",
+                    "board_id": "brd_01",
+                    "card_id": "card_01",
+                    "stage_key": "research",
+                    "agent_id": "agt_researcher",
+                    "agent_principal_id": "prn_agent01",
+                    "status": "ended",
+                    "outcome": "completed",
+                    "started_at": "2026-10-04T10:12:38.000Z",
+                    "ended_at": "2026-10-04T10:15:00.000Z"
+                  },
+                  "card": {
+                    "id": "card_01",
+                    "title": "Add OAuth login",
+                    "stage_key": "review"
+                  },
+                  "gates": [
+                    {
+                      "id": "gate_01",
+                      "run_id": "run_01",
+                      "stage_key": "review",
+                      "status": "resolved",
+                      "decision": "rejected",
+                      "decided_by": "usr_the_actual_person",
+                      "produced_by": "agt_researcher",
+                      "produced_by_principal_id": "prn_agent01",
+                      "decided_by_principal_id": "prn_human01",
+                      "decided_by_hub_sub": null,
+                      "created_at": "2026-10-04T10:15:00.000Z",
+                      "resolved_at": "2026-10-04T11:02:10.000Z"
+                    }
+                  ],
+                  "usage": {
+                    "status": "reported",
+                    "input_tokens": 120,
+                    "output_tokens": 40,
+                    "cost_usd": 0.002
+                  },
+                  "as_of": "2026-10-04T11:05:00.000Z"
+                },
+                "provenance": {
+                  "lease_epoch": 1,
+                  "queued_by": null,
+                  "completion": {
+                    "met": true,
+                    "unchecked_count": 0
+                  },
+                  "handoff_recorded": true,
+                  "references_truncated": false,
+                  "references": [
+                    {
+                      "id": "ref_evidence",
+                      "cardId": "card_01",
+                      "runId": "run_01",
+                      "url": "https://library.test/artifacts/example",
+                      "provider": "superlibrary",
+                      "sourceType": "artifact",
+                      "externalId": "artifact_example",
+                      "createdAt": "2026-10-04T11:05:00.000Z",
+                      "execution_export": {
+                        "schema_version": "agentpod-execution-export/v1",
+                        "export_id": "00000000-0000-4000-8000-000000000001",
+                        "manifest_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+                        "verification": "unverified"
+                      }
+                    }
+                  ]
+                },
+                "usage": {
+                  "status": "known",
+                  "recorded_cost_usd": 0.002,
+                  "estimated_cost_usd": null,
+                  "cost_provenance": "agent-reported-not-provider-bill"
+                },
+                "executor_evidence": {
+                  "external_source": "superpipeline",
+                  "external_run_id": "run_01",
+                  "agentpod_path": "/api/evidence/runs/superpipeline/run_01/execution?schema_version=salaam-execution-evidence%2Fv1"
+                }
+              }
+            },
+            {
+              "why": "the shape is closed",
+              "body": {
+                "schema_version": "superpipeline-run-evidence/v1",
+                "pipeline": {
+                  "run": {
+                    "id": "run_01",
+                    "board_id": "brd_01",
+                    "card_id": "card_01",
+                    "stage_key": "research",
+                    "agent_id": "agt_researcher",
+                    "agent_principal_id": "prn_agent01",
+                    "status": "ended",
+                    "outcome": "completed",
+                    "started_at": "2026-10-04T10:12:38.000Z",
+                    "ended_at": "2026-10-04T10:15:00.000Z"
+                  },
+                  "card": {
+                    "id": "card_01",
+                    "title": "Add OAuth login",
+                    "stage_key": "review"
+                  },
+                  "gates": [
+                    {
+                      "id": "gate_01",
+                      "run_id": "run_01",
+                      "stage_key": "review",
+                      "status": "resolved",
+                      "decision": "rejected",
+                      "decided_by": "usr_the_actual_person",
+                      "produced_by": "agt_researcher",
+                      "produced_by_principal_id": "prn_agent01",
+                      "decided_by_principal_id": "prn_human01",
+                      "decided_by_hub_sub": null,
+                      "created_at": "2026-10-04T10:15:00.000Z",
+                      "resolved_at": "2026-10-04T11:02:10.000Z"
+                    }
+                  ],
+                  "usage": {
+                    "status": "reported",
+                    "input_tokens": 120,
+                    "output_tokens": 40,
+                    "cost_usd": 0.002
+                  },
+                  "as_of": "2026-10-04T11:05:00.000Z"
+                },
+                "provenance": {
+                  "lease_epoch": 1,
+                  "queued_by": null,
+                  "completion": {
+                    "met": true,
+                    "unchecked_count": 0
+                  },
+                  "handoff_recorded": true,
+                  "references_truncated": false,
+                  "references": [
+                    {
+                      "id": "ref_evidence",
+                      "cardId": "card_01",
+                      "runId": "run_01",
+                      "url": "https://library.test/artifacts/example",
+                      "provider": "superlibrary",
+                      "sourceType": "artifact",
+                      "externalId": "artifact_example",
+                      "createdAt": "2026-10-04T11:05:00.000Z",
+                      "execution_export": {
+                        "schema_version": "agentpod-execution-export/v1",
+                        "export_id": "00000000-0000-4000-8000-000000000001",
+                        "manifest_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+                        "verification": "unverified"
+                      }
+                    }
+                  ]
+                },
+                "usage": {
+                  "status": "known",
+                  "recorded_cost_usd": 0.002,
+                  "estimated_cost_usd": null,
+                  "cost_provenance": "agent-reported-not-provider-bill"
+                },
+                "executor_evidence": {
+                  "external_source": "superpipeline",
+                  "external_run_id": "run_01",
+                  "agentpod_path": "/api/evidence/runs/superpipeline/run_01/execution?schema_version=salaam-execution-evidence%2Fv1"
+                },
+                "verified": true
+              }
+            },
+            {
+              "why": "the nested C4 shape is closed too",
+              "body": {
+                "schema_version": "superpipeline-run-evidence/v1",
+                "pipeline": {
+                  "run": {
+                    "id": "run_01",
+                    "board_id": "brd_01",
+                    "card_id": "card_01",
+                    "stage_key": "research",
+                    "agent_id": "agt_researcher",
+                    "agent_principal_id": "prn_agent01",
+                    "status": "ended",
+                    "outcome": "completed",
+                    "started_at": "2026-10-04T10:12:38.000Z",
+                    "ended_at": "2026-10-04T10:15:00.000Z",
+                    "lease_epoch": 1
+                  },
+                  "card": {
+                    "id": "card_01",
+                    "title": "Add OAuth login",
+                    "stage_key": "review"
+                  },
+                  "gates": [
+                    {
+                      "id": "gate_01",
+                      "run_id": "run_01",
+                      "stage_key": "review",
+                      "status": "resolved",
+                      "decision": "rejected",
+                      "decided_by": "usr_the_actual_person",
+                      "produced_by": "agt_researcher",
+                      "produced_by_principal_id": "prn_agent01",
+                      "decided_by_principal_id": "prn_human01",
+                      "decided_by_hub_sub": null,
+                      "created_at": "2026-10-04T10:15:00.000Z",
+                      "resolved_at": "2026-10-04T11:02:10.000Z"
+                    }
+                  ],
+                  "usage": {
+                    "status": "reported",
+                    "input_tokens": 120,
+                    "output_tokens": 40,
+                    "cost_usd": 0.002
+                  },
+                  "as_of": "2026-10-04T11:05:00.000Z"
+                },
+                "provenance": {
+                  "lease_epoch": 1,
+                  "queued_by": null,
+                  "completion": {
+                    "met": true,
+                    "unchecked_count": 0
+                  },
+                  "handoff_recorded": true,
+                  "references_truncated": false,
+                  "references": [
+                    {
+                      "id": "ref_evidence",
+                      "cardId": "card_01",
+                      "runId": "run_01",
+                      "url": "https://library.test/artifacts/example",
+                      "provider": "superlibrary",
+                      "sourceType": "artifact",
+                      "externalId": "artifact_example",
+                      "createdAt": "2026-10-04T11:05:00.000Z",
+                      "execution_export": {
+                        "schema_version": "agentpod-execution-export/v1",
+                        "export_id": "00000000-0000-4000-8000-000000000001",
+                        "manifest_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+                        "verification": "unverified"
+                      }
+                    }
+                  ]
+                },
+                "usage": {
+                  "status": "known",
+                  "recorded_cost_usd": 0.002,
+                  "estimated_cost_usd": null,
+                  "cost_provenance": "agent-reported-not-provider-bill"
+                },
+                "executor_evidence": {
+                  "external_source": "superpipeline",
+                  "external_run_id": "run_01",
+                  "agentpod_path": "/api/evidence/runs/superpipeline/run_01/execution?schema_version=salaam-execution-evidence%2Fv1"
+                }
+              }
+            },
+            {
+              "why": "executor_evidence is required",
+              "body": {
+                "schema_version": "superpipeline-run-evidence/v1",
+                "pipeline": {
+                  "run": {
+                    "id": "run_01",
+                    "board_id": "brd_01",
+                    "card_id": "card_01",
+                    "stage_key": "research",
+                    "agent_id": "agt_researcher",
+                    "agent_principal_id": "prn_agent01",
+                    "status": "ended",
+                    "outcome": "completed",
+                    "started_at": "2026-10-04T10:12:38.000Z",
+                    "ended_at": "2026-10-04T10:15:00.000Z"
+                  },
+                  "card": {
+                    "id": "card_01",
+                    "title": "Add OAuth login",
+                    "stage_key": "review"
+                  },
+                  "gates": [
+                    {
+                      "id": "gate_01",
+                      "run_id": "run_01",
+                      "stage_key": "review",
+                      "status": "resolved",
+                      "decision": "rejected",
+                      "decided_by": "usr_the_actual_person",
+                      "produced_by": "agt_researcher",
+                      "produced_by_principal_id": "prn_agent01",
+                      "decided_by_principal_id": "prn_human01",
+                      "decided_by_hub_sub": null,
+                      "created_at": "2026-10-04T10:15:00.000Z",
+                      "resolved_at": "2026-10-04T11:02:10.000Z"
+                    }
+                  ],
+                  "usage": {
+                    "status": "reported",
+                    "input_tokens": 120,
+                    "output_tokens": 40,
+                    "cost_usd": 0.002
+                  },
+                  "as_of": "2026-10-04T11:05:00.000Z"
+                },
+                "provenance": {
+                  "lease_epoch": 1,
+                  "queued_by": null,
+                  "completion": {
+                    "met": true,
+                    "unchecked_count": 0
+                  },
+                  "handoff_recorded": true,
+                  "references_truncated": false,
+                  "references": [
+                    {
+                      "id": "ref_evidence",
+                      "cardId": "card_01",
+                      "runId": "run_01",
+                      "url": "https://library.test/artifacts/example",
+                      "provider": "superlibrary",
+                      "sourceType": "artifact",
+                      "externalId": "artifact_example",
+                      "createdAt": "2026-10-04T11:05:00.000Z",
+                      "execution_export": {
+                        "schema_version": "agentpod-execution-export/v1",
+                        "export_id": "00000000-0000-4000-8000-000000000001",
+                        "manifest_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+                        "verification": "unverified"
+                      }
+                    }
+                  ]
+                },
+                "usage": {
+                  "status": "known",
+                  "recorded_cost_usd": 0.002,
+                  "estimated_cost_usd": null,
+                  "cost_provenance": "agent-reported-not-provider-bill"
+                }
+              }
+            },
+            {
+              "why": "provenance carries lease_epoch",
+              "body": {
+                "schema_version": "superpipeline-run-evidence/v1",
+                "pipeline": {
+                  "run": {
+                    "id": "run_01",
+                    "board_id": "brd_01",
+                    "card_id": "card_01",
+                    "stage_key": "research",
+                    "agent_id": "agt_researcher",
+                    "agent_principal_id": "prn_agent01",
+                    "status": "ended",
+                    "outcome": "completed",
+                    "started_at": "2026-10-04T10:12:38.000Z",
+                    "ended_at": "2026-10-04T10:15:00.000Z"
+                  },
+                  "card": {
+                    "id": "card_01",
+                    "title": "Add OAuth login",
+                    "stage_key": "review"
+                  },
+                  "gates": [
+                    {
+                      "id": "gate_01",
+                      "run_id": "run_01",
+                      "stage_key": "review",
+                      "status": "resolved",
+                      "decision": "rejected",
+                      "decided_by": "usr_the_actual_person",
+                      "produced_by": "agt_researcher",
+                      "produced_by_principal_id": "prn_agent01",
+                      "decided_by_principal_id": "prn_human01",
+                      "decided_by_hub_sub": null,
+                      "created_at": "2026-10-04T10:15:00.000Z",
+                      "resolved_at": "2026-10-04T11:02:10.000Z"
+                    }
+                  ],
+                  "usage": {
+                    "status": "reported",
+                    "input_tokens": 120,
+                    "output_tokens": 40,
+                    "cost_usd": 0.002
+                  },
+                  "as_of": "2026-10-04T11:05:00.000Z"
+                },
+                "provenance": {
+                  "queued_by": null,
+                  "completion": {
+                    "met": true,
+                    "unchecked_count": 0
+                  },
+                  "handoff_recorded": true,
+                  "references_truncated": false,
+                  "references": [
+                    {
+                      "id": "ref_evidence",
+                      "cardId": "card_01",
+                      "runId": "run_01",
+                      "url": "https://library.test/artifacts/example",
+                      "provider": "superlibrary",
+                      "sourceType": "artifact",
+                      "externalId": "artifact_example",
+                      "createdAt": "2026-10-04T11:05:00.000Z",
+                      "execution_export": {
+                        "schema_version": "agentpod-execution-export/v1",
+                        "export_id": "00000000-0000-4000-8000-000000000001",
+                        "manifest_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+                        "verification": "unverified"
+                      }
+                    }
+                  ]
+                },
+                "usage": {
+                  "status": "known",
+                  "recorded_cost_usd": 0.002,
+                  "estimated_cost_usd": null,
+                  "cost_provenance": "agent-reported-not-provider-bill"
+                },
+                "executor_evidence": {
+                  "external_source": "superpipeline",
+                  "external_run_id": "run_01",
+                  "agentpod_path": "/api/evidence/runs/superpipeline/run_01/execution?schema_version=salaam-execution-evidence%2Fv1"
+                }
+              }
+            },
+            {
+              "why": "lease_epoch is not negative",
+              "body": {
+                "schema_version": "superpipeline-run-evidence/v1",
+                "pipeline": {
+                  "run": {
+                    "id": "run_01",
+                    "board_id": "brd_01",
+                    "card_id": "card_01",
+                    "stage_key": "research",
+                    "agent_id": "agt_researcher",
+                    "agent_principal_id": "prn_agent01",
+                    "status": "ended",
+                    "outcome": "completed",
+                    "started_at": "2026-10-04T10:12:38.000Z",
+                    "ended_at": "2026-10-04T10:15:00.000Z"
+                  },
+                  "card": {
+                    "id": "card_01",
+                    "title": "Add OAuth login",
+                    "stage_key": "review"
+                  },
+                  "gates": [
+                    {
+                      "id": "gate_01",
+                      "run_id": "run_01",
+                      "stage_key": "review",
+                      "status": "resolved",
+                      "decision": "rejected",
+                      "decided_by": "usr_the_actual_person",
+                      "produced_by": "agt_researcher",
+                      "produced_by_principal_id": "prn_agent01",
+                      "decided_by_principal_id": "prn_human01",
+                      "decided_by_hub_sub": null,
+                      "created_at": "2026-10-04T10:15:00.000Z",
+                      "resolved_at": "2026-10-04T11:02:10.000Z"
+                    }
+                  ],
+                  "usage": {
+                    "status": "reported",
+                    "input_tokens": 120,
+                    "output_tokens": 40,
+                    "cost_usd": 0.002
+                  },
+                  "as_of": "2026-10-04T11:05:00.000Z"
+                },
+                "provenance": {
+                  "lease_epoch": -1,
+                  "queued_by": null,
+                  "completion": {
+                    "met": true,
+                    "unchecked_count": 0
+                  },
+                  "handoff_recorded": true,
+                  "references_truncated": false,
+                  "references": [
+                    {
+                      "id": "ref_evidence",
+                      "cardId": "card_01",
+                      "runId": "run_01",
+                      "url": "https://library.test/artifacts/example",
+                      "provider": "superlibrary",
+                      "sourceType": "artifact",
+                      "externalId": "artifact_example",
+                      "createdAt": "2026-10-04T11:05:00.000Z",
+                      "execution_export": {
+                        "schema_version": "agentpod-execution-export/v1",
+                        "export_id": "00000000-0000-4000-8000-000000000001",
+                        "manifest_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+                        "verification": "unverified"
+                      }
+                    }
+                  ]
+                },
+                "usage": {
+                  "status": "known",
+                  "recorded_cost_usd": 0.002,
+                  "estimated_cost_usd": null,
+                  "cost_provenance": "agent-reported-not-provider-bill"
+                },
+                "executor_evidence": {
+                  "external_source": "superpipeline",
+                  "external_run_id": "run_01",
+                  "agentpod_path": "/api/evidence/runs/superpipeline/run_01/execution?schema_version=salaam-execution-evidence%2Fv1"
+                }
+              }
+            },
+            {
+              "why": "v1 usage has its own statuses",
+              "body": {
+                "schema_version": "superpipeline-run-evidence/v1",
+                "pipeline": {
+                  "run": {
+                    "id": "run_01",
+                    "board_id": "brd_01",
+                    "card_id": "card_01",
+                    "stage_key": "research",
+                    "agent_id": "agt_researcher",
+                    "agent_principal_id": "prn_agent01",
+                    "status": "ended",
+                    "outcome": "completed",
+                    "started_at": "2026-10-04T10:12:38.000Z",
+                    "ended_at": "2026-10-04T10:15:00.000Z"
+                  },
+                  "card": {
+                    "id": "card_01",
+                    "title": "Add OAuth login",
+                    "stage_key": "review"
+                  },
+                  "gates": [
+                    {
+                      "id": "gate_01",
+                      "run_id": "run_01",
+                      "stage_key": "review",
+                      "status": "resolved",
+                      "decision": "rejected",
+                      "decided_by": "usr_the_actual_person",
+                      "produced_by": "agt_researcher",
+                      "produced_by_principal_id": "prn_agent01",
+                      "decided_by_principal_id": "prn_human01",
+                      "decided_by_hub_sub": null,
+                      "created_at": "2026-10-04T10:15:00.000Z",
+                      "resolved_at": "2026-10-04T11:02:10.000Z"
+                    }
+                  ],
+                  "usage": {
+                    "status": "reported",
+                    "input_tokens": 120,
+                    "output_tokens": 40,
+                    "cost_usd": 0.002
+                  },
+                  "as_of": "2026-10-04T11:05:00.000Z"
+                },
+                "provenance": {
+                  "lease_epoch": 1,
+                  "queued_by": null,
+                  "completion": {
+                    "met": true,
+                    "unchecked_count": 0
+                  },
+                  "handoff_recorded": true,
+                  "references_truncated": false,
+                  "references": [
+                    {
+                      "id": "ref_evidence",
+                      "cardId": "card_01",
+                      "runId": "run_01",
+                      "url": "https://library.test/artifacts/example",
+                      "provider": "superlibrary",
+                      "sourceType": "artifact",
+                      "externalId": "artifact_example",
+                      "createdAt": "2026-10-04T11:05:00.000Z",
+                      "execution_export": {
+                        "schema_version": "agentpod-execution-export/v1",
+                        "export_id": "00000000-0000-4000-8000-000000000001",
+                        "manifest_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+                        "verification": "unverified"
+                      }
+                    }
+                  ]
+                },
+                "usage": {
+                  "status": "reported",
+                  "recorded_cost_usd": 0.002,
+                  "estimated_cost_usd": null,
+                  "cost_provenance": "agent-reported-not-provider-bill"
+                },
+                "executor_evidence": {
+                  "external_source": "superpipeline",
+                  "external_run_id": "run_01",
+                  "agentpod_path": "/api/evidence/runs/superpipeline/run_01/execution?schema_version=salaam-execution-evidence%2Fv1"
+                }
+              }
+            },
+            {
+              "why": "an export locator is never verified here",
+              "body": {
+                "schema_version": "superpipeline-run-evidence/v1",
+                "pipeline": {
+                  "run": {
+                    "id": "run_01",
+                    "board_id": "brd_01",
+                    "card_id": "card_01",
+                    "stage_key": "research",
+                    "agent_id": "agt_researcher",
+                    "agent_principal_id": "prn_agent01",
+                    "status": "ended",
+                    "outcome": "completed",
+                    "started_at": "2026-10-04T10:12:38.000Z",
+                    "ended_at": "2026-10-04T10:15:00.000Z"
+                  },
+                  "card": {
+                    "id": "card_01",
+                    "title": "Add OAuth login",
+                    "stage_key": "review"
+                  },
+                  "gates": [
+                    {
+                      "id": "gate_01",
+                      "run_id": "run_01",
+                      "stage_key": "review",
+                      "status": "resolved",
+                      "decision": "rejected",
+                      "decided_by": "usr_the_actual_person",
+                      "produced_by": "agt_researcher",
+                      "produced_by_principal_id": "prn_agent01",
+                      "decided_by_principal_id": "prn_human01",
+                      "decided_by_hub_sub": null,
+                      "created_at": "2026-10-04T10:15:00.000Z",
+                      "resolved_at": "2026-10-04T11:02:10.000Z"
+                    }
+                  ],
+                  "usage": {
+                    "status": "reported",
+                    "input_tokens": 120,
+                    "output_tokens": 40,
+                    "cost_usd": 0.002
+                  },
+                  "as_of": "2026-10-04T11:05:00.000Z"
+                },
+                "provenance": {
+                  "lease_epoch": 1,
+                  "queued_by": null,
+                  "completion": {
+                    "met": true,
+                    "unchecked_count": 0
+                  },
+                  "handoff_recorded": true,
+                  "references_truncated": false,
+                  "references": [
+                    {
+                      "id": "ref_evidence",
+                      "cardId": "card_01",
+                      "runId": "run_01",
+                      "url": "https://library.test/artifacts/example",
+                      "provider": "superlibrary",
+                      "sourceType": "artifact",
+                      "externalId": "artifact_example",
+                      "createdAt": "2026-10-04T11:05:00.000Z",
+                      "execution_export": {
+                        "schema_version": "agentpod-execution-export/v1",
+                        "export_id": "00000000-0000-4000-8000-000000000001",
+                        "manifest_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+                        "verification": "verified"
+                      }
+                    }
+                  ]
+                },
+                "usage": {
+                  "status": "known",
+                  "recorded_cost_usd": 0.002,
+                  "estimated_cost_usd": null,
+                  "cost_provenance": "agent-reported-not-provider-bill"
+                },
+                "executor_evidence": {
+                  "external_source": "superpipeline",
+                  "external_run_id": "run_01",
+                  "agentpod_path": "/api/evidence/runs/superpipeline/run_01/execution?schema_version=salaam-execution-evidence%2Fv1"
+                }
+              }
+            },
+            {
+              "why": "a manifest digest is 64 lowercase hex digits",
+              "body": {
+                "schema_version": "superpipeline-run-evidence/v1",
+                "pipeline": {
+                  "run": {
+                    "id": "run_01",
+                    "board_id": "brd_01",
+                    "card_id": "card_01",
+                    "stage_key": "research",
+                    "agent_id": "agt_researcher",
+                    "agent_principal_id": "prn_agent01",
+                    "status": "ended",
+                    "outcome": "completed",
+                    "started_at": "2026-10-04T10:12:38.000Z",
+                    "ended_at": "2026-10-04T10:15:00.000Z"
+                  },
+                  "card": {
+                    "id": "card_01",
+                    "title": "Add OAuth login",
+                    "stage_key": "review"
+                  },
+                  "gates": [
+                    {
+                      "id": "gate_01",
+                      "run_id": "run_01",
+                      "stage_key": "review",
+                      "status": "resolved",
+                      "decision": "rejected",
+                      "decided_by": "usr_the_actual_person",
+                      "produced_by": "agt_researcher",
+                      "produced_by_principal_id": "prn_agent01",
+                      "decided_by_principal_id": "prn_human01",
+                      "decided_by_hub_sub": null,
+                      "created_at": "2026-10-04T10:15:00.000Z",
+                      "resolved_at": "2026-10-04T11:02:10.000Z"
+                    }
+                  ],
+                  "usage": {
+                    "status": "reported",
+                    "input_tokens": 120,
+                    "output_tokens": 40,
+                    "cost_usd": 0.002
+                  },
+                  "as_of": "2026-10-04T11:05:00.000Z"
+                },
+                "provenance": {
+                  "lease_epoch": 1,
+                  "queued_by": null,
+                  "completion": {
+                    "met": true,
+                    "unchecked_count": 0
+                  },
+                  "handoff_recorded": true,
+                  "references_truncated": false,
+                  "references": [
+                    {
+                      "id": "ref_evidence",
+                      "cardId": "card_01",
+                      "runId": "run_01",
+                      "url": "https://library.test/artifacts/example",
+                      "provider": "superlibrary",
+                      "sourceType": "artifact",
+                      "externalId": "artifact_example",
+                      "createdAt": "2026-10-04T11:05:00.000Z",
+                      "execution_export": {
+                        "schema_version": "agentpod-execution-export/v1",
+                        "export_id": "00000000-0000-4000-8000-000000000001",
+                        "manifest_sha256": "ABC",
+                        "verification": "unverified"
+                      }
+                    }
+                  ]
+                },
+                "usage": {
+                  "status": "known",
+                  "recorded_cost_usd": 0.002,
+                  "estimated_cost_usd": null,
+                  "cost_provenance": "agent-reported-not-provider-bill"
+                },
+                "executor_evidence": {
+                  "external_source": "superpipeline",
+                  "external_run_id": "run_01",
+                  "agentpod_path": "/api/evidence/runs/superpipeline/run_01/execution?schema_version=salaam-execution-evidence%2Fv1"
+                }
+              }
+            },
+            {
+              "why": "an export id is a UUID",
+              "body": {
+                "schema_version": "superpipeline-run-evidence/v1",
+                "pipeline": {
+                  "run": {
+                    "id": "run_01",
+                    "board_id": "brd_01",
+                    "card_id": "card_01",
+                    "stage_key": "research",
+                    "agent_id": "agt_researcher",
+                    "agent_principal_id": "prn_agent01",
+                    "status": "ended",
+                    "outcome": "completed",
+                    "started_at": "2026-10-04T10:12:38.000Z",
+                    "ended_at": "2026-10-04T10:15:00.000Z"
+                  },
+                  "card": {
+                    "id": "card_01",
+                    "title": "Add OAuth login",
+                    "stage_key": "review"
+                  },
+                  "gates": [
+                    {
+                      "id": "gate_01",
+                      "run_id": "run_01",
+                      "stage_key": "review",
+                      "status": "resolved",
+                      "decision": "rejected",
+                      "decided_by": "usr_the_actual_person",
+                      "produced_by": "agt_researcher",
+                      "produced_by_principal_id": "prn_agent01",
+                      "decided_by_principal_id": "prn_human01",
+                      "decided_by_hub_sub": null,
+                      "created_at": "2026-10-04T10:15:00.000Z",
+                      "resolved_at": "2026-10-04T11:02:10.000Z"
+                    }
+                  ],
+                  "usage": {
+                    "status": "reported",
+                    "input_tokens": 120,
+                    "output_tokens": 40,
+                    "cost_usd": 0.002
+                  },
+                  "as_of": "2026-10-04T11:05:00.000Z"
+                },
+                "provenance": {
+                  "lease_epoch": 1,
+                  "queued_by": null,
+                  "completion": {
+                    "met": true,
+                    "unchecked_count": 0
+                  },
+                  "handoff_recorded": true,
+                  "references_truncated": false,
+                  "references": [
+                    {
+                      "id": "ref_evidence",
+                      "cardId": "card_01",
+                      "runId": "run_01",
+                      "url": "https://library.test/artifacts/example",
+                      "provider": "superlibrary",
+                      "sourceType": "artifact",
+                      "externalId": "artifact_example",
+                      "createdAt": "2026-10-04T11:05:00.000Z",
+                      "execution_export": {
+                        "schema_version": "agentpod-execution-export/v1",
+                        "export_id": "export-1",
+                        "manifest_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+                        "verification": "unverified"
+                      }
+                    }
+                  ]
+                },
+                "usage": {
+                  "status": "known",
+                  "recorded_cost_usd": 0.002,
+                  "estimated_cost_usd": null,
+                  "cost_provenance": "agent-reported-not-provider-bill"
+                },
+                "executor_evidence": {
+                  "external_source": "superpipeline",
+                  "external_run_id": "run_01",
+                  "agentpod_path": "/api/evidence/runs/superpipeline/run_01/execution?schema_version=salaam-execution-evidence%2Fv1"
+                }
+              }
+            },
+            {
+              "why": "executor evidence is superpipeline's",
+              "body": {
+                "schema_version": "superpipeline-run-evidence/v1",
+                "pipeline": {
+                  "run": {
+                    "id": "run_01",
+                    "board_id": "brd_01",
+                    "card_id": "card_01",
+                    "stage_key": "research",
+                    "agent_id": "agt_researcher",
+                    "agent_principal_id": "prn_agent01",
+                    "status": "ended",
+                    "outcome": "completed",
+                    "started_at": "2026-10-04T10:12:38.000Z",
+                    "ended_at": "2026-10-04T10:15:00.000Z"
+                  },
+                  "card": {
+                    "id": "card_01",
+                    "title": "Add OAuth login",
+                    "stage_key": "review"
+                  },
+                  "gates": [
+                    {
+                      "id": "gate_01",
+                      "run_id": "run_01",
+                      "stage_key": "review",
+                      "status": "resolved",
+                      "decision": "rejected",
+                      "decided_by": "usr_the_actual_person",
+                      "produced_by": "agt_researcher",
+                      "produced_by_principal_id": "prn_agent01",
+                      "decided_by_principal_id": "prn_human01",
+                      "decided_by_hub_sub": null,
+                      "created_at": "2026-10-04T10:15:00.000Z",
+                      "resolved_at": "2026-10-04T11:02:10.000Z"
+                    }
+                  ],
+                  "usage": {
+                    "status": "reported",
+                    "input_tokens": 120,
+                    "output_tokens": 40,
+                    "cost_usd": 0.002
+                  },
+                  "as_of": "2026-10-04T11:05:00.000Z"
+                },
+                "provenance": {
+                  "lease_epoch": 1,
+                  "queued_by": null,
+                  "completion": {
+                    "met": true,
+                    "unchecked_count": 0
+                  },
+                  "handoff_recorded": true,
+                  "references_truncated": false,
+                  "references": [
+                    {
+                      "id": "ref_evidence",
+                      "cardId": "card_01",
+                      "runId": "run_01",
+                      "url": "https://library.test/artifacts/example",
+                      "provider": "superlibrary",
+                      "sourceType": "artifact",
+                      "externalId": "artifact_example",
+                      "createdAt": "2026-10-04T11:05:00.000Z",
+                      "execution_export": {
+                        "schema_version": "agentpod-execution-export/v1",
+                        "export_id": "00000000-0000-4000-8000-000000000001",
+                        "manifest_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+                        "verification": "unverified"
+                      }
+                    }
+                  ]
+                },
+                "usage": {
+                  "status": "known",
+                  "recorded_cost_usd": 0.002,
+                  "estimated_cost_usd": null,
+                  "cost_provenance": "agent-reported-not-provider-bill"
+                },
+                "executor_evidence": {
+                  "external_source": "agentpod",
+                  "external_run_id": "run_01",
+                  "agentpod_path": "/api/evidence/runs/superpipeline/run_01/execution?schema_version=salaam-execution-evidence%2Fv1"
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}
