@@ -7,6 +7,8 @@ and the release notes quote that section.
 
 ## Unreleased
 
+## v0.0.14 — 2026-11-24
+
 ### Changed
 
 - What SuperWitness reads from SuperPipeline and AgentPod is pinned by treaty 0.0.19 (`treaty.json`,
