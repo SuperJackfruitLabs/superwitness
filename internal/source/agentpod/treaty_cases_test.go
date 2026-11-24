@@ -122,9 +122,14 @@ func TestPrincipalEveryCase(t *testing.T) {
 			}
 		})
 	}
+	var key string // a principal id the contract accepts: the first valid case's
+	for _, body := range c.Valid {
+		key = field(t, body, "id")
+		break
+	}
 	for _, inv := range c.Invalid {
 		t.Run(inv.Why, func(t *testing.T) {
-			if p, err := serveAll(t, inv.Body).Lookup(context.Background(), "prn_0123456789abcdef0123"); err == nil {
+			if p, err := serveAll(t, inv.Body).Lookup(context.Background(), key); err == nil {
 				t.Fatalf("accepted %+v", p)
 			}
 		})

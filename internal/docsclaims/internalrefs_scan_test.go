@@ -167,9 +167,11 @@ func TestNoInternalIdentifiersInTrackedTree(t *testing.T) {
 
 // treatyVendoredPatterns are the patterns a file vendored from treaty may match. treaty's corpora
 // are public, `treaty verify` in CI holds each copy byte-identical to the pinned release, and
-// they spell real-grammar synthetic ids and cite treaty's own plan. A private name is never
-// exempt, and no other file is.
-var treatyVendoredPatterns = map[string]bool{"real-looking-id": true, "ruling": true}
+// they spell real-grammar synthetic ids and cite treaty's own plan and the products' public
+// contract sections (contract C4, spec §3.3). A private name is never exempt, and no other file
+// is.
+var treatyVendoredPatterns = map[string]bool{"real-looking-id": true, "ruling": true,
+	"contract-c": true, "spec-section": true, "section-sign": true}
 
 // vendoredTreatyFiles is the set of paths treaty.json's vendored list names.
 func vendoredTreatyFiles(t *testing.T, root string) map[string]bool {
@@ -204,7 +206,8 @@ func TestVendoredTreatyExceptionIsNarrow(t *testing.T) {
 		t.Fatalf("%s is not in treaty.json's vendored list", file)
 	}
 	id := internalRef{"real-looking-id", "prn_0123456789abcdef0123"}
-	if !vendoredTreatyRef(vendored, file, id) || !vendoredTreatyRef(vendored, file, internalRef{"ruling", "ruling 3"}) {
+	if !vendoredTreatyRef(vendored, file, id) || !vendoredTreatyRef(vendored, file, internalRef{"ruling", "ruling 3"}) ||
+		!vendoredTreatyRef(vendored, file, internalRef{"contract-c", "contract C5"}) || !vendoredTreatyRef(vendored, file, internalRef{"section-sign", "§3"}) {
 		t.Fatal("a vendored treaty file's synthetic ids or citation were refused")
 	}
 	if vendoredTreatyRef(vendored, "internal/auth/testdata/org-plane-tokens.json", id) {
