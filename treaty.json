@@ -1,6 +1,6 @@
 {
   "product": "superwitness",
-  "treaty": "0.0.15",
+  "treaty": "0.0.19",
   "produces": ["superwitness.runs", "superwitness.telemetry"],
   "consumes": [
     "accounts.token-claims",
@@ -14,6 +14,46 @@
     {
       "path": "internal/auth/testdata/treaty/token_vectors.json",
       "source": "fixtures/ecosystem-identity/token_vectors.json"
+    },
+    {
+      "path": "internal/treaty/schemas/http/superpipeline/board-read.v1.openapi.json",
+      "source": "schemas/http/superpipeline/board-read.v1.openapi.json"
+    },
+    {
+      "path": "internal/treaty/fixtures/http/superpipeline/board-read.v1.cases.json",
+      "source": "fixtures/http/superpipeline/board-read.v1.cases.json"
+    },
+    {
+      "path": "internal/treaty/schemas/http/agentpod/evidence.v1.openapi.json",
+      "source": "schemas/http/agentpod/evidence.v1.openapi.json"
+    },
+    {
+      "path": "internal/treaty/schemas/agentpod/execution-export.v1.json",
+      "source": "schemas/agentpod/execution-export.v1.json"
+    },
+    {
+      "path": "internal/treaty/schemas/agentpod/execution-evidence.v1.json",
+      "source": "schemas/agentpod/execution-evidence.v1.json"
+    },
+    {
+      "path": "internal/treaty/schemas/agentpod/execution-artifacts.v1.json",
+      "source": "schemas/agentpod/execution-artifacts.v1.json"
+    },
+    {
+      "path": "internal/treaty/fixtures/agentpod-evidence/examples.json",
+      "source": "fixtures/agentpod-evidence/examples.json"
+    },
+    {
+      "path": "internal/treaty/fixtures/http/agentpod/evidence.v1.cases.json",
+      "source": "fixtures/http/agentpod/evidence.v1.cases.json"
+    },
+    {
+      "path": "internal/treaty/schemas/telemetry/suite.v1.json",
+      "source": "schemas/telemetry/suite.v1.json"
+    },
+    {
+      "path": "internal/treaty/fixtures/telemetry/suite.v1.cases.json",
+      "source": "fixtures/telemetry/suite.v1.cases.json"
     }
   ]
 }

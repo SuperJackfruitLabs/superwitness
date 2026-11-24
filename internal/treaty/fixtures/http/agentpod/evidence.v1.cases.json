@@ -1,0 +1,2339 @@
+{
+  "operations": {
+    "readExecutionExport": {
+      "responses": {
+        "200": {
+          "valid": {
+            "committed-manifest": {
+              "schema_version": "agentpod-execution-export/v1",
+              "export_id": "22222222-2222-4222-8222-222222222222",
+              "external_source": "superpipeline",
+              "external_run_id": "run_abcdef",
+              "board_id": "brd_abcdef",
+              "card_id": "card_abcdef",
+              "stage_key": "build",
+              "principal_id": "prn_aaaaaaaaaaaaaaaaaaaa",
+              "run_epoch": 1,
+              "manifest_sha256": "c5c6a2f3119798e0e273c6d4e8f74094b70d307f28075defd0adcd8c71afa2c0",
+              "manifest_bytes": 1371,
+              "artifact_kind": "execution-metadata-manifest",
+              "library": {
+                "item_id": "itm_fixture",
+                "version": 1,
+                "sha256": "c5c6a2f3119798e0e273c6d4e8f74094b70d307f28075defd0adcd8c71afa2c0",
+                "bytes": 1371,
+                "entry": "execution-evidence.json"
+              },
+              "artifact_files": [],
+              "verification": "download-sha256-verified"
+            },
+            "committed-artifact-bundle": {
+              "schema_version": "agentpod-execution-export/v1",
+              "export_id": "44444444-4444-4444-8444-444444444444",
+              "external_source": "superpipeline",
+              "external_run_id": "run_abcdef",
+              "board_id": "brd_abcdef",
+              "card_id": "card_abcdef",
+              "stage_key": "build",
+              "principal_id": "prn_aaaaaaaaaaaaaaaaaaaa",
+              "run_epoch": 1,
+              "manifest_sha256": "38bfa0105691557544427a9d27a4760bbd8ffd02c4a7480fcdcf3cf7967b989b",
+              "manifest_bytes": 1942,
+              "artifact_kind": "execution-artifact-bundle",
+              "library": {
+                "item_id": "itm_fixture",
+                "version": 1,
+                "sha256": "c8b0d8fd8f9c2fcc50a5a9e3343030dfcddb01679ab4c4ba395bfd6c25df57ec",
+                "bytes": 1975,
+                "entry": "execution-manifest.json"
+              },
+              "artifact_files": [
+                {
+                  "artifact_id": "33333333-3333-4333-8333-333333333333",
+                  "file_id": {
+                    "item_id": "itm_fixture",
+                    "version": 1,
+                    "path": "artifacts/33333333-3333-4333-8333-333333333333.json"
+                  },
+                  "path": "artifacts/33333333-3333-4333-8333-333333333333.json",
+                  "sha256": "2de657a2eacded6e94ac4c32bf02ec0393eb89612392534c4faa7d6c06356688",
+                  "bytes": 33,
+                  "disposition": "produced"
+                }
+              ],
+              "verification": "download-sha256-verified"
+            }
+          },
+          "invalid": [
+            {
+              "why": "unknown-version",
+              "body": {
+                "schema_version": "v2",
+                "export_id": "22222222-2222-4222-8222-222222222222",
+                "external_source": "superpipeline",
+                "external_run_id": "run_abcdef",
+                "board_id": "brd_abcdef",
+                "card_id": "card_abcdef",
+                "stage_key": "build",
+                "principal_id": "prn_aaaaaaaaaaaaaaaaaaaa",
+                "run_epoch": 1,
+                "manifest_sha256": "c5c6a2f3119798e0e273c6d4e8f74094b70d307f28075defd0adcd8c71afa2c0",
+                "manifest_bytes": 1371,
+                "artifact_kind": "execution-metadata-manifest",
+                "library": {
+                  "item_id": "itm_abcdef",
+                  "version": 1,
+                  "sha256": "c5c6a2f3119798e0e273c6d4e8f74094b70d307f28075defd0adcd8c71afa2c0",
+                  "bytes": 1371,
+                  "entry": "execution-evidence.json"
+                },
+                "verification": "download-sha256-verified",
+                "artifact_files": []
+              }
+            },
+            {
+              "why": "unknown-field",
+              "body": {
+                "schema_version": "agentpod-execution-export/v1",
+                "export_id": "22222222-2222-4222-8222-222222222222",
+                "external_source": "superpipeline",
+                "external_run_id": "run_abcdef",
+                "board_id": "brd_abcdef",
+                "card_id": "card_abcdef",
+                "stage_key": "build",
+                "principal_id": "prn_aaaaaaaaaaaaaaaaaaaa",
+                "run_epoch": 1,
+                "manifest_sha256": "c5c6a2f3119798e0e273c6d4e8f74094b70d307f28075defd0adcd8c71afa2c0",
+                "manifest_bytes": 1371,
+                "artifact_kind": "execution-metadata-manifest",
+                "library": {
+                  "item_id": "itm_abcdef",
+                  "version": 1,
+                  "sha256": "c5c6a2f3119798e0e273c6d4e8f74094b70d307f28075defd0adcd8c71afa2c0",
+                  "bytes": 1371,
+                  "entry": "execution-evidence.json"
+                },
+                "verification": "download-sha256-verified",
+                "url": "https://untrusted.test",
+                "artifact_files": []
+              }
+            },
+            {
+              "why": "unverified-receipt",
+              "body": {
+                "schema_version": "agentpod-execution-export/v1",
+                "export_id": "22222222-2222-4222-8222-222222222222",
+                "external_source": "superpipeline",
+                "external_run_id": "run_abcdef",
+                "board_id": "brd_abcdef",
+                "card_id": "card_abcdef",
+                "stage_key": "build",
+                "principal_id": "prn_aaaaaaaaaaaaaaaaaaaa",
+                "run_epoch": 1,
+                "manifest_sha256": "c5c6a2f3119798e0e273c6d4e8f74094b70d307f28075defd0adcd8c71afa2c0",
+                "manifest_bytes": 1371,
+                "artifact_kind": "execution-metadata-manifest",
+                "library": {
+                  "item_id": "itm_abcdef",
+                  "version": 1,
+                  "sha256": "c5c6a2f3119798e0e273c6d4e8f74094b70d307f28075defd0adcd8c71afa2c0",
+                  "bytes": 1371,
+                  "entry": "execution-evidence.json"
+                },
+                "verification": "unverified",
+                "artifact_files": []
+              }
+            },
+            {
+              "why": "foreign-run-namespace",
+              "body": {
+                "schema_version": "agentpod-execution-export/v1",
+                "export_id": "22222222-2222-4222-8222-222222222222",
+                "external_source": "salaam",
+                "external_run_id": "run_abcdef",
+                "board_id": "brd_abcdef",
+                "card_id": "card_abcdef",
+                "stage_key": "build",
+                "principal_id": "prn_aaaaaaaaaaaaaaaaaaaa",
+                "run_epoch": 1,
+                "manifest_sha256": "c5c6a2f3119798e0e273c6d4e8f74094b70d307f28075defd0adcd8c71afa2c0",
+                "manifest_bytes": 1371,
+                "artifact_kind": "execution-metadata-manifest",
+                "library": {
+                  "item_id": "itm_abcdef",
+                  "version": 1,
+                  "sha256": "c5c6a2f3119798e0e273c6d4e8f74094b70d307f28075defd0adcd8c71afa2c0",
+                  "bytes": 1371,
+                  "entry": "execution-evidence.json"
+                },
+                "verification": "download-sha256-verified",
+                "artifact_files": []
+              }
+            },
+            {
+              "why": "zero-library-version",
+              "body": {
+                "schema_version": "agentpod-execution-export/v1",
+                "export_id": "22222222-2222-4222-8222-222222222222",
+                "external_source": "superpipeline",
+                "external_run_id": "run_abcdef",
+                "board_id": "brd_abcdef",
+                "card_id": "card_abcdef",
+                "stage_key": "build",
+                "principal_id": "prn_aaaaaaaaaaaaaaaaaaaa",
+                "run_epoch": 1,
+                "manifest_sha256": "c5c6a2f3119798e0e273c6d4e8f74094b70d307f28075defd0adcd8c71afa2c0",
+                "manifest_bytes": 1371,
+                "artifact_kind": "execution-metadata-manifest",
+                "library": {
+                  "item_id": "itm_abcdef",
+                  "version": 0,
+                  "sha256": "c5c6a2f3119798e0e273c6d4e8f74094b70d307f28075defd0adcd8c71afa2c0",
+                  "bytes": 1371,
+                  "entry": "execution-evidence.json"
+                },
+                "verification": "download-sha256-verified",
+                "artifact_files": []
+              }
+            }
+          ]
+        }
+      }
+    },
+    "readExecutionEvidence": {
+      "responses": {
+        "200": {
+          "valid": {
+            "every execution of AgentPod's corpus": {
+              "schema_version": "agentpod-execution-evidence/v1",
+              "external_source": "superpipeline",
+              "external_run_id": "run_abcdef",
+              "board_id": "brd_abcdef",
+              "card_id": "card_abcdef",
+              "executions": [
+                {
+                  "schema_version": "salaam-execution-evidence/v1",
+                  "source": "salaam",
+                  "as_of": "2026-10-21T00:00:00.000Z",
+                  "binding": {
+                    "version": 1,
+                    "organization_id": "org_aaaaaaaaaaaaaaaaaaaa",
+                    "principal_id": "prn_aaaaaaaaaaaaaaaaaaaa",
+                    "node_id": "node_1",
+                    "station_id": "station_1",
+                    "station_key": "salaam:aaaaaaaaaaaaaaaa",
+                    "occupancy_epoch": 1,
+                    "hub_session_id": "session_hub",
+                    "run": {
+                      "source": "superpipeline",
+                      "id": "run_abcdef",
+                      "epoch": 1
+                    }
+                  },
+                  "task": {
+                    "task_id": "11111111-1111-4111-8111-111111111111",
+                    "request_id": "11111111-1111-4111-8111-111111111111",
+                    "session_id": "11111111-1111-4111-8111-111111111111",
+                    "input_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    "plan_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    "state": "accepted",
+                    "plan_revision": 1,
+                    "board_id": "brd_abcdef",
+                    "card_id": "card_abcdef",
+                    "stage_key": "build"
+                  },
+                  "attempts": [],
+                  "children": [],
+                  "tools": [],
+                  "checks": [],
+                  "integrations": [],
+                  "artifacts": [],
+                  "usage": {
+                    "version": 1,
+                    "recorded_by": "salaam-usage-ledger",
+                    "session_id": "11111111-1111-4111-8111-111111111111",
+                    "includes_children": true,
+                    "status": "unreported",
+                    "coverage": {
+                      "observations": 0,
+                      "recorded": 0,
+                      "unknown": 0,
+                      "estimated": 0
+                    },
+                    "recorded_subtotal": null,
+                    "cost_provenance": "unknown",
+                    "truncated": false,
+                    "observations": []
+                  },
+                  "contributors": {
+                    "principal_ids": [],
+                    "closure": "unknown"
+                  },
+                  "coverage": {
+                    "truncated": [],
+                    "unavailable": [
+                      "fingerprints"
+                    ]
+                  },
+                  "fingerprints": []
+                },
+                {
+                  "schema_version": "salaam-execution-evidence/v1",
+                  "source": "salaam",
+                  "as_of": "2026-10-21T00:00:00.000Z",
+                  "binding": {
+                    "version": 1,
+                    "organization_id": "org_aaaaaaaaaaaaaaaaaaaa",
+                    "principal_id": "prn_aaaaaaaaaaaaaaaaaaaa",
+                    "node_id": "node_1",
+                    "station_id": "station_1",
+                    "station_key": "salaam:aaaaaaaaaaaaaaaa",
+                    "occupancy_epoch": 1,
+                    "hub_session_id": "session_hub",
+                    "run": {
+                      "source": "superpipeline",
+                      "id": "run_abcdef",
+                      "epoch": 1
+                    }
+                  },
+                  "task": {
+                    "task_id": "00000002-1111-4111-8111-111111111111",
+                    "request_id": "00000003-1111-4111-8111-111111111111",
+                    "session_id": "00000001-1111-4111-8111-111111111111",
+                    "input_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    "plan_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    "state": "running",
+                    "plan_revision": 1,
+                    "board_id": "brd_abcdef",
+                    "card_id": "card_abcdef",
+                    "stage_key": "build"
+                  },
+                  "attempts": [
+                    {
+                      "id": "00000004-1111-4111-8111-111111111111",
+                      "session_id": "00000001-1111-4111-8111-111111111111",
+                      "worker_epoch": 1,
+                      "state": "completed"
+                    },
+                    {
+                      "id": "00000007-1111-4111-8111-111111111111",
+                      "session_id": "00000006-1111-4111-8111-111111111111",
+                      "worker_epoch": null,
+                      "state": "accepted"
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "00000005-1111-4111-8111-111111111111",
+                      "parent_session": "00000001-1111-4111-8111-111111111111",
+                      "parent_attempt": "00000004-1111-4111-8111-111111111111",
+                      "child_session": "00000006-1111-4111-8111-111111111111",
+                      "child_attempt": "00000007-1111-4111-8111-111111111111",
+                      "state": "completed",
+                      "input_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "artifact_id": "00000008-1111-4111-8111-111111111111",
+                      "contributor_principal_id": null
+                    }
+                  ],
+                  "tools": [
+                    {
+                      "id": "00000010-1111-4111-8111-111111111111",
+                      "source": "operation",
+                      "session_id": "00000001-1111-4111-8111-111111111111",
+                      "attempt_id": "00000004-1111-4111-8111-111111111111",
+                      "task_check_id": null,
+                      "tool_call_id": "call/1",
+                      "kind": "http",
+                      "state": "confirmed",
+                      "input_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "operation_id": null,
+                      "operation_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "receipt_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "resolution": "confirmed",
+                      "resolution_evidence": null
+                    },
+                    {
+                      "id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                      "source": "managed-http",
+                      "session_id": "00000001-1111-4111-8111-111111111111",
+                      "attempt_id": "00000004-1111-4111-8111-111111111111",
+                      "task_check_id": null,
+                      "tool_call_id": "call/1",
+                      "kind": "http",
+                      "state": "returned",
+                      "input_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "operation_id": "00000010-1111-4111-8111-111111111111",
+                      "operation_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "receipt_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "resolution": null,
+                      "resolution_evidence": null
+                    }
+                  ],
+                  "checks": [
+                    {
+                      "id": "00000009-1111-4111-8111-111111111111",
+                      "task_id": "00000002-1111-4111-8111-111111111111",
+                      "step_id": null,
+                      "plan_revision": 1,
+                      "workspace_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "profile_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "engine_id": "acceptance",
+                      "state": "passed",
+                      "artifact_id": "00000008-1111-4111-8111-111111111111"
+                    }
+                  ],
+                  "integrations": [
+                    {
+                      "id": "00000011-1111-4111-8111-111111111111",
+                      "parent_session": "00000001-1111-4111-8111-111111111111",
+                      "child_id": "00000005-1111-4111-8111-111111111111",
+                      "patch_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "before_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "after_artifact": null,
+                      "state": "proposed",
+                      "mutation_id": null
+                    }
+                  ],
+                  "artifacts": [
+                    {
+                      "id": "00000008-1111-4111-8111-111111111111",
+                      "session_id": "00000006-1111-4111-8111-111111111111",
+                      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "bytes": 32,
+                      "disposition": "produced"
+                    }
+                  ],
+                  "usage": {
+                    "version": 1,
+                    "recorded_by": "salaam-usage-ledger",
+                    "session_id": "00000001-1111-4111-8111-111111111111",
+                    "includes_children": true,
+                    "status": "unreported",
+                    "coverage": {
+                      "observations": 0,
+                      "recorded": 0,
+                      "unknown": 0,
+                      "estimated": 0
+                    },
+                    "recorded_subtotal": null,
+                    "cost_provenance": "unknown",
+                    "truncated": false,
+                    "observations": []
+                  },
+                  "contributors": {
+                    "principal_ids": [
+                      "prn_aaaaaaaaaaaaaaaaaaaa"
+                    ],
+                    "closure": "incomplete"
+                  },
+                  "coverage": {
+                    "truncated": [],
+                    "unavailable": [
+                      "fingerprints"
+                    ]
+                  },
+                  "fingerprints": []
+                },
+                {
+                  "schema_version": "salaam-execution-evidence/v1",
+                  "source": "salaam",
+                  "as_of": "2026-10-21T00:00:00.000Z",
+                  "binding": {
+                    "version": 1,
+                    "organization_id": "org_aaaaaaaaaaaaaaaaaaaa",
+                    "principal_id": "prn_aaaaaaaaaaaaaaaaaaaa",
+                    "node_id": "node_1",
+                    "station_id": "station_1",
+                    "station_key": "salaam:aaaaaaaaaaaaaaaa",
+                    "occupancy_epoch": 1,
+                    "hub_session_id": "session_hub",
+                    "run": {
+                      "source": "superpipeline",
+                      "id": "run_abcdef",
+                      "epoch": 1
+                    }
+                  },
+                  "task": {
+                    "task_id": "00000002-1111-4111-8111-111111111111",
+                    "request_id": "00000003-1111-4111-8111-111111111111",
+                    "session_id": "00000001-1111-4111-8111-111111111111",
+                    "input_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    "plan_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    "state": "running",
+                    "plan_revision": 1,
+                    "board_id": "brd_abcdef",
+                    "card_id": "card_abcdef",
+                    "stage_key": "build"
+                  },
+                  "attempts": [
+                    {
+                      "id": "00000004-1111-4111-8111-111111111111",
+                      "session_id": "00000001-1111-4111-8111-111111111111",
+                      "worker_epoch": 1,
+                      "state": "completed"
+                    },
+                    {
+                      "id": "00000007-1111-4111-8111-111111111111",
+                      "session_id": "00000006-1111-4111-8111-111111111111",
+                      "worker_epoch": null,
+                      "state": "accepted"
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "00000005-1111-4111-8111-111111111111",
+                      "parent_session": "00000001-1111-4111-8111-111111111111",
+                      "parent_attempt": "00000004-1111-4111-8111-111111111111",
+                      "child_session": "00000006-1111-4111-8111-111111111111",
+                      "child_attempt": "00000007-1111-4111-8111-111111111111",
+                      "state": "completed",
+                      "input_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "artifact_id": "00000008-1111-4111-8111-111111111111",
+                      "contributor_principal_id": null
+                    }
+                  ],
+                  "tools": [
+                    {
+                      "id": "00000010-1111-4111-8111-111111111111",
+                      "source": "operation",
+                      "session_id": "00000001-1111-4111-8111-111111111111",
+                      "attempt_id": "00000004-1111-4111-8111-111111111111",
+                      "task_check_id": null,
+                      "tool_call_id": "call/1",
+                      "kind": "http",
+                      "state": "confirmed",
+                      "input_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "operation_id": null,
+                      "operation_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "receipt_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "resolution": "confirmed",
+                      "resolution_evidence": null
+                    },
+                    {
+                      "id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                      "source": "managed-toolkit",
+                      "session_id": "00000001-1111-4111-8111-111111111111",
+                      "attempt_id": "00000004-1111-4111-8111-111111111111",
+                      "task_check_id": null,
+                      "tool_call_id": "call/1",
+                      "kind": "http",
+                      "state": "outcome_unknown",
+                      "input_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "operation_id": "00000010-1111-4111-8111-111111111111",
+                      "operation_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "receipt_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "resolution": null,
+                      "resolution_evidence": {
+                        "resolution_id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+                        "call_revision": 2,
+                        "request_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                        "source": "operator-attestation",
+                        "outcome": "succeeded",
+                        "evidence_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                        "native_state": "outcome_acknowledged",
+                        "native_receipt_digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                        "authority": false,
+                        "product_effect_verified": false
+                      }
+                    }
+                  ],
+                  "checks": [
+                    {
+                      "id": "00000009-1111-4111-8111-111111111111",
+                      "task_id": "00000002-1111-4111-8111-111111111111",
+                      "step_id": null,
+                      "plan_revision": 1,
+                      "workspace_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "profile_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "engine_id": "acceptance",
+                      "state": "passed",
+                      "artifact_id": "00000008-1111-4111-8111-111111111111"
+                    }
+                  ],
+                  "integrations": [
+                    {
+                      "id": "00000011-1111-4111-8111-111111111111",
+                      "parent_session": "00000001-1111-4111-8111-111111111111",
+                      "child_id": "00000005-1111-4111-8111-111111111111",
+                      "patch_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "before_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "after_artifact": null,
+                      "state": "proposed",
+                      "mutation_id": null
+                    }
+                  ],
+                  "artifacts": [
+                    {
+                      "id": "00000008-1111-4111-8111-111111111111",
+                      "session_id": "00000006-1111-4111-8111-111111111111",
+                      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "bytes": 32,
+                      "disposition": "produced"
+                    }
+                  ],
+                  "usage": {
+                    "version": 1,
+                    "recorded_by": "salaam-usage-ledger",
+                    "session_id": "00000001-1111-4111-8111-111111111111",
+                    "includes_children": true,
+                    "status": "unreported",
+                    "coverage": {
+                      "observations": 0,
+                      "recorded": 0,
+                      "unknown": 0,
+                      "estimated": 0
+                    },
+                    "recorded_subtotal": null,
+                    "cost_provenance": "unknown",
+                    "truncated": false,
+                    "observations": []
+                  },
+                  "contributors": {
+                    "principal_ids": [
+                      "prn_aaaaaaaaaaaaaaaaaaaa"
+                    ],
+                    "closure": "incomplete"
+                  },
+                  "coverage": {
+                    "truncated": [],
+                    "unavailable": [
+                      "fingerprints"
+                    ]
+                  },
+                  "fingerprints": []
+                }
+              ],
+              "as_of": "2026-10-21T00:00:01.000Z"
+            },
+            "a run with no executions": {
+              "schema_version": "agentpod-execution-evidence/v1",
+              "external_source": "superpipeline",
+              "external_run_id": "run_abcdef",
+              "board_id": "brd_abcdef",
+              "card_id": "card_abcdef",
+              "executions": [],
+              "as_of": "2026-10-21T00:00:01.000Z"
+            }
+          },
+          "invalid": [
+            {
+              "why": "the execution's own version on the envelope",
+              "body": {
+                "schema_version": "salaam-execution-evidence/v1",
+                "external_source": "superpipeline",
+                "external_run_id": "run_abcdef",
+                "board_id": "brd_abcdef",
+                "card_id": "card_abcdef",
+                "executions": [],
+                "as_of": "2026-10-21T00:00:01.000Z"
+              }
+            },
+            {
+              "why": "an execution AgentPod's corpus refuses: unknown-version",
+              "body": {
+                "schema_version": "agentpod-execution-evidence/v1",
+                "external_source": "superpipeline",
+                "external_run_id": "run_abcdef",
+                "board_id": "brd_abcdef",
+                "card_id": "card_abcdef",
+                "executions": [
+                  {
+                    "schema_version": "v2",
+                    "source": "salaam",
+                    "as_of": "2026-10-21T00:00:00.000Z",
+                    "binding": {
+                      "version": 1,
+                      "organization_id": "org_aaaaaaaaaaaaaaaaaaaa",
+                      "principal_id": "prn_aaaaaaaaaaaaaaaaaaaa",
+                      "node_id": "node_1",
+                      "station_id": "station_1",
+                      "station_key": "salaam:aaaaaaaaaaaaaaaa",
+                      "occupancy_epoch": 1,
+                      "hub_session_id": "session_hub",
+                      "run": {
+                        "source": "superpipeline",
+                        "id": "run_abcdef",
+                        "epoch": 1
+                      }
+                    },
+                    "task": {
+                      "task_id": "11111111-1111-4111-8111-111111111111",
+                      "request_id": "11111111-1111-4111-8111-111111111111",
+                      "session_id": "11111111-1111-4111-8111-111111111111",
+                      "input_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "plan_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "state": "accepted",
+                      "plan_revision": 1,
+                      "board_id": "brd_abcdef",
+                      "card_id": "card_abcdef",
+                      "stage_key": "build"
+                    },
+                    "attempts": [],
+                    "children": [],
+                    "tools": [],
+                    "checks": [],
+                    "integrations": [],
+                    "artifacts": [],
+                    "usage": {
+                      "version": 1,
+                      "recorded_by": "salaam-usage-ledger",
+                      "session_id": "11111111-1111-4111-8111-111111111111",
+                      "includes_children": true,
+                      "status": "unreported",
+                      "coverage": {
+                        "observations": 0,
+                        "recorded": 0,
+                        "unknown": 0,
+                        "estimated": 0
+                      },
+                      "recorded_subtotal": null,
+                      "cost_provenance": "unknown",
+                      "truncated": false,
+                      "observations": []
+                    },
+                    "contributors": {
+                      "principal_ids": [],
+                      "closure": "unknown"
+                    },
+                    "coverage": {
+                      "truncated": [],
+                      "unavailable": [
+                        "fingerprints"
+                      ]
+                    },
+                    "fingerprints": []
+                  }
+                ],
+                "as_of": "2026-10-21T00:00:01.000Z"
+              }
+            },
+            {
+              "why": "an execution AgentPod's corpus refuses: workspace-leak",
+              "body": {
+                "schema_version": "agentpod-execution-evidence/v1",
+                "external_source": "superpipeline",
+                "external_run_id": "run_abcdef",
+                "board_id": "brd_abcdef",
+                "card_id": "card_abcdef",
+                "executions": [
+                  {
+                    "schema_version": "salaam-execution-evidence/v1",
+                    "source": "salaam",
+                    "as_of": "2026-10-21T00:00:00.000Z",
+                    "binding": {
+                      "version": 1,
+                      "organization_id": "org_aaaaaaaaaaaaaaaaaaaa",
+                      "principal_id": "prn_aaaaaaaaaaaaaaaaaaaa",
+                      "node_id": "node_1",
+                      "station_id": "station_1",
+                      "station_key": "salaam:aaaaaaaaaaaaaaaa",
+                      "occupancy_epoch": 1,
+                      "hub_session_id": "session_hub",
+                      "run": {
+                        "source": "superpipeline",
+                        "id": "run_abcdef",
+                        "epoch": 1
+                      },
+                      "workspace": "/private"
+                    },
+                    "task": {
+                      "task_id": "11111111-1111-4111-8111-111111111111",
+                      "request_id": "11111111-1111-4111-8111-111111111111",
+                      "session_id": "11111111-1111-4111-8111-111111111111",
+                      "input_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "plan_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "state": "accepted",
+                      "plan_revision": 1,
+                      "board_id": "brd_abcdef",
+                      "card_id": "card_abcdef",
+                      "stage_key": "build"
+                    },
+                    "attempts": [],
+                    "children": [],
+                    "tools": [],
+                    "checks": [],
+                    "integrations": [],
+                    "artifacts": [],
+                    "usage": {
+                      "version": 1,
+                      "recorded_by": "salaam-usage-ledger",
+                      "session_id": "11111111-1111-4111-8111-111111111111",
+                      "includes_children": true,
+                      "status": "unreported",
+                      "coverage": {
+                        "observations": 0,
+                        "recorded": 0,
+                        "unknown": 0,
+                        "estimated": 0
+                      },
+                      "recorded_subtotal": null,
+                      "cost_provenance": "unknown",
+                      "truncated": false,
+                      "observations": []
+                    },
+                    "contributors": {
+                      "principal_ids": [],
+                      "closure": "unknown"
+                    },
+                    "coverage": {
+                      "truncated": [],
+                      "unavailable": [
+                        "fingerprints"
+                      ]
+                    },
+                    "fingerprints": []
+                  }
+                ],
+                "as_of": "2026-10-21T00:00:01.000Z"
+              }
+            },
+            {
+              "why": "no executions",
+              "body": {
+                "schema_version": "agentpod-execution-evidence/v1",
+                "external_source": "superpipeline",
+                "external_run_id": "run_abcdef",
+                "board_id": "brd_abcdef",
+                "card_id": "card_abcdef",
+                "as_of": "2026-10-21T00:00:01.000Z"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "readRunEvidence": {
+      "responses": {
+        "200": {
+          "valid": {
+            "a dispatched run, one fingerprinted attempt and one written before migration 0085": {
+              "external_source": "superpipeline",
+              "external_run_id": "run_e074a2160c4b4f28",
+              "board_id": "brd_9c1d4e5f6a7b8c9d",
+              "card_id": "card_1a2b3c4d5e6f7a8b",
+              "dispatch": {
+                "outcome": "reported",
+                "detail": null,
+                "station_id": "station_4a1482de-9c3f-4b17-8a55-0d6e2f7c1b90",
+                "updated_at": "2026-10-04T10:15:02.000Z"
+              },
+              "attempts": [
+                {
+                  "id": "attempt_9f1c2ab0-4d7e-4b3a-8c88-0d6e2f7c1b90",
+                  "station_id": "station_4a1482de-9c3f-4b17-8a55-0d6e2f7c1b90",
+                  "session_id": "acps_e074a216-0c4b-4f28-9d3a-51b6c7e8f0a2",
+                  "state": "completed",
+                  "start_seq": 1,
+                  "end_seq": 9,
+                  "started_at": "2026-10-04T10:12:40.000Z",
+                  "ended_at": "2026-10-04T10:14:58.000Z",
+                  "agent_principal_id": "prn_0123456789abcdef0123",
+                  "fingerprint": {
+                    "digest": "sha256:b38ccbea6e3b6a65fcbfc4402709554b5f9579555c91407498257fbad815ea92",
+                    "harness": "hermes",
+                    "harness_version": "unknown",
+                    "model": "unknown",
+                    "profile": "press",
+                    "skill_release": "none",
+                    "reported_by": "hub"
+                  }
+                },
+                {
+                  "id": "attempt_1b2c3d4e-5f60-4718-8293-a4b5c6d7e8f9",
+                  "station_id": "station_4a1482de-9c3f-4b17-8a55-0d6e2f7c1b90",
+                  "session_id": "acps_e074a216-0c4b-4f28-9d3a-51b6c7e8f0a2",
+                  "state": "working",
+                  "start_seq": 10,
+                  "end_seq": null,
+                  "started_at": "2026-10-04T10:15:10.000Z",
+                  "ended_at": null,
+                  "agent_principal_id": null,
+                  "fingerprint": {
+                    "digest": "unknown",
+                    "harness": "unknown",
+                    "harness_version": "unknown",
+                    "model": "unknown",
+                    "profile": "unknown",
+                    "skill_release": "unknown",
+                    "reported_by": "hub"
+                  }
+                }
+              ],
+              "as_of": "2026-10-04T10:20:00.000Z"
+            },
+            "an attempt with no ledger row": {
+              "external_source": "superpipeline",
+              "external_run_id": "run_a1b2c3d4e5f60718",
+              "board_id": null,
+              "card_id": null,
+              "dispatch": null,
+              "attempts": [],
+              "as_of": "2026-10-04T10:20:00.000Z"
+            },
+            "a parked dispatch, which AgentPod's table allows": {
+              "external_source": "superpipeline",
+              "external_run_id": "run_e074a2160c4b4f28",
+              "board_id": "brd_9c1d4e5f6a7b8c9d",
+              "card_id": "card_1a2b3c4d5e6f7a8b",
+              "dispatch": {
+                "outcome": "parked",
+                "detail": null,
+                "station_id": "station_4a1482de-9c3f-4b17-8a55-0d6e2f7c1b90",
+                "updated_at": "2026-10-04T10:15:02.000Z"
+              },
+              "attempts": [
+                {
+                  "id": "attempt_9f1c2ab0-4d7e-4b3a-8c88-0d6e2f7c1b90",
+                  "station_id": "station_4a1482de-9c3f-4b17-8a55-0d6e2f7c1b90",
+                  "session_id": "acps_e074a216-0c4b-4f28-9d3a-51b6c7e8f0a2",
+                  "state": "completed",
+                  "start_seq": 1,
+                  "end_seq": 9,
+                  "started_at": "2026-10-04T10:12:40.000Z",
+                  "ended_at": "2026-10-04T10:14:58.000Z",
+                  "agent_principal_id": "prn_0123456789abcdef0123",
+                  "fingerprint": {
+                    "digest": "sha256:b38ccbea6e3b6a65fcbfc4402709554b5f9579555c91407498257fbad815ea92",
+                    "harness": "hermes",
+                    "harness_version": "unknown",
+                    "model": "unknown",
+                    "profile": "press",
+                    "skill_release": "none",
+                    "reported_by": "hub"
+                  }
+                },
+                {
+                  "id": "attempt_1b2c3d4e-5f60-4718-8293-a4b5c6d7e8f9",
+                  "station_id": "station_4a1482de-9c3f-4b17-8a55-0d6e2f7c1b90",
+                  "session_id": "acps_e074a216-0c4b-4f28-9d3a-51b6c7e8f0a2",
+                  "state": "working",
+                  "start_seq": 10,
+                  "end_seq": null,
+                  "started_at": "2026-10-04T10:15:10.000Z",
+                  "ended_at": null,
+                  "agent_principal_id": null,
+                  "fingerprint": {
+                    "digest": "unknown",
+                    "harness": "unknown",
+                    "harness_version": "unknown",
+                    "model": "unknown",
+                    "profile": "unknown",
+                    "skill_release": "unknown",
+                    "reported_by": "hub"
+                  }
+                }
+              ],
+              "as_of": "2026-10-04T10:20:00.000Z"
+            }
+          },
+          "invalid": [
+            {
+              "why": "zero standing in for unknown",
+              "body": {
+                "external_source": "superpipeline",
+                "external_run_id": "run_e074a2160c4b4f28",
+                "board_id": "brd_9c1d4e5f6a7b8c9d",
+                "card_id": "card_1a2b3c4d5e6f7a8b",
+                "dispatch": {
+                  "outcome": "reported",
+                  "detail": null,
+                  "station_id": "station_4a1482de-9c3f-4b17-8a55-0d6e2f7c1b90",
+                  "updated_at": "2026-10-04T10:15:02.000Z"
+                },
+                "attempts": [
+                  {
+                    "id": "attempt_9f1c2ab0-4d7e-4b3a-8c88-0d6e2f7c1b90",
+                    "station_id": "station_4a1482de-9c3f-4b17-8a55-0d6e2f7c1b90",
+                    "session_id": "acps_e074a216-0c4b-4f28-9d3a-51b6c7e8f0a2",
+                    "state": "completed",
+                    "start_seq": 1,
+                    "end_seq": 9,
+                    "started_at": "2026-10-04T10:12:40.000Z",
+                    "ended_at": "2026-10-04T10:14:58.000Z",
+                    "agent_principal_id": "prn_0123456789abcdef0123",
+                    "fingerprint": {
+                      "digest": "",
+                      "harness": "hermes",
+                      "harness_version": "unknown",
+                      "model": "unknown",
+                      "profile": "press",
+                      "skill_release": "none",
+                      "reported_by": "hub"
+                    }
+                  },
+                  {
+                    "id": "attempt_1b2c3d4e-5f60-4718-8293-a4b5c6d7e8f9",
+                    "station_id": "station_4a1482de-9c3f-4b17-8a55-0d6e2f7c1b90",
+                    "session_id": "acps_e074a216-0c4b-4f28-9d3a-51b6c7e8f0a2",
+                    "state": "working",
+                    "start_seq": 10,
+                    "end_seq": null,
+                    "started_at": "2026-10-04T10:15:10.000Z",
+                    "ended_at": null,
+                    "agent_principal_id": null,
+                    "fingerprint": {
+                      "digest": "unknown",
+                      "harness": "unknown",
+                      "harness_version": "unknown",
+                      "model": "unknown",
+                      "profile": "unknown",
+                      "skill_release": "unknown",
+                      "reported_by": "hub"
+                    }
+                  }
+                ],
+                "as_of": "2026-10-04T10:20:00.000Z"
+              }
+            },
+            {
+              "why": "unknown reporter",
+              "body": {
+                "external_source": "superpipeline",
+                "external_run_id": "run_e074a2160c4b4f28",
+                "board_id": "brd_9c1d4e5f6a7b8c9d",
+                "card_id": "card_1a2b3c4d5e6f7a8b",
+                "dispatch": {
+                  "outcome": "reported",
+                  "detail": null,
+                  "station_id": "station_4a1482de-9c3f-4b17-8a55-0d6e2f7c1b90",
+                  "updated_at": "2026-10-04T10:15:02.000Z"
+                },
+                "attempts": [
+                  {
+                    "id": "attempt_9f1c2ab0-4d7e-4b3a-8c88-0d6e2f7c1b90",
+                    "station_id": "station_4a1482de-9c3f-4b17-8a55-0d6e2f7c1b90",
+                    "session_id": "acps_e074a216-0c4b-4f28-9d3a-51b6c7e8f0a2",
+                    "state": "completed",
+                    "start_seq": 1,
+                    "end_seq": 9,
+                    "started_at": "2026-10-04T10:12:40.000Z",
+                    "ended_at": "2026-10-04T10:14:58.000Z",
+                    "agent_principal_id": "prn_0123456789abcdef0123",
+                    "fingerprint": {
+                      "digest": "sha256:b38ccbea6e3b6a65fcbfc4402709554b5f9579555c91407498257fbad815ea92",
+                      "harness": "hermes",
+                      "harness_version": "unknown",
+                      "model": "unknown",
+                      "profile": "press",
+                      "skill_release": "none",
+                      "reported_by": "guess"
+                    }
+                  },
+                  {
+                    "id": "attempt_1b2c3d4e-5f60-4718-8293-a4b5c6d7e8f9",
+                    "station_id": "station_4a1482de-9c3f-4b17-8a55-0d6e2f7c1b90",
+                    "session_id": "acps_e074a216-0c4b-4f28-9d3a-51b6c7e8f0a2",
+                    "state": "working",
+                    "start_seq": 10,
+                    "end_seq": null,
+                    "started_at": "2026-10-04T10:15:10.000Z",
+                    "ended_at": null,
+                    "agent_principal_id": null,
+                    "fingerprint": {
+                      "digest": "unknown",
+                      "harness": "unknown",
+                      "harness_version": "unknown",
+                      "model": "unknown",
+                      "profile": "unknown",
+                      "skill_release": "unknown",
+                      "reported_by": "hub"
+                    }
+                  }
+                ],
+                "as_of": "2026-10-04T10:20:00.000Z"
+              }
+            },
+            {
+              "why": "no dispatch: null is sent when the ledger holds no row",
+              "body": {
+                "external_source": "superpipeline",
+                "external_run_id": "run_e074a2160c4b4f28",
+                "board_id": "brd_9c1d4e5f6a7b8c9d",
+                "card_id": "card_1a2b3c4d5e6f7a8b",
+                "attempts": [
+                  {
+                    "id": "attempt_9f1c2ab0-4d7e-4b3a-8c88-0d6e2f7c1b90",
+                    "station_id": "station_4a1482de-9c3f-4b17-8a55-0d6e2f7c1b90",
+                    "session_id": "acps_e074a216-0c4b-4f28-9d3a-51b6c7e8f0a2",
+                    "state": "completed",
+                    "start_seq": 1,
+                    "end_seq": 9,
+                    "started_at": "2026-10-04T10:12:40.000Z",
+                    "ended_at": "2026-10-04T10:14:58.000Z",
+                    "agent_principal_id": "prn_0123456789abcdef0123",
+                    "fingerprint": {
+                      "digest": "sha256:b38ccbea6e3b6a65fcbfc4402709554b5f9579555c91407498257fbad815ea92",
+                      "harness": "hermes",
+                      "harness_version": "unknown",
+                      "model": "unknown",
+                      "profile": "press",
+                      "skill_release": "none",
+                      "reported_by": "hub"
+                    }
+                  },
+                  {
+                    "id": "attempt_1b2c3d4e-5f60-4718-8293-a4b5c6d7e8f9",
+                    "station_id": "station_4a1482de-9c3f-4b17-8a55-0d6e2f7c1b90",
+                    "session_id": "acps_e074a216-0c4b-4f28-9d3a-51b6c7e8f0a2",
+                    "state": "working",
+                    "start_seq": 10,
+                    "end_seq": null,
+                    "started_at": "2026-10-04T10:15:10.000Z",
+                    "ended_at": null,
+                    "agent_principal_id": null,
+                    "fingerprint": {
+                      "digest": "unknown",
+                      "harness": "unknown",
+                      "harness_version": "unknown",
+                      "model": "unknown",
+                      "profile": "unknown",
+                      "skill_release": "unknown",
+                      "reported_by": "hub"
+                    }
+                  }
+                ],
+                "as_of": "2026-10-04T10:20:00.000Z"
+              }
+            },
+            {
+              "why": "an attempt id that is not attempt_",
+              "body": {
+                "external_source": "superpipeline",
+                "external_run_id": "run_e074a2160c4b4f28",
+                "board_id": "brd_9c1d4e5f6a7b8c9d",
+                "card_id": "card_1a2b3c4d5e6f7a8b",
+                "dispatch": {
+                  "outcome": "reported",
+                  "detail": null,
+                  "station_id": "station_4a1482de-9c3f-4b17-8a55-0d6e2f7c1b90",
+                  "updated_at": "2026-10-04T10:15:02.000Z"
+                },
+                "attempts": [
+                  {
+                    "id": "run_e074a2160c4b4f28",
+                    "station_id": "station_4a1482de-9c3f-4b17-8a55-0d6e2f7c1b90",
+                    "session_id": "acps_e074a216-0c4b-4f28-9d3a-51b6c7e8f0a2",
+                    "state": "completed",
+                    "start_seq": 1,
+                    "end_seq": 9,
+                    "started_at": "2026-10-04T10:12:40.000Z",
+                    "ended_at": "2026-10-04T10:14:58.000Z",
+                    "agent_principal_id": "prn_0123456789abcdef0123",
+                    "fingerprint": {
+                      "digest": "sha256:b38ccbea6e3b6a65fcbfc4402709554b5f9579555c91407498257fbad815ea92",
+                      "harness": "hermes",
+                      "harness_version": "unknown",
+                      "model": "unknown",
+                      "profile": "press",
+                      "skill_release": "none",
+                      "reported_by": "hub"
+                    }
+                  },
+                  {
+                    "id": "attempt_1b2c3d4e-5f60-4718-8293-a4b5c6d7e8f9",
+                    "station_id": "station_4a1482de-9c3f-4b17-8a55-0d6e2f7c1b90",
+                    "session_id": "acps_e074a216-0c4b-4f28-9d3a-51b6c7e8f0a2",
+                    "state": "working",
+                    "start_seq": 10,
+                    "end_seq": null,
+                    "started_at": "2026-10-04T10:15:10.000Z",
+                    "ended_at": null,
+                    "agent_principal_id": null,
+                    "fingerprint": {
+                      "digest": "unknown",
+                      "harness": "unknown",
+                      "harness_version": "unknown",
+                      "model": "unknown",
+                      "profile": "unknown",
+                      "skill_release": "unknown",
+                      "reported_by": "hub"
+                    }
+                  }
+                ],
+                "as_of": "2026-10-04T10:20:00.000Z"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "readAttemptRun": {
+      "responses": {
+        "200": {
+          "valid": {
+            "dispatched": {
+              "external_source": "superpipeline",
+              "external_run_id": "run_e074a2160c4b4f28",
+              "board_id": "brd_9c1d4e5f6a7b8c9d"
+            },
+            "not dispatched": {
+              "external_source": null,
+              "external_run_id": null,
+              "board_id": null
+            }
+          },
+          "invalid": [
+            {
+              "why": "no board_id: null is sent when there is no ledger row",
+              "body": {
+                "external_source": "superpipeline",
+                "external_run_id": "run_e074a2160c4b4f28"
+              }
+            },
+            {
+              "why": "a run id that is not a string",
+              "body": {
+                "external_source": "superpipeline",
+                "external_run_id": 7,
+                "board_id": null
+              }
+            }
+          ]
+        }
+      }
+    },
+    "readEvidencePrincipal": {
+      "responses": {
+        "200": {
+          "valid": {
+            "a human": {
+              "id": "prn_0123456789abcdef0123",
+              "kind": "human",
+              "handle": "rakesh",
+              "suspended": false
+            },
+            "an agent, suspended": {
+              "id": "prn_abcdefabcdefabcdef01",
+              "kind": "agent",
+              "handle": "press-writer",
+              "suspended": true
+            },
+            "a service": {
+              "id": "prn_fedcba9876543210fedc",
+              "kind": "service",
+              "handle": "superwitness",
+              "suspended": false
+            }
+          },
+          "invalid": [
+            {
+              "why": "a timestamp instead of a boolean",
+              "body": {
+                "id": "prn_0123456789abcdef0123",
+                "kind": "human",
+                "handle": "rakesh",
+                "suspended": "2026-10-01T00:00:00.000Z"
+              }
+            },
+            {
+              "why": "a kind the hub does not mint",
+              "body": {
+                "id": "prn_0123456789abcdef0123",
+                "kind": "grader",
+                "handle": "rakesh",
+                "suspended": false
+              }
+            },
+            {
+              "why": "not a principal id",
+              "body": {
+                "id": "usr_abc",
+                "kind": "human",
+                "handle": "rakesh",
+                "suspended": false
+              }
+            }
+          ]
+        }
+      }
+    },
+    "readTranscript": {
+      "responses": {
+        "200": {
+          "valid": {
+            "every kind": {
+              "session_id": "acps_3f1c2b7e-5d4a-4c9b-8e2f-1a6b7c8d9e0f",
+              "seq_from": 2,
+              "seq_to": 20,
+              "items": [
+                {
+                  "kind": "tool_call",
+                  "id": "call_0",
+                  "seq_from": 2,
+                  "seq_to": 2,
+                  "title": "call_0",
+                  "tool_kind": null,
+                  "status": "completed",
+                  "input": null,
+                  "output": {
+                    "content": null,
+                    "raw": {
+                      "exit": 0
+                    }
+                  },
+                  "partial": true,
+                  "redactions": 0
+                },
+                {
+                  "kind": "permission",
+                  "seq": 1,
+                  "answer_seq": 3,
+                  "title": "Permission request",
+                  "options": [],
+                  "outcome": "selected:allow",
+                  "partial": true,
+                  "redactions": 0
+                },
+                {
+                  "kind": "state",
+                  "seq": 4,
+                  "status": "idle",
+                  "redactions": 0
+                },
+                {
+                  "kind": "prompt",
+                  "seq": 5,
+                  "text": "Use Authorization: [redacted:authorization] to call the API",
+                  "images": [
+                    {
+                      "name": "screenshot.png",
+                      "mimeType": "image/png"
+                    }
+                  ],
+                  "redactions": 1
+                },
+                {
+                  "kind": "reasoning",
+                  "seq_from": 6,
+                  "seq_to": 7,
+                  "text": "Check the test first.",
+                  "redactions": 0
+                },
+                {
+                  "kind": "message",
+                  "seq_from": 8,
+                  "seq_to": 9,
+                  "text": "The key is [redacted:anthropic-key], done.",
+                  "redactions": 1
+                },
+                {
+                  "kind": "tool_call",
+                  "id": "call_1",
+                  "seq_from": 10,
+                  "seq_to": 12,
+                  "title": "bun test",
+                  "tool_kind": "execute",
+                  "status": "failed",
+                  "input": {
+                    "command": "bun test"
+                  },
+                  "output": {
+                    "content": [
+                      {
+                        "type": "content",
+                        "content": {
+                          "type": "text",
+                          "text": "1 failing"
+                        }
+                      }
+                    ],
+                    "raw": {
+                      "truncated": true,
+                      "bytes": 20491,
+                      "head": "{\"stdout\":\"....\""
+                    }
+                  },
+                  "redactions": 0
+                },
+                {
+                  "kind": "permission",
+                  "seq": 11,
+                  "answer_seq": 13,
+                  "tool_call_id": "call_1",
+                  "title": "bun test",
+                  "options": [
+                    {
+                      "optionId": "allow",
+                      "name": "Allow",
+                      "kind": "allow_once"
+                    },
+                    {
+                      "optionId": "reject",
+                      "name": "Reject",
+                      "kind": "reject_once"
+                    }
+                  ],
+                  "outcome": "selected:allow",
+                  "redactions": 0
+                },
+                {
+                  "kind": "other",
+                  "seq": 14,
+                  "type": "agent-update:usage_update",
+                  "redactions": 0
+                },
+                {
+                  "kind": "error",
+                  "seq": 15,
+                  "error_kind": "quota",
+                  "message": "You have exceeded your quota.",
+                  "redactions": 0
+                }
+              ],
+              "next_cursor": "czoxNg",
+              "redactions": 2,
+              "truncated_fields": 1
+            },
+            "an empty session": {
+              "session_id": "acps_3f1c2b7e-5d4a-4c9b-8e2f-1a6b7c8d9e0f",
+              "seq_from": 0,
+              "seq_to": 0,
+              "items": [],
+              "next_cursor": null,
+              "redactions": 0,
+              "truncated_fields": 0
+            }
+          },
+          "invalid": [
+            {
+              "why": "an item without its redaction count",
+              "body": {
+                "session_id": "acps_3f1c2b7e-5d4a-4c9b-8e2f-1a6b7c8d9e0f",
+                "seq_from": 2,
+                "seq_to": 20,
+                "items": [
+                  {
+                    "kind": "tool_call",
+                    "id": "call_0",
+                    "seq_from": 2,
+                    "seq_to": 2,
+                    "title": "call_0",
+                    "tool_kind": null,
+                    "status": "completed",
+                    "input": null,
+                    "output": {
+                      "content": null,
+                      "raw": {
+                        "exit": 0
+                      }
+                    },
+                    "partial": true,
+                    "redactions": null
+                  },
+                  {
+                    "kind": "permission",
+                    "seq": 1,
+                    "answer_seq": 3,
+                    "title": "Permission request",
+                    "options": [],
+                    "outcome": "selected:allow",
+                    "partial": true,
+                    "redactions": 0
+                  },
+                  {
+                    "kind": "state",
+                    "seq": 4,
+                    "status": "idle",
+                    "redactions": 0
+                  },
+                  {
+                    "kind": "prompt",
+                    "seq": 5,
+                    "text": "Use Authorization: [redacted:authorization] to call the API",
+                    "images": [
+                      {
+                        "name": "screenshot.png",
+                        "mimeType": "image/png"
+                      }
+                    ],
+                    "redactions": 1
+                  },
+                  {
+                    "kind": "reasoning",
+                    "seq_from": 6,
+                    "seq_to": 7,
+                    "text": "Check the test first.",
+                    "redactions": 0
+                  },
+                  {
+                    "kind": "message",
+                    "seq_from": 8,
+                    "seq_to": 9,
+                    "text": "The key is [redacted:anthropic-key], done.",
+                    "redactions": 1
+                  },
+                  {
+                    "kind": "tool_call",
+                    "id": "call_1",
+                    "seq_from": 10,
+                    "seq_to": 12,
+                    "title": "bun test",
+                    "tool_kind": "execute",
+                    "status": "failed",
+                    "input": {
+                      "command": "bun test"
+                    },
+                    "output": {
+                      "content": [
+                        {
+                          "type": "content",
+                          "content": {
+                            "type": "text",
+                            "text": "1 failing"
+                          }
+                        }
+                      ],
+                      "raw": {
+                        "truncated": true,
+                        "bytes": 20491,
+                        "head": "{\"stdout\":\"....\""
+                      }
+                    },
+                    "redactions": 0
+                  },
+                  {
+                    "kind": "permission",
+                    "seq": 11,
+                    "answer_seq": 13,
+                    "tool_call_id": "call_1",
+                    "title": "bun test",
+                    "options": [
+                      {
+                        "optionId": "allow",
+                        "name": "Allow",
+                        "kind": "allow_once"
+                      },
+                      {
+                        "optionId": "reject",
+                        "name": "Reject",
+                        "kind": "reject_once"
+                      }
+                    ],
+                    "outcome": "selected:allow",
+                    "redactions": 0
+                  },
+                  {
+                    "kind": "other",
+                    "seq": 14,
+                    "type": "agent-update:usage_update",
+                    "redactions": 0
+                  },
+                  {
+                    "kind": "error",
+                    "seq": 15,
+                    "error_kind": "quota",
+                    "message": "You have exceeded your quota.",
+                    "redactions": 0
+                  }
+                ],
+                "next_cursor": "czoxNg",
+                "redactions": 2,
+                "truncated_fields": 1
+              }
+            },
+            {
+              "why": "an unknown item kind",
+              "body": {
+                "session_id": "acps_3f1c2b7e-5d4a-4c9b-8e2f-1a6b7c8d9e0f",
+                "seq_from": 2,
+                "seq_to": 20,
+                "items": [
+                  {
+                    "kind": "note",
+                    "id": "call_0",
+                    "seq_from": 2,
+                    "seq_to": 2,
+                    "title": "call_0",
+                    "tool_kind": null,
+                    "status": "completed",
+                    "input": null,
+                    "output": {
+                      "content": null,
+                      "raw": {
+                        "exit": 0
+                      }
+                    },
+                    "partial": true,
+                    "redactions": 0
+                  },
+                  {
+                    "kind": "permission",
+                    "seq": 1,
+                    "answer_seq": 3,
+                    "title": "Permission request",
+                    "options": [],
+                    "outcome": "selected:allow",
+                    "partial": true,
+                    "redactions": 0
+                  },
+                  {
+                    "kind": "state",
+                    "seq": 4,
+                    "status": "idle",
+                    "redactions": 0
+                  },
+                  {
+                    "kind": "prompt",
+                    "seq": 5,
+                    "text": "Use Authorization: [redacted:authorization] to call the API",
+                    "images": [
+                      {
+                        "name": "screenshot.png",
+                        "mimeType": "image/png"
+                      }
+                    ],
+                    "redactions": 1
+                  },
+                  {
+                    "kind": "reasoning",
+                    "seq_from": 6,
+                    "seq_to": 7,
+                    "text": "Check the test first.",
+                    "redactions": 0
+                  },
+                  {
+                    "kind": "message",
+                    "seq_from": 8,
+                    "seq_to": 9,
+                    "text": "The key is [redacted:anthropic-key], done.",
+                    "redactions": 1
+                  },
+                  {
+                    "kind": "tool_call",
+                    "id": "call_1",
+                    "seq_from": 10,
+                    "seq_to": 12,
+                    "title": "bun test",
+                    "tool_kind": "execute",
+                    "status": "failed",
+                    "input": {
+                      "command": "bun test"
+                    },
+                    "output": {
+                      "content": [
+                        {
+                          "type": "content",
+                          "content": {
+                            "type": "text",
+                            "text": "1 failing"
+                          }
+                        }
+                      ],
+                      "raw": {
+                        "truncated": true,
+                        "bytes": 20491,
+                        "head": "{\"stdout\":\"....\""
+                      }
+                    },
+                    "redactions": 0
+                  },
+                  {
+                    "kind": "permission",
+                    "seq": 11,
+                    "answer_seq": 13,
+                    "tool_call_id": "call_1",
+                    "title": "bun test",
+                    "options": [
+                      {
+                        "optionId": "allow",
+                        "name": "Allow",
+                        "kind": "allow_once"
+                      },
+                      {
+                        "optionId": "reject",
+                        "name": "Reject",
+                        "kind": "reject_once"
+                      }
+                    ],
+                    "outcome": "selected:allow",
+                    "redactions": 0
+                  },
+                  {
+                    "kind": "other",
+                    "seq": 14,
+                    "type": "agent-update:usage_update",
+                    "redactions": 0
+                  },
+                  {
+                    "kind": "error",
+                    "seq": 15,
+                    "error_kind": "quota",
+                    "message": "You have exceeded your quota.",
+                    "redactions": 0
+                  }
+                ],
+                "next_cursor": "czoxNg",
+                "redactions": 2,
+                "truncated_fields": 1
+              }
+            },
+            {
+              "why": "a permission outcome outside the four",
+              "body": {
+                "session_id": "acps_3f1c2b7e-5d4a-4c9b-8e2f-1a6b7c8d9e0f",
+                "seq_from": 2,
+                "seq_to": 20,
+                "items": [
+                  {
+                    "kind": "tool_call",
+                    "id": "call_0",
+                    "seq_from": 2,
+                    "seq_to": 2,
+                    "title": "call_0",
+                    "tool_kind": null,
+                    "status": "completed",
+                    "input": null,
+                    "output": {
+                      "content": null,
+                      "raw": {
+                        "exit": 0
+                      }
+                    },
+                    "partial": true,
+                    "redactions": 0
+                  },
+                  {
+                    "kind": "permission",
+                    "seq": 1,
+                    "answer_seq": 3,
+                    "title": "Permission request",
+                    "options": [],
+                    "outcome": "approved",
+                    "partial": true,
+                    "redactions": 0
+                  },
+                  {
+                    "kind": "state",
+                    "seq": 4,
+                    "status": "idle",
+                    "redactions": 0
+                  },
+                  {
+                    "kind": "prompt",
+                    "seq": 5,
+                    "text": "Use Authorization: [redacted:authorization] to call the API",
+                    "images": [
+                      {
+                        "name": "screenshot.png",
+                        "mimeType": "image/png"
+                      }
+                    ],
+                    "redactions": 1
+                  },
+                  {
+                    "kind": "reasoning",
+                    "seq_from": 6,
+                    "seq_to": 7,
+                    "text": "Check the test first.",
+                    "redactions": 0
+                  },
+                  {
+                    "kind": "message",
+                    "seq_from": 8,
+                    "seq_to": 9,
+                    "text": "The key is [redacted:anthropic-key], done.",
+                    "redactions": 1
+                  },
+                  {
+                    "kind": "tool_call",
+                    "id": "call_1",
+                    "seq_from": 10,
+                    "seq_to": 12,
+                    "title": "bun test",
+                    "tool_kind": "execute",
+                    "status": "failed",
+                    "input": {
+                      "command": "bun test"
+                    },
+                    "output": {
+                      "content": [
+                        {
+                          "type": "content",
+                          "content": {
+                            "type": "text",
+                            "text": "1 failing"
+                          }
+                        }
+                      ],
+                      "raw": {
+                        "truncated": true,
+                        "bytes": 20491,
+                        "head": "{\"stdout\":\"....\""
+                      }
+                    },
+                    "redactions": 0
+                  },
+                  {
+                    "kind": "permission",
+                    "seq": 11,
+                    "answer_seq": 13,
+                    "tool_call_id": "call_1",
+                    "title": "bun test",
+                    "options": [
+                      {
+                        "optionId": "allow",
+                        "name": "Allow",
+                        "kind": "allow_once"
+                      },
+                      {
+                        "optionId": "reject",
+                        "name": "Reject",
+                        "kind": "reject_once"
+                      }
+                    ],
+                    "outcome": "selected:allow",
+                    "redactions": 0
+                  },
+                  {
+                    "kind": "other",
+                    "seq": 14,
+                    "type": "agent-update:usage_update",
+                    "redactions": 0
+                  },
+                  {
+                    "kind": "error",
+                    "seq": 15,
+                    "error_kind": "quota",
+                    "message": "You have exceeded your quota.",
+                    "redactions": 0
+                  }
+                ],
+                "next_cursor": "czoxNg",
+                "redactions": 2,
+                "truncated_fields": 1
+              }
+            },
+            {
+              "why": "a truncation marker without its size",
+              "body": {
+                "session_id": "acps_3f1c2b7e-5d4a-4c9b-8e2f-1a6b7c8d9e0f",
+                "seq_from": 2,
+                "seq_to": 20,
+                "items": [
+                  {
+                    "kind": "tool_call",
+                    "id": "call_0",
+                    "seq_from": 2,
+                    "seq_to": 2,
+                    "title": "call_0",
+                    "tool_kind": null,
+                    "status": "completed",
+                    "input": null,
+                    "output": {
+                      "content": null,
+                      "raw": {
+                        "exit": 0
+                      }
+                    },
+                    "partial": true,
+                    "redactions": 0
+                  },
+                  {
+                    "kind": "permission",
+                    "seq": 1,
+                    "answer_seq": 3,
+                    "title": "Permission request",
+                    "options": [],
+                    "outcome": "selected:allow",
+                    "partial": true,
+                    "redactions": 0
+                  },
+                  {
+                    "kind": "state",
+                    "seq": 4,
+                    "status": "idle",
+                    "redactions": 0
+                  },
+                  {
+                    "kind": "prompt",
+                    "seq": 5,
+                    "text": {
+                      "truncated": true,
+                      "head": "Use"
+                    },
+                    "images": [
+                      {
+                        "name": "screenshot.png",
+                        "mimeType": "image/png"
+                      }
+                    ],
+                    "redactions": 1
+                  },
+                  {
+                    "kind": "reasoning",
+                    "seq_from": 6,
+                    "seq_to": 7,
+                    "text": "Check the test first.",
+                    "redactions": 0
+                  },
+                  {
+                    "kind": "message",
+                    "seq_from": 8,
+                    "seq_to": 9,
+                    "text": "The key is [redacted:anthropic-key], done.",
+                    "redactions": 1
+                  },
+                  {
+                    "kind": "tool_call",
+                    "id": "call_1",
+                    "seq_from": 10,
+                    "seq_to": 12,
+                    "title": "bun test",
+                    "tool_kind": "execute",
+                    "status": "failed",
+                    "input": {
+                      "command": "bun test"
+                    },
+                    "output": {
+                      "content": [
+                        {
+                          "type": "content",
+                          "content": {
+                            "type": "text",
+                            "text": "1 failing"
+                          }
+                        }
+                      ],
+                      "raw": {
+                        "truncated": true,
+                        "bytes": 20491,
+                        "head": "{\"stdout\":\"....\""
+                      }
+                    },
+                    "redactions": 0
+                  },
+                  {
+                    "kind": "permission",
+                    "seq": 11,
+                    "answer_seq": 13,
+                    "tool_call_id": "call_1",
+                    "title": "bun test",
+                    "options": [
+                      {
+                        "optionId": "allow",
+                        "name": "Allow",
+                        "kind": "allow_once"
+                      },
+                      {
+                        "optionId": "reject",
+                        "name": "Reject",
+                        "kind": "reject_once"
+                      }
+                    ],
+                    "outcome": "selected:allow",
+                    "redactions": 0
+                  },
+                  {
+                    "kind": "other",
+                    "seq": 14,
+                    "type": "agent-update:usage_update",
+                    "redactions": 0
+                  },
+                  {
+                    "kind": "error",
+                    "seq": 15,
+                    "error_kind": "quota",
+                    "message": "You have exceeded your quota.",
+                    "redactions": 0
+                  }
+                ],
+                "next_cursor": "czoxNg",
+                "redactions": 2,
+                "truncated_fields": 1
+              }
+            },
+            {
+              "why": "a seq of zero on an item",
+              "body": {
+                "session_id": "acps_3f1c2b7e-5d4a-4c9b-8e2f-1a6b7c8d9e0f",
+                "seq_from": 2,
+                "seq_to": 20,
+                "items": [
+                  {
+                    "kind": "tool_call",
+                    "id": "call_0",
+                    "seq_from": 2,
+                    "seq_to": 2,
+                    "title": "call_0",
+                    "tool_kind": null,
+                    "status": "completed",
+                    "input": null,
+                    "output": {
+                      "content": null,
+                      "raw": {
+                        "exit": 0
+                      }
+                    },
+                    "partial": true,
+                    "redactions": 0
+                  },
+                  {
+                    "kind": "permission",
+                    "seq": 1,
+                    "answer_seq": 3,
+                    "title": "Permission request",
+                    "options": [],
+                    "outcome": "selected:allow",
+                    "partial": true,
+                    "redactions": 0
+                  },
+                  {
+                    "kind": "state",
+                    "seq": 0,
+                    "status": "idle",
+                    "redactions": 0
+                  },
+                  {
+                    "kind": "prompt",
+                    "seq": 5,
+                    "text": "Use Authorization: [redacted:authorization] to call the API",
+                    "images": [
+                      {
+                        "name": "screenshot.png",
+                        "mimeType": "image/png"
+                      }
+                    ],
+                    "redactions": 1
+                  },
+                  {
+                    "kind": "reasoning",
+                    "seq_from": 6,
+                    "seq_to": 7,
+                    "text": "Check the test first.",
+                    "redactions": 0
+                  },
+                  {
+                    "kind": "message",
+                    "seq_from": 8,
+                    "seq_to": 9,
+                    "text": "The key is [redacted:anthropic-key], done.",
+                    "redactions": 1
+                  },
+                  {
+                    "kind": "tool_call",
+                    "id": "call_1",
+                    "seq_from": 10,
+                    "seq_to": 12,
+                    "title": "bun test",
+                    "tool_kind": "execute",
+                    "status": "failed",
+                    "input": {
+                      "command": "bun test"
+                    },
+                    "output": {
+                      "content": [
+                        {
+                          "type": "content",
+                          "content": {
+                            "type": "text",
+                            "text": "1 failing"
+                          }
+                        }
+                      ],
+                      "raw": {
+                        "truncated": true,
+                        "bytes": 20491,
+                        "head": "{\"stdout\":\"....\""
+                      }
+                    },
+                    "redactions": 0
+                  },
+                  {
+                    "kind": "permission",
+                    "seq": 11,
+                    "answer_seq": 13,
+                    "tool_call_id": "call_1",
+                    "title": "bun test",
+                    "options": [
+                      {
+                        "optionId": "allow",
+                        "name": "Allow",
+                        "kind": "allow_once"
+                      },
+                      {
+                        "optionId": "reject",
+                        "name": "Reject",
+                        "kind": "reject_once"
+                      }
+                    ],
+                    "outcome": "selected:allow",
+                    "redactions": 0
+                  },
+                  {
+                    "kind": "other",
+                    "seq": 14,
+                    "type": "agent-update:usage_update",
+                    "redactions": 0
+                  },
+                  {
+                    "kind": "error",
+                    "seq": 15,
+                    "error_kind": "quota",
+                    "message": "You have exceeded your quota.",
+                    "redactions": 0
+                  }
+                ],
+                "next_cursor": "czoxNg",
+                "redactions": 2,
+                "truncated_fields": 1
+              }
+            }
+          ]
+        }
+      }
+    },
+    "readTranscriptItem": {
+      "responses": {
+        "200": {
+          "valid": {
+            "full=1": {
+              "session_id": "acps_3f1c2b7e-5d4a-4c9b-8e2f-1a6b7c8d9e0f",
+              "item": {
+                "kind": "tool_call",
+                "id": "call_1",
+                "seq_from": 10,
+                "seq_to": 12,
+                "title": "bun test",
+                "tool_kind": "execute",
+                "status": "failed",
+                "input": {
+                  "command": "bun test"
+                },
+                "output": {
+                  "content": [
+                    {
+                      "type": "content",
+                      "content": {
+                        "type": "text",
+                        "text": "1 failing"
+                      }
+                    }
+                  ],
+                  "raw": {
+                    "stdout": "....",
+                    "token": "[redacted:key-name]"
+                  }
+                },
+                "redactions": 1
+              }
+            },
+            "an other item, cut as its page cut it": {
+              "session_id": "acps_3f1c2b7e-5d4a-4c9b-8e2f-1a6b7c8d9e0f",
+              "item": {
+                "kind": "other",
+                "seq": 14,
+                "type": "agent-update:usage_update",
+                "redactions": 0
+              }
+            }
+          },
+          "invalid": [
+            {
+              "why": "the item without its redaction count",
+              "body": {
+                "session_id": "acps_3f1c2b7e-5d4a-4c9b-8e2f-1a6b7c8d9e0f",
+                "item": {
+                  "kind": "tool_call",
+                  "id": "call_1",
+                  "seq_from": 10,
+                  "seq_to": 12,
+                  "title": "bun test",
+                  "tool_kind": "execute",
+                  "status": "failed",
+                  "input": {
+                    "command": "bun test"
+                  },
+                  "output": {
+                    "content": [
+                      {
+                        "type": "content",
+                        "content": {
+                          "type": "text",
+                          "text": "1 failing"
+                        }
+                      }
+                    ],
+                    "raw": {
+                      "stdout": "....",
+                      "token": "[redacted:key-name]"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "why": "a page instead of an item",
+              "body": {
+                "session_id": "acps_3f1c2b7e-5d4a-4c9b-8e2f-1a6b7c8d9e0f",
+                "seq_from": 2,
+                "seq_to": 20,
+                "items": [
+                  {
+                    "kind": "tool_call",
+                    "id": "call_0",
+                    "seq_from": 2,
+                    "seq_to": 2,
+                    "title": "call_0",
+                    "tool_kind": null,
+                    "status": "completed",
+                    "input": null,
+                    "output": {
+                      "content": null,
+                      "raw": {
+                        "exit": 0
+                      }
+                    },
+                    "partial": true,
+                    "redactions": 0
+                  },
+                  {
+                    "kind": "permission",
+                    "seq": 1,
+                    "answer_seq": 3,
+                    "title": "Permission request",
+                    "options": [],
+                    "outcome": "selected:allow",
+                    "partial": true,
+                    "redactions": 0
+                  },
+                  {
+                    "kind": "state",
+                    "seq": 4,
+                    "status": "idle",
+                    "redactions": 0
+                  },
+                  {
+                    "kind": "prompt",
+                    "seq": 5,
+                    "text": "Use Authorization: [redacted:authorization] to call the API",
+                    "images": [
+                      {
+                        "name": "screenshot.png",
+                        "mimeType": "image/png"
+                      }
+                    ],
+                    "redactions": 1
+                  },
+                  {
+                    "kind": "reasoning",
+                    "seq_from": 6,
+                    "seq_to": 7,
+                    "text": "Check the test first.",
+                    "redactions": 0
+                  },
+                  {
+                    "kind": "message",
+                    "seq_from": 8,
+                    "seq_to": 9,
+                    "text": "The key is [redacted:anthropic-key], done.",
+                    "redactions": 1
+                  },
+                  {
+                    "kind": "tool_call",
+                    "id": "call_1",
+                    "seq_from": 10,
+                    "seq_to": 12,
+                    "title": "bun test",
+                    "tool_kind": "execute",
+                    "status": "failed",
+                    "input": {
+                      "command": "bun test"
+                    },
+                    "output": {
+                      "content": [
+                        {
+                          "type": "content",
+                          "content": {
+                            "type": "text",
+                            "text": "1 failing"
+                          }
+                        }
+                      ],
+                      "raw": {
+                        "truncated": true,
+                        "bytes": 20491,
+                        "head": "{\"stdout\":\"....\""
+                      }
+                    },
+                    "redactions": 0
+                  },
+                  {
+                    "kind": "permission",
+                    "seq": 11,
+                    "answer_seq": 13,
+                    "tool_call_id": "call_1",
+                    "title": "bun test",
+                    "options": [
+                      {
+                        "optionId": "allow",
+                        "name": "Allow",
+                        "kind": "allow_once"
+                      },
+                      {
+                        "optionId": "reject",
+                        "name": "Reject",
+                        "kind": "reject_once"
+                      }
+                    ],
+                    "outcome": "selected:allow",
+                    "redactions": 0
+                  },
+                  {
+                    "kind": "other",
+                    "seq": 14,
+                    "type": "agent-update:usage_update",
+                    "redactions": 0
+                  },
+                  {
+                    "kind": "error",
+                    "seq": 15,
+                    "error_kind": "quota",
+                    "message": "You have exceeded your quota.",
+                    "redactions": 0
+                  }
+                ],
+                "next_cursor": "czoxNg",
+                "redactions": 2,
+                "truncated_fields": 1
+              }
+            },
+            {
+              "why": "a session id that is not acps_",
+              "body": {
+                "session_id": "session-1",
+                "item": {
+                  "kind": "tool_call",
+                  "id": "call_1",
+                  "seq_from": 10,
+                  "seq_to": 12,
+                  "title": "bun test",
+                  "tool_kind": "execute",
+                  "status": "failed",
+                  "input": {
+                    "command": "bun test"
+                  },
+                  "output": {
+                    "content": [
+                      {
+                        "type": "content",
+                        "content": {
+                          "type": "text",
+                          "text": "1 failing"
+                        }
+                      }
+                    ],
+                    "raw": {
+                      "stdout": "....",
+                      "token": "[redacted:key-name]"
+                    }
+                  },
+                  "redactions": 1
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

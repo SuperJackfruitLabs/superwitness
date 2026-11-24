@@ -36,12 +36,13 @@ import (
 	"github.com/SuperJackfruitLabs/superwitness/internal/app"
 	"github.com/SuperJackfruitLabs/superwitness/internal/auth"
 	"github.com/SuperJackfruitLabs/superwitness/internal/config"
-	"github.com/SuperJackfruitLabs/superwitness/internal/contracts"
 	"github.com/SuperJackfruitLabs/superwitness/internal/join"
 	"github.com/SuperJackfruitLabs/superwitness/internal/source"
 	"github.com/SuperJackfruitLabs/superwitness/internal/source/agentpod"
+	"github.com/SuperJackfruitLabs/superwitness/internal/source/fake"
 	"github.com/SuperJackfruitLabs/superwitness/internal/source/superpipeline"
 	"github.com/SuperJackfruitLabs/superwitness/internal/testutil"
+	"github.com/SuperJackfruitLabs/superwitness/internal/treaty"
 	"github.com/SuperJackfruitLabs/superwitness/internal/verdicts"
 )
 
@@ -95,17 +96,18 @@ func svcOnly(next http.HandlerFunc) http.HandlerFunc {
 // C5 alone must not imply that no child contributors exist.
 func integrationExecutionEvidence(t *testing.T) source.ExecutionEnvelope {
 	t.Helper()
-	b, err := os.ReadFile("../../internal/source/testdata/execution-evidence-v1.json")
+	cases, err := treaty.Examples("execution-evidence.v1")
 	if err != nil {
 		t.Fatal(err)
 	}
-	var corpus struct {
-		Success []struct{ Value source.ExecutionEvidence }
-	}
-	if err := json.Unmarshal(b, &corpus); err != nil {
+	b, err := cases.Case("empty-unreported")
+	if err != nil {
 		t.Fatal(err)
 	}
-	execution := corpus.Success[0].Value
+	var execution source.ExecutionEvidence
+	if err := json.Unmarshal(b, &execution); err != nil {
+		t.Fatal(err)
+	}
 	execution.Binding.Run.ID = "run_01"
 	execution.Binding.HubSessionID = "acps_01"
 	execution.Task.BoardID = "brd_01"
@@ -150,7 +152,7 @@ func newHub(t *testing.T) *hubFake {
 			fmt.Fprint(w, `{"error":"not_found"}`)
 			return
 		}
-		_, _ = w.Write(contracts.HubEvidenceRun)
+		_, _ = w.Write(fake.DevHubRun)
 	}))
 	mux.HandleFunc("GET /api/evidence/runs/superpipeline/{run}/execution", svcOnly(func(w http.ResponseWriter, r *http.Request) {
 		if r.PathValue("run") != "run_01" || !h.executionAvailable.Load() {
@@ -170,12 +172,12 @@ func newHub(t *testing.T) *hubFake {
 			fmt.Fprint(w, `{"error":"not_found"}`)
 			return
 		}
-		_, _ = w.Write(contracts.HubEvidenceAttempt)
+		fmt.Fprint(w, `{"external_source":"superpipeline","external_run_id":"run_01","board_id":"brd_01"}`)
 	}))
 	mux.HandleFunc("GET /api/evidence/principals/{id}", svcOnly(func(w http.ResponseWriter, r *http.Request) {
 		switch r.PathValue("id") {
 		case "prn_human01":
-			_, _ = w.Write(contracts.HubPrincipal)
+			fmt.Fprint(w, `{"id":"prn_human01","kind":"human","handle":"human01","suspended":false}`)
 		case "hubuser_7f3a", "prn_human02": // the hub accepts a hub auth user id as well as the prn_
 			fmt.Fprint(w, `{"id":"prn_human02","kind":"human","handle":"former","suspended":false}`)
 		default:
@@ -202,6 +204,16 @@ func (h *hubFake) token(t *testing.T, sub, kind string) string {
 	return s
 }
 
+// devRunEvidence is SuperPipeline's answer for run_01: treaty's board-read case the dev run is.
+func devRunEvidence(t *testing.T) []byte {
+	t.Helper()
+	b, err := fake.DevRunEvidence()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return b
+}
+
 func newSuperpipeline(t *testing.T) *httptest.Server {
 	t.Helper()
 	mux := http.NewServeMux()
@@ -211,7 +223,7 @@ func newSuperpipeline(t *testing.T) *httptest.Server {
 			fmt.Fprint(w, `{"error":{"code":"RUN_NOT_FOUND"}}`)
 			return
 		}
-		_, _ = w.Write(contracts.SuperpipelineEvidence)
+		_, _ = w.Write(devRunEvidence(t))
 	}))
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, "ok") })
 	srv := httptest.NewServer(mux)

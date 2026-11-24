@@ -1,6 +1,6 @@
 ---
 title: Contracts
-description: The run document and verdict shapes SuperWitness returns, and the recorded payloads that pin what it reads from other products.
+description: The run document and verdict shapes SuperWitness returns, and the treaty contracts that pin what it reads from other products.
 ---
 
 When you are implementing a client, “roughly this shape” is not much of a contract. This page lists
@@ -194,20 +194,44 @@ SuperWitness expects.
 
 ## What SuperWitness reads, pinned
 
-SuperWitness keeps a recorded example of each payload it reads from another product, in
-`internal/contracts/` in its repository. Its adapter tests decode them, and fake mode serves the
-development run from them:
+What SuperWitness reads from SuperPipeline and AgentPod is pinned by treaty, the suite's contracts
+repository, not by copies of its own. `treaty.json` names the treaty release SuperWitness reads
+(0.0.19) and the crossings it consumes; `./scripts/treaty.sh sync` copies treaty's data for them
+into `internal/treaty/`, at the same paths it has in treaty, and `./scripts/treaty.sh verify` in CI
+fails if any copy drifts from that release:
+
+| Copy under `internal/treaty/` | What it pins |
+|---|---|
+| `schemas/http/superpipeline/board-read.v1.openapi.json` and its cases | SuperPipeline's run evidence routes, `evidence` and `evidence-v1`: closed shapes |
+| `schemas/http/agentpod/evidence.v1.openapi.json` and its cases | the AgentPod hub's evidence routes: the ledger, attempts, an attempt's run, a principal's kind, execution evidence, export receipts and transcripts |
+| `schemas/agentpod/execution-{export,evidence,artifacts}.v1.json` and `fixtures/agentpod-evidence/examples.json` | AgentPod's execution evidence and export receipt, with its corpus of valid and refused examples |
+| `schemas/telemetry/suite.v1.json` and its cases | the suite's telemetry conventions: span names, attribute keys and which keys each span carries |
+
+SuperWitness's tests run every case through its adapters: each valid body is read, and each invalid
+one is refused, so the run shows that source as unavailable rather than half-read. A shape the
+contract closes (SuperPipeline's run evidence) refuses an unknown key; an open one (the hub's
+reads) ignores it but still requires every key the contract names. An evidence `schema_version`
+SuperWitness does not know is refused, never read as v1, and when the hub answers
+`unsupported_evidence_version` the execution evidence is unavailable. A transcript page or item is
+passed on exactly as the hub sent it, once it has the contract's shape and is about the session
+asked for. SuperWitness is stricter than the contract in one place: it reads one execution per
+session in a run, so an envelope with two executions of one session is refused as a conflicting
+join.
+
+The trace and log queries use only attribute keys the telemetry conventions name (`run.id` to find
+a run, `attempt.id` to group its spans), and a test reads the vendored conventions to hold them
+there. Telemetry stays best-effort: a span missing a key the conventions require is still shown;
+the missing key fails the producer's tests, never a read.
+
+Two recorded payloads stay in `internal/contracts/`, because no suite contract covers what they
+record:
 
 | File | The answer from |
 |---|---|
-| `superpipeline_evidence.json` | SuperPipeline's run evidence route: run, card, gates and usage |
-| `hub_evidence_run.json` | the AgentPod hub's run evidence route: the ledger, attempts and fingerprints |
-| `hub_evidence_attempt.json` | the hub's attempt route: which run an attempt belongs to |
-| `hub_principal.json` | the hub's principal route: a principal's id and kind |
 | `jaeger_trace_hub.json` | VictoriaTraces' Jaeger API: a `dispatch`, `attempt` and `turn` trace from `agentpod-hub` |
 | `jaeger_trace_workers.json` | VictoriaTraces' Jaeger API: a span from `superpipeline-api` carrying `run.id` |
 
-[With AgentPod and SuperPipeline](/use/with-agentpod-and-superpipeline/) lists the routes these
-come from. Together, the recorded payloads and adapter tests keep both sides of the join reviewable:
-you can see what SuperWitness promises out and what it expects in without reverse-engineering either
-from a running service.
+Fake mode serves the development run from treaty's board-read case for it and from its own hub
+ledger (`internal/source/fake/devdata/`), which decodes through the same reader as the hub's
+answers. [With AgentPod and SuperPipeline](/use/with-agentpod-and-superpipeline/) lists the routes
+these come from.

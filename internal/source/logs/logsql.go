@@ -95,7 +95,7 @@ func Quote(s string) string { return strconv.Quote(s) }
 
 // RunFilter matches lines that carry the run's id or belong to one of its traces.
 func RunFilter(ref source.RunRef) string {
-	parts := []string{`"run.id":=` + Quote(ref.RunID)}
+	parts := []string{Quote(source.AttrRunID) + ":=" + Quote(ref.RunID)}
 	var ids []string
 	for _, id := range ref.TraceIDs {
 		if source.ValidTraceID(id) {
@@ -142,7 +142,7 @@ func RowLine(row map[string]string) source.LogLine {
 		svc = "unknown"
 	}
 	return source.LogLine{At: RowTime(row), Service: svc, Level: levelOf(row), Message: row["_msg"],
-		TraceID: row["trace_id"], SpanID: row["span_id"], RunID: row["run.id"]}
+		TraceID: row["trace_id"], SpanID: row["span_id"], RunID: row[source.AttrRunID]}
 }
 
 func levelOf(row map[string]string) string {

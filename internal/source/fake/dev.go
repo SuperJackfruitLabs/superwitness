@@ -2,6 +2,7 @@ package fake
 
 import (
 	"context"
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -9,7 +10,29 @@ import (
 	"github.com/SuperJackfruitLabs/superwitness/internal/auth"
 	"github.com/SuperJackfruitLabs/superwitness/internal/contracts"
 	"github.com/SuperJackfruitLabs/superwitness/internal/source"
+	"github.com/SuperJackfruitLabs/superwitness/internal/treaty"
 )
+
+// DevRunCase is the case of treaty's board-read cases (readRunEvidence) the dev run is: four
+// gates, decided by a linked person and an unlinked one, pending and cancelled.
+const DevRunCase = "gates resolved, decided by an unlinked person, pending and cancelled"
+
+// DevHubRun is the hub's run evidence for the dev run. It is the dev run's own data, not a copy
+// of a contract's case: its ids (attempt_01, acps_01, prn_agent01) are shorter than the hub
+// mints. It decodes through the reader the hub's answers do, which holds it to the contract's
+// shape.
+//
+//go:embed devdata/hub_run.json
+var DevHubRun []byte
+
+// DevRunEvidence is SuperPipeline's run evidence for the dev run, treaty's case DevRunCase.
+func DevRunEvidence() ([]byte, error) {
+	c, err := treaty.Response(treaty.BoardReadCases, "readRunEvidence", "200")
+	if err != nil {
+		return nil, err
+	}
+	return c.Case(DevRunCase)
+}
 
 const (
 	DevBoard    = "brd_01"
@@ -21,7 +44,7 @@ const (
 	DevHuman2   = "prn_human02" // gate_02's decider, known only by hub sub in the superpipeline fixture
 )
 
-// Dev serves run superpipeline:brd_01/run_01 from the contract fixtures, whose principal
+// Dev serves run superpipeline:brd_01/run_01 from treaty's case and the dev hub data, whose principal
 // fields name DevExecutor as the agent and DevHuman as gate_01's decider.
 type Dev struct {
 	SP, AP, Traces, Logs, Errors *Source
@@ -32,12 +55,16 @@ type Dev struct {
 }
 
 func NewDev() (*Dev, error) {
+	sp, err := DevRunEvidence()
+	if err != nil {
+		return nil, err
+	}
 	var run source.RunFragment
-	if err := json.Unmarshal(contracts.SuperpipelineEvidence, &run); err != nil {
+	if err := json.Unmarshal(sp, &run); err != nil {
 		return nil, fmt.Errorf("superpipeline fixture: %w", err)
 	}
 	var led source.LedgerFragment
-	if err := json.Unmarshal(contracts.HubEvidenceRun, &led); err != nil {
+	if err := json.Unmarshal(DevHubRun, &led); err != nil {
 		return nil, fmt.Errorf("hub fixture: %w", err)
 	}
 

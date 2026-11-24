@@ -41,7 +41,7 @@ func (a *Adapter) Name() source.Name { return source.Traces }
 
 func (a *Adapter) SearchURL(service, runID string) string {
 	now := a.Now().UTC()
-	tags, _ := json.Marshal(map[string]string{"run.id": runID})
+	tags, _ := json.Marshal(map[string]string{source.AttrRunID: runID})
 	q := url.Values{}
 	q.Set("service", service)
 	q.Set("tags", string(tags))

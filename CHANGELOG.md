@@ -7,6 +7,32 @@ and the release notes quote that section.
 
 ## Unreleased
 
+### Changed
+
+- What SuperWitness reads from SuperPipeline and AgentPod is pinned by treaty 0.0.19 (`treaty.json`,
+  up from 0.0.15). Its contracts and cases for SuperPipeline's run evidence routes, AgentPod's
+  evidence reads and the suite's telemetry conventions are vendored in `internal/treaty/` by
+  `./scripts/treaty.sh sync` and held to the release by `./scripts/treaty.sh verify` in CI. They
+  replace SuperWitness's own recorded copies (`internal/contracts/superpipeline_evidence.json`,
+  `hub_evidence_*.json`, `hub_principal.json` and `internal/source/testdata/`), and the adapters'
+  tests run every case: each valid body is read, each invalid one refused.
+- SuperPipeline's run evidence (`/evidence`) is read as the closed shape its contract states: an
+  unknown key, a missing key, a gate status or decision outside its enum, or usage whose numbers
+  contradict its status makes the source unavailable for that run, where it was read before.
+- The hub's run evidence and attempt reads require every key the contract names (a missing
+  `dispatch` or `board_id` is no longer read as null), attempt ids `attempt_…` and session ids
+  `acps_…`, and a fingerprint whose digest is a sha256 or `unknown` and whose reporter is
+  `harness`, `station` or `hub`. Unknown keys are still ignored.
+- Transcript pages and items are passed on only when they have the contract's shape (every item
+  kind with its keys and redaction count) and are about the session asked for; anything else is
+  unavailable, never shown.
+- An evidence `schema_version` SuperWitness does not know is refused, never read as v1, and the
+  hub's `unsupported_evidence_version` answer leaves the execution evidence unavailable. One rule
+  is stricter than the contract: an execution envelope with two executions of one session is
+  refused as a conflicting join.
+- The trace and log queries use only attribute keys the telemetry conventions name, and a test
+  holds them there. A span missing a key the conventions require is still shown.
+
 ## v0.0.13 — 2026-11-23
 
 ### Added

@@ -167,9 +167,11 @@ func TestNoInternalIdentifiersInTrackedTree(t *testing.T) {
 
 // treatyVendoredPatterns are the patterns a file vendored from treaty may match. treaty's corpora
 // are public, `treaty verify` in CI holds each copy byte-identical to the pinned release, and
-// they spell real-grammar synthetic ids and cite treaty's own plan. A private name is never
-// exempt, and no other file is.
-var treatyVendoredPatterns = map[string]bool{"real-looking-id": true, "ruling": true}
+// they spell real-grammar synthetic ids and cite treaty's own plan and the products' public
+// contract sections (contract C4, spec §3.3). A private name is never exempt, and no other file
+// is.
+var treatyVendoredPatterns = map[string]bool{"real-looking-id": true, "ruling": true,
+	"contract-c": true, "spec-section": true, "section-sign": true}
 
 // vendoredTreatyFiles is the set of paths treaty.json's vendored list names.
 func vendoredTreatyFiles(t *testing.T, root string) map[string]bool {
@@ -204,7 +206,8 @@ func TestVendoredTreatyExceptionIsNarrow(t *testing.T) {
 		t.Fatalf("%s is not in treaty.json's vendored list", file)
 	}
 	id := internalRef{"real-looking-id", "prn_0123456789abcdef0123"}
-	if !vendoredTreatyRef(vendored, file, id) || !vendoredTreatyRef(vendored, file, internalRef{"ruling", "ruling 3"}) {
+	if !vendoredTreatyRef(vendored, file, id) || !vendoredTreatyRef(vendored, file, internalRef{"ruling", "ruling 3"}) ||
+		!vendoredTreatyRef(vendored, file, internalRef{"contract-c", "contract C5"}) || !vendoredTreatyRef(vendored, file, internalRef{"section-sign", "§3"}) {
 		t.Fatal("a vendored treaty file's synthetic ids or citation were refused")
 	}
 	if vendoredTreatyRef(vendored, "internal/auth/testdata/org-plane-tokens.json", id) {
@@ -217,19 +220,14 @@ func TestVendoredTreatyExceptionIsNarrow(t *testing.T) {
 	}
 }
 
-// The canonical cross-language evidence corpus requires principal syntax. Only
-// these reviewed synthetic principals in these exact bytes get this exception.
-const executionFixturePath = "internal/source/testdata/execution-evidence-v1.json"
-const executionFixtureDigest = "0c29ac94d21fcef7bc854a2fbf0b7d81d8261d77162ae530f51de0799120e96f"
-
+// The org-plane token fixture names principals in the strict id grammar. Only these reviewed
+// synthetic principals in these exact bytes get this exception. (AgentPod's evidence corpus,
+// which once had the same exception, is treaty's data now: vendored, it takes treaty's.)
 const orgPlaneFixturePath = "internal/auth/testdata/org-plane-tokens.json"
 const orgPlaneFixtureDigest = "02fe35656f7d9280c3e2a782559afef99bb0f1fe82818e1511b4b342ff6ace58"
 
 func syntheticExecutionRef(file string, data []byte, r internalRef) bool {
 	expected := map[string]string{
-		executionFixturePath: executionFixtureDigest,
-		"internal/source/testdata/execution-export-v1.json": "6af4eebb36ecd99258ed5e9d7049a86163b6c1e7cbb3bd4500491902e7ff0de1",
-		// The org-plane token fixture: the plane's tokens name principals in the strict id grammar.
 		orgPlaneFixturePath: orgPlaneFixtureDigest,
 	}[file]
 	if expected == "" || r.pattern != "real-looking-id" {
@@ -241,69 +239,6 @@ func syntheticExecutionRef(file string, data []byte, r internalRef) bool {
 	}
 	return r.match == "prn_"+strings.Repeat("a", 20) || r.match == "prn_"+strings.Repeat("b", 20)
 }
-func TestExecutionFixtureExceptionIsExact(t *testing.T) {
-	b, err := os.ReadFile(filepath.Join(repoRoot(t), executionFixturePath))
-	if err != nil {
-		t.Fatal(err)
-	}
-	sum := sha256.Sum256(b)
-	if hex.EncodeToString(sum[:]) != executionFixtureDigest {
-		t.Fatal("shared execution corpus bytes changed; review canonical mirror and synthetic identity exception")
-	}
-	refs := 0
-	for _, line := range strings.Split(string(b), "\n") {
-		for _, r := range scanLine(line, privateNameDigests) {
-			refs++
-			if !syntheticExecutionRef(executionFixturePath, b, r) {
-				t.Fatalf("non-synthetic reference: %s", r.match)
-			}
-		}
-	}
-	if refs == 0 {
-		t.Fatal("fixture no longer exercises synthetic exception")
-	}
-	for _, tc := range []struct {
-		file string
-		data []byte
-		r    internalRef
-	}{
-		{"other.json", b, internalRef{"real-looking-id", "prn_" + strings.Repeat("a", 20)}},
-		{executionFixturePath, append(append([]byte{}, b...), ' '), internalRef{"real-looking-id", "prn_" + strings.Repeat("a", 20)}},
-		{executionFixturePath, b, internalRef{"real-looking-id", "prn_0123456789abcdef0123"}},
-		{executionFixturePath, b, internalRef{"tailnet-ip", "100.1.2.3"}},
-	} {
-		if syntheticExecutionRef(tc.file, tc.data, tc.r) {
-			t.Fatal("exception accepted non-reviewed identity, bytes or path")
-		}
-	}
-}
-
-func TestExportFixtureExceptionIsExact(t *testing.T) {
-	path := "internal/source/testdata/execution-export-v1.json"
-	b, err := os.ReadFile(filepath.Join(repoRoot(t), path))
-	if err != nil {
-		t.Fatal(err)
-	}
-	refs := 0
-	for _, line := range strings.Split(string(b), "\n") {
-		for _, r := range scanLine(line, privateNameDigests) {
-			refs++
-			if !syntheticExecutionRef(path, b, r) {
-				t.Fatal("export corpus exception requires reviewed exact bytes and synthetic identity")
-			}
-		}
-	}
-	if refs == 0 {
-		t.Fatal("missing synthetic export identity")
-	}
-	if syntheticExecutionRef(path, append(append([]byte{}, b...), ' '), internalRef{"real-looking-id", "prn_" + strings.Repeat("a", 20)}) {
-		t.Fatal("changed corpus bytes accepted")
-	}
-	if syntheticExecutionRef(path, b, internalRef{"real-looking-id", "prn_0123456789abcdef0123"}) {
-		t.Fatal("non-synthetic identity accepted")
-	}
-}
-
 func TestOrgPlaneFixtureExceptionIsExact(t *testing.T) {
 	b, err := os.ReadFile(filepath.Join(repoRoot(t), orgPlaneFixturePath))
 	if err != nil {
