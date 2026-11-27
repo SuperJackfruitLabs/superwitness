@@ -2,6 +2,7 @@ package fake
 
 import (
 	"context"
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -9,7 +10,29 @@ import (
 	"github.com/SuperJackfruitLabs/superwitness/internal/auth"
 	"github.com/SuperJackfruitLabs/superwitness/internal/contracts"
 	"github.com/SuperJackfruitLabs/superwitness/internal/source"
+	"github.com/SuperJackfruitLabs/superwitness/internal/treaty"
 )
+
+// DevRunCase is the case of treaty's board-read cases (readRunEvidence) the dev run is: four
+// gates, decided by a linked person and an unlinked one, pending and cancelled.
+const DevRunCase = "gates resolved, decided by an unlinked person, pending and cancelled"
+
+// DevHubRun is the hub's run evidence for the dev run. It is the dev run's own data, not a copy
+// of a contract's case: its ids (attempt_01, acps_01, prn_agent01) are shorter than the hub
+// mints. It decodes through the reader the hub's answers do, which holds it to the contract's
+// shape.
+//
+//go:embed devdata/hub_run.json
+var DevHubRun []byte
+
+// DevRunEvidence is SuperPipeline's run evidence for the dev run, treaty's case DevRunCase.
+func DevRunEvidence() ([]byte, error) {
+	c, err := treaty.Response(treaty.BoardReadCases, "readRunEvidence", "200")
+	if err != nil {
+		return nil, err
+	}
+	return c.Case(DevRunCase)
+}
 
 const (
 	DevBoard    = "brd_01"
@@ -21,7 +44,7 @@ const (
 	DevHuman2   = "prn_human02" // gate_02's decider, known only by hub sub in the superpipeline fixture
 )
 
-// Dev serves run superpipeline:brd_01/run_01 from the contract fixtures, whose principal
+// Dev serves run superpipeline:brd_01/run_01 from treaty's case and the dev hub data, whose principal
 // fields name DevExecutor as the agent and DevHuman as gate_01's decider.
 type Dev struct {
 	SP, AP, Traces, Logs, Errors *Source
@@ -32,12 +55,16 @@ type Dev struct {
 }
 
 func NewDev() (*Dev, error) {
+	sp, err := DevRunEvidence()
+	if err != nil {
+		return nil, err
+	}
 	var run source.RunFragment
-	if err := json.Unmarshal(contracts.SuperpipelineEvidence, &run); err != nil {
+	if err := json.Unmarshal(sp, &run); err != nil {
 		return nil, fmt.Errorf("superpipeline fixture: %w", err)
 	}
 	var led source.LedgerFragment
-	if err := json.Unmarshal(contracts.HubEvidenceRun, &led); err != nil {
+	if err := json.Unmarshal(DevHubRun, &led); err != nil {
 		return nil, fmt.Errorf("hub fixture: %w", err)
 	}
 
@@ -126,29 +153,29 @@ func devSpans() []source.Span {
 	hub, workers := contracts.TraceHub, contracts.TraceWorkers
 	return []source.Span{
 		{TraceID: hub, SpanID: "00f067aa0ba902b7", Name: "dispatch", Service: "agentpod-hub", Start: t0, DurationMS: 300000,
-			Attributes: map[string]string{"run.id": DevRun, "board.id": DevBoard, "card.id": "crd_01", "external.source": "superpipeline"}},
+			Attributes: map[string]any{"run.id": DevRun, "board.id": DevBoard, "card.id": "crd_01", "external.source": "superpipeline"}},
 		{TraceID: hub, SpanID: "00f067aa0ba902b8", ParentSpanID: "00f067aa0ba902b7", Name: "attempt", Service: "agentpod-hub",
 			Start: t0.Add(2 * time.Second), DurationMS: 296000,
-			Attributes: map[string]string{"attempt.id": DevAttempt, "station.id": "stn_01", "run.id": DevRun,
-				"harness.name": "hermes", "acp.session_id": "acps_01", "acp.seq_from": "1", "acp.seq_to": "9"}},
+			Attributes: map[string]any{"attempt.id": DevAttempt, "station.id": "stn_01", "run.id": DevRun,
+				"harness.name": "hermes", "acp.session_id": "acps_01", "acp.seq_from": 1, "acp.seq_to": 9}},
 		{TraceID: hub, SpanID: "00f067aa0ba902b9", ParentSpanID: "00f067aa0ba902b8", Name: "turn", Service: "agentpod-hub",
 			Start: t0.Add(3 * time.Second), DurationMS: 290000,
-			Attributes: map[string]string{"attempt.id": DevAttempt, "acp.seq_from": "1", "acp.seq_to": "9"}},
+			Attributes: map[string]any{"attempt.id": DevAttempt, "acp.seq_from": 1, "acp.seq_to": 9}},
 		{TraceID: hub, SpanID: "00f067aa0ba902ba", ParentSpanID: "00f067aa0ba902b9", Name: "tool_call", Service: "agentpod-hub",
 			Start: t0.Add(10 * time.Second), DurationMS: 1200,
-			Attributes: map[string]string{"attempt.id": DevAttempt, "tool.kind": "read", "tool.status": "completed",
-				"acp.seq_from": "3", "acp.seq_to": "4"}},
+			Attributes: map[string]any{"attempt.id": DevAttempt, "tool.kind": "read", "tool.status": "completed",
+				"acp.seq_from": 3, "acp.seq_to": 4}},
 		{TraceID: hub, SpanID: "00f067aa0ba902bb", ParentSpanID: "00f067aa0ba902b9", Name: "permission", Service: "agentpod-hub",
 			Start: t0.Add(20 * time.Second), DurationMS: 4000,
-			Attributes: map[string]string{"attempt.id": DevAttempt, "tool.kind": "edit", "permission.auto": "false",
-				"acp.seq_from": "5", "acp.seq_to": "6"}},
+			Attributes: map[string]any{"attempt.id": DevAttempt, "tool.kind": "edit", "permission.auto": "false",
+				"acp.seq_from": 5, "acp.seq_to": 6}},
 		{TraceID: hub, SpanID: "00f067aa0ba902bc", ParentSpanID: "00f067aa0ba902b9", Name: "tool_call", Service: "agentpod-hub",
 			Start: t0.Add(25 * time.Second), DurationMS: 800,
-			Attributes: map[string]string{"attempt.id": DevAttempt, "tool.kind": "edit", "tool.status": "failed",
-				"otel.status_code": "ERROR", "acp.seq_from": "7", "acp.seq_to": "8"}},
+			Attributes: map[string]any{"attempt.id": DevAttempt, "tool.kind": "edit", "tool.status": "failed",
+				"otel.status_code": "ERROR", "acp.seq_from": 7, "acp.seq_to": 8}},
 		{TraceID: workers, SpanID: "10f067aa0ba902b7", Name: "POST /v1/boards/:id/runs/:runId/heartbeat",
 			Service: "superpipeline-api", Start: t0.Add(time.Minute), DurationMS: 12,
-			Attributes: map[string]string{"run.id": DevRun}},
+			Attributes: map[string]any{"run.id": DevRun}},
 	}
 }
 

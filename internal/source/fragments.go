@@ -115,14 +115,14 @@ func (l AttemptLink) Ref() (RunRef, bool) {
 }
 
 type Span struct {
-	TraceID      string            `json:"trace_id"`
-	SpanID       string            `json:"span_id"`
-	ParentSpanID string            `json:"parent_span_id,omitempty"`
-	Name         string            `json:"name"`
-	Service      string            `json:"service"`
-	Start        time.Time         `json:"start"`
-	DurationMS   float64           `json:"duration_ms"`
-	Attributes   map[string]string `json:"attributes"`
+	TraceID      string         `json:"trace_id"`
+	SpanID       string         `json:"span_id"`
+	ParentSpanID string         `json:"parent_span_id,omitempty"`
+	Name         string         `json:"name"`
+	Service      string         `json:"service"`
+	Start        time.Time      `json:"start"`
+	DurationMS   float64        `json:"duration_ms"`
+	Attributes   map[string]any `json:"attributes"` // a string, number or boolean, by key
 }
 
 type TracesFragment struct {

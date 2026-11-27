@@ -7,14 +7,13 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strings"
 	"sync/atomic"
 	"testing"
 
 	"github.com/SuperJackfruitLabs/superwitness/internal/auth"
-	"github.com/SuperJackfruitLabs/superwitness/internal/contracts"
 	"github.com/SuperJackfruitLabs/superwitness/internal/source"
+	"github.com/SuperJackfruitLabs/superwitness/internal/source/fake"
 )
 
 func hub(t *testing.T, principalHits *atomic.Int32) *httptest.Server {
@@ -30,12 +29,12 @@ func hub(t *testing.T, principalHits *atomic.Int32) *httptest.Server {
 			fmt.Fprint(w, `{"error":"not_found"}`)
 			return
 		}
-		_, _ = w.Write(contracts.HubEvidenceRun)
+		_, _ = w.Write(fake.DevHubRun)
 	})
 	mux.HandleFunc("GET /api/evidence/attempts/{id}", func(w http.ResponseWriter, r *http.Request) {
 		switch r.PathValue("id") {
 		case "attempt_01":
-			_, _ = w.Write(contracts.HubEvidenceAttempt)
+			fmt.Fprint(w, `{"external_source":"superpipeline","external_run_id":"run_01","board_id":"brd_01"}`)
 		case "attempt_solo":
 			fmt.Fprint(w, `{"external_source":null,"external_run_id":null,"board_id":null}`)
 		default:
@@ -47,7 +46,7 @@ func hub(t *testing.T, principalHits *atomic.Int32) *httptest.Server {
 		principalHits.Add(1)
 		switch r.PathValue("id") {
 		case "prn_human01":
-			_, _ = w.Write(contracts.HubPrincipal)
+			fmt.Fprint(w, `{"id":"prn_human01","kind":"human","handle":"human01","suspended":false}`)
 		case "hubuser_7f3a":
 			fmt.Fprint(w, `{"id":"prn_human02","kind":"human","handle":"former","suspended":false}`)
 		case "hubuser_gone":
@@ -204,22 +203,13 @@ func TestUnauthorizedInvalidates(t *testing.T) {
 }
 
 func TestNegotiatedExecutionEvidence(t *testing.T) {
-	b, err := os.ReadFile("../testdata/execution-evidence-v1.json")
-	if err != nil {
+	envelope := map[string]any{}
+	if err := json.Unmarshal(evidenceCase(t, "readExecutionEvidence", "every execution of AgentPod's corpus"), &envelope); err != nil {
 		t.Fatal(err)
 	}
-	var corpus struct {
-		Success []struct{ Value source.ExecutionEvidence }
-	}
-	if err := json.Unmarshal(b, &corpus); err != nil {
-		t.Fatal(err)
-	}
-	execution := corpus.Success[1].Value
-	execution.Binding.Run.ID = "run_01"
-	execution.Task.BoardID = "brd_01"
-	execution.Task.CardID = "crd_01"
-	board, card := "brd_01", "crd_01"
-	envelope := source.ExecutionEnvelope{SchemaVersion: "agentpod-execution-evidence/v1", ExternalSource: "superpipeline", ExternalRunID: "run_01", BoardID: &board, CardID: &card, Executions: []source.ExecutionEvidence{execution}, AsOf: execution.AsOf}
+	// The corpus's third execution repeats the second's session, which SuperWitness refuses as a
+	// conflicting join (source's TestStricterThanTreatyIsOnlyTheDuplicateSession).
+	envelope["executions"] = envelope["executions"].([]any)[:2]
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasSuffix(r.URL.Path, "/execution") {
 			if r.URL.Query().Get("schema_version") != source.ExecutionSchemaV1 {
@@ -230,27 +220,20 @@ func TestNegotiatedExecutionEvidence(t *testing.T) {
 			}
 			return
 		}
-		// Use the legacy fixture; its card binding is the authority checked below.
-		var ledger source.LedgerFragment
-		if err := json.Unmarshal(contracts.HubEvidenceRun, &ledger); err != nil {
-			t.Error(err)
-		}
-		ledger.CardID = &card
-		if err := json.NewEncoder(w).Encode(ledger); err != nil {
-			t.Error(err)
-		}
+		// The ledger's card binding is the authority checked below.
+		fmt.Fprint(w, ledgerOf("run_abcdef", "brd_abcdef", "card_abcdef"))
 	}))
 	defer srv.Close()
 	adapter := New(srv.URL, &auth.StaticTokenSource{Value: "test"}, srv.Client())
-	ref, _ := source.NewSuperpipelineRef(board, "run_01")
+	ref, _ := source.NewSuperpipelineRef("brd_abcdef", "run_abcdef")
 	f, st := adapter.Fetch(context.Background(), ref)
 	if st != source.StatusOK || f.ExecutionStatus != source.StatusOK || f.Execution == nil {
 		t.Fatalf("%s %+v", st, f)
 	}
-	if len(f.Execution.Executions[0].Tools) != 2 {
+	if len(f.Execution.Executions) != 2 || len(f.Execution.Executions[1].Tools) != 2 {
 		t.Fatal("actual receipt metadata omitted")
 	}
-	envelope.Executions[0].Task.CardID = "crd_foreign"
+	envelope["executions"].([]any)[0].(map[string]any)["task"].(map[string]any)["card_id"] = "card_foreign"
 	f, st = adapter.Fetch(context.Background(), ref)
 	if st != source.StatusOK || f.Execution != nil || f.ExecutionStatus != source.StatusUnavailable {
 		t.Fatal("conflicting execution evidence should be unavailable while legacy remains readable")
@@ -258,19 +241,13 @@ func TestNegotiatedExecutionEvidence(t *testing.T) {
 }
 
 func TestFetchCommittedExportReceipt(t *testing.T) {
-	b, err := os.ReadFile("../testdata/execution-export-v1.json")
-	if err != nil {
+	var receipt map[string]any
+	if err := json.Unmarshal(evidenceCase(t, "readExecutionExport", "committed-manifest"), &receipt); err != nil {
 		t.Fatal(err)
 	}
-	var corpus struct {
-		Success []struct{ Value source.ExecutionExportReceipt }
-	}
-	if err := json.Unmarshal(b, &corpus); err != nil {
-		t.Fatal(err)
-	}
-	receipt := corpus.Success[0].Value
+	id := receipt["export_id"].(string)
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/evidence/exports/"+receipt.ExportID || r.URL.Query().Get("schema_version") != source.ExecutionExportSchemaV1 || r.Header.Get("Authorization") != "Bearer test" {
+		if r.URL.Path != "/api/evidence/exports/"+id || r.URL.Query().Get("schema_version") != source.ExecutionExportSchemaV1 || r.Header.Get("Authorization") != "Bearer test" {
 			t.Error("unscoped export receipt request")
 		}
 		if err := json.NewEncoder(w).Encode(receipt); err != nil {
@@ -279,12 +256,13 @@ func TestFetchCommittedExportReceipt(t *testing.T) {
 	}))
 	defer srv.Close()
 	a := New(srv.URL, &auth.StaticTokenSource{Value: "test"}, srv.Client())
-	got, status := a.FetchExport(context.Background(), receipt.ExportID)
-	if status != source.StatusOK || got.ManifestSHA256 != receipt.ManifestSHA256 || got.Verification != "download-sha256-verified" {
+	got, status := a.FetchExport(context.Background(), id)
+	if status != source.StatusOK || got.ManifestSHA256 != receipt["manifest_sha256"] || got.Verification != "download-sha256-verified" {
 		t.Fatalf("%s %+v", status, got)
 	}
-	receipt.Library.Bytes++
-	if _, status = a.FetchExport(context.Background(), receipt.ExportID); status != source.StatusUnavailable {
+	library := receipt["library"].(map[string]any)
+	library["bytes"] = library["bytes"].(float64) + 1
+	if _, status = a.FetchExport(context.Background(), id); status != source.StatusUnavailable {
 		t.Fatal("contradictory Library commit receipt accepted")
 	}
 }

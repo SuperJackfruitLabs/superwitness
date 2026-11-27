@@ -230,7 +230,7 @@ func applyTraces(doc *RunDocument, tf *source.TracesFragment) {
 	doc.Trace.TraceIDs = append([]string{}, tf.TraceIDs...)
 	counts := map[string]int{}
 	for _, s := range tf.Spans {
-		if id := s.Attributes["attempt.id"]; id != "" {
+		if id, _ := s.Attributes[source.AttrAttemptID].(string); id != "" {
 			counts[id]++
 		}
 	}

@@ -2,62 +2,38 @@ package source
 
 import (
 	"encoding/json"
-	"os"
 	"strings"
 	"testing"
 )
 
+// executionFixture is the first valid execution of AgentPod's corpus: no tools, usage unreported.
 func executionFixture(t *testing.T) []byte {
 	t.Helper()
-	b, err := os.ReadFile("testdata/execution-evidence-v1.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	var corpus struct {
-		Success   []struct{ Value json.RawMessage }
-		Rejection []struct{ Value json.RawMessage }
-	}
-	if err := json.Unmarshal(b, &corpus); err != nil {
-		t.Fatal(err)
-	}
-	return corpus.Success[0].Value
+	return validCase(t, examples(t, "execution-evidence.v1"), "empty-unreported")
 }
 func wrapExecution(value []byte) []byte {
 	return []byte(`{"schema_version":"agentpod-execution-evidence/v1","external_source":"superpipeline","external_run_id":"run_abcdef","board_id":"brd_abcdef","card_id":"card_abcdef","executions":[` + string(value) + `],"as_of":"2026-10-21T00:00:00Z"}`)
 }
+
+// Every execution of AgentPod's corpus (treaty's agentpod-evidence examples) reads, and every
+// one it refuses is refused here too.
 func TestExecutionSharedCorpus(t *testing.T) {
-	b, err := os.ReadFile("testdata/execution-evidence-v1.json")
-	if err != nil {
-		t.Fatal(err)
+	corpus := examples(t, "execution-evidence.v1")
+	if len(corpus.Valid) != 3 || len(corpus.Invalid) != 7 {
+		t.Fatal("canonical valid/invalid corpus changed")
 	}
-	var corpus struct {
-		Success []struct {
-			Name  string
-			Value json.RawMessage
-		}
-		Rejection []struct {
-			Name  string
-			Value json.RawMessage
-		}
-	}
-	if err := json.Unmarshal(b, &corpus); err != nil {
-		t.Fatal(err)
-	}
-	if len(corpus.Success) != 3 || len(corpus.Rejection) != 7 {
-		t.Fatal("canonical success/rejection corpus changed")
-	}
-	for _, c := range corpus.Success {
-		t.Run(c.Name, func(t *testing.T) {
+	for name, value := range corpus.Valid {
+		t.Run(name, func(t *testing.T) {
 			var e ExecutionEnvelope
-			if err := json.Unmarshal(wrapExecution(c.Value), &e); err != nil {
+			if err := json.Unmarshal(wrapExecution(value), &e); err != nil {
 				t.Fatal(err)
 			}
 		})
 	}
-	for _, c := range corpus.Rejection {
-		t.Run(c.Name, func(t *testing.T) {
+	for _, c := range corpus.Invalid {
+		t.Run(c.Why, func(t *testing.T) {
 			var e ExecutionEnvelope
-			if err := json.Unmarshal(wrapExecution(c.Value), &e); err == nil {
+			if err := json.Unmarshal(wrapExecution(c.Body), &e); err == nil {
 				t.Fatal("accepted rejected fixture")
 			}
 		})
@@ -200,18 +176,9 @@ func TestUnmappedContributorProofFailsClosed(t *testing.T) {
 }
 
 func TestOperatorAttestationDoesNotReplaceNativeReceipt(t *testing.T) {
-	b, err := os.ReadFile("testdata/execution-evidence-v1.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	var corpus struct {
-		Success []struct{ Value json.RawMessage }
-	}
-	if err := json.Unmarshal(b, &corpus); err != nil {
-		t.Fatal(err)
-	}
+	attested := validCase(t, examples(t, "execution-evidence.v1"), "operator-attestation-retains-native-uncertainty")
 	var e ExecutionEnvelope
-	if err := json.Unmarshal(wrapExecution(corpus.Success[2].Value), &e); err != nil {
+	if err := json.Unmarshal(wrapExecution(attested), &e); err != nil {
 		t.Fatal(err)
 	}
 	found := false

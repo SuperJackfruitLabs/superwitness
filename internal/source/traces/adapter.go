@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/url"
 	"sort"
@@ -15,6 +14,7 @@ import (
 	"time"
 
 	"github.com/SuperJackfruitLabs/superwitness/internal/source"
+	"github.com/SuperJackfruitLabs/superwitness/internal/treaty"
 )
 
 // DefaultServices are the service.name values that emit spans about a run.
@@ -41,7 +41,7 @@ func (a *Adapter) Name() source.Name { return source.Traces }
 
 func (a *Adapter) SearchURL(service, runID string) string {
 	now := a.Now().UTC()
-	tags, _ := json.Marshal(map[string]string{"run.id": runID})
+	tags, _ := json.Marshal(map[string]string{source.AttrRunID: runID})
 	q := url.Values{}
 	q.Set("service", service)
 	q.Set("tags", string(tags))
@@ -80,6 +80,7 @@ type jaegerRef struct {
 
 type jaegerTag struct {
 	Key   string `json:"key"`
+	Type  string `json:"type"`
 	Value any    `json:"value"`
 }
 
@@ -221,9 +222,9 @@ func (a *Adapter) Ping(ctx context.Context) source.SourceStatus {
 
 func convert(s jaegerSpan, procs map[string]jaegerProcess) source.Span {
 	traceID := padHex(s.TraceID, 32)
-	attrs := make(map[string]string, len(s.Tags))
+	attrs := make(map[string]any, len(s.Tags))
 	for _, t := range s.Tags {
-		attrs[t.Key] = tagString(t.Value)
+		attrs[t.Key] = tagValue(t)
 	}
 	parent := ""
 	for _, r := range s.References {
@@ -260,19 +261,34 @@ func padHex(id string, n int) string {
 	return id
 }
 
-func tagString(v any) string {
-	switch x := v.(type) {
-	case nil:
-		return ""
-	case string:
-		return x
-	case json.Number:
-		return x.String()
-	case bool:
-		return strconv.FormatBool(x)
-	default:
-		return fmt.Sprint(x)
+// conventions are the suite's telemetry conventions, the one source of each attribute's type.
+var conventions = sync.OnceValue(func() map[string]treaty.Attribute {
+	c, err := treaty.TelemetryConventions()
+	if err != nil {
+		return nil // embedded at build time; without them every value is served as the store gave it
 	}
+	return c.Attributes
+})
+
+// jaegerTypes are the tag types of Jaeger's JSON model that say more than "string".
+var jaegerTypes = map[string]string{"int64": "int", "float64": "double", "bool": "boolean"}
+
+// tagValue is a tag's value in its type. A store's Jaeger API may send every tag as a string
+// (VictoriaTraces does, numbers included), so a tag typed int64, float64 or bool is read as
+// that type, and any other tag whose key the conventions name is read as the conventions' type.
+// A value that does not read as its type, and a key the conventions do not name, is kept as the
+// store gave it: a span is never dropped over an attribute.
+func tagValue(t jaegerTag) any {
+	if t.Value == nil {
+		return ""
+	}
+	if typ, ok := jaegerTypes[t.Type]; ok {
+		return treaty.CoerceTo(typ, t.Value)
+	}
+	if a, ok := conventions()[t.Key]; ok {
+		return a.Coerce(t.Value)
+	}
+	return t.Value
 }
 
 func worse(a, b source.SourceStatus) source.SourceStatus {

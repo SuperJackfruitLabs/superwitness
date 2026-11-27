@@ -36,7 +36,7 @@ make web                # rebuilds the SvelteKit app into internal/web/dist
 make web-check          # the same, then fails if the committed bundle changed
 make licenses           # dependency licence allowlist
 make e2e                # needs Docker, and npx playwright install chromium once
-npx -y @superjackfruitlabs/treaty-contracts@0.0.15 verify   # treaty.json and the vendored treaty files
+./scripts/treaty.sh verify   # treaty.json and the vendored treaty files (sync rewrites them)
 ```
 
 The app in `web/` is SvelteKit with Svelte 5 and the vendored vibekit design kit

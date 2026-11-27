@@ -2,6 +2,19 @@ package source
 
 import "time"
 
+// The span and log attribute keys SuperWitness queries and reads, each one a key the suite's
+// telemetry conventions name (treaty's schemas/telemetry/suite.v1.json, vendored in
+// internal/treaty): a run's spans and log lines are found by AttrRunID, and its spans counted
+// per attempt by AttrAttemptID. A test holds every key here, and every key the trace and log
+// queries use, to the conventions.
+const (
+	AttrRunID     = "run.id"
+	AttrAttemptID = "attempt.id"
+)
+
+// QueriedAttributes is every attribute key SuperWitness queries or reads.
+var QueriedAttributes = []string{AttrRunID, AttrAttemptID}
+
 // TraceIDsOf returns the distinct trace ids in spans, ordered by each trace's earliest span.
 func TraceIDsOf(spans []Span) []string {
 	first := map[string]time.Time{}

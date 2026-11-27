@@ -46,14 +46,26 @@ SuperWitness uses none of the answers rather than some of them.
 
 ### The trace shape SuperWitness expects
 
-SuperWitness's contract fixtures pin the trace it is built to read, with these spans from
-`agentpod-hub`:
+The suite's telemetry conventions (treaty's `schemas/telemetry/suite.v1.json`, vendored in
+SuperWitness's `internal/treaty/`) name every span and attribute key, and SuperWitness queries only
+keys they name. Its recorded trace has these spans from `agentpod-hub`:
 
 - a root span **`dispatch`**, carrying `run.id`, `board.id`, `card.id` and `external.source`;
 - under it, an **`attempt`** span per attempt, carrying `attempt.id`, `station.id`,
   `fingerprint.digest`, `harness.name`, `acp.session_id`, `acp.seq_from` and `run.id`;
 - under that, **`turn`** spans carrying `attempt.id`, `acp.seq_from` and `acp.seq_to`;
 - spans from `superpipeline-api` carrying `run.id`.
+
+The conventions also say which keys each span must carry (a `dispatch` also carries `station.id`
+and `dispatch.status`, for instance). That is for producers to test: a span missing a key is still
+read and shown, never refused.
+
+The conventions also give each key its type, and SuperWitness serves a span's attributes in it. A
+store's Jaeger API may send every tag as a string, numbers included (VictoriaTraces does), so a tag
+the store types `int64`, `float64` or `bool` is read as that type, and any other tag whose key the
+conventions name is read as their type: `acp.seq_from` `"3"` is served as `3`. A value that does
+not read as its type (`"three"` for an `int`) and a key the conventions do not name are served as
+the store sent them.
 
 ### Trace context between products
 

@@ -72,7 +72,7 @@ imports only from a layer below its own; a new package fails the test until it i
 
 | Layer | Packages under `internal/` |
 |---|---|
-| Foundation | `auth`, `config`, `contracts`, `ratelimit`, `web` |
+| Foundation | `auth`, `config`, `contracts`, `ratelimit`, `treaty`, `web` |
 | The source contract | `source` |
 | The sources | `source/agentpod`, `source/fake`, `source/logs`, `source/superpipeline`, `source/traces` |
 | Derived sources | `source/errors` (read out of the logs) |

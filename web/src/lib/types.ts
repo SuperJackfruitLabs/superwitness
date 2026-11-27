@@ -94,7 +94,9 @@ export interface Span {
   service: string;
   start: string;
   duration_ms: number;
-  attributes: Record<string, string>;
+  // An attribute the telemetry conventions name has their type (acp.seq_from is a number);
+  // any other is as the trace store gave it, which is often a string.
+  attributes: Record<string, string | number | boolean>;
 }
 
 export interface LogLine {

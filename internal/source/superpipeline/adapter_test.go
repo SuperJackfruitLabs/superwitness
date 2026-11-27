@@ -6,15 +6,59 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/SuperJackfruitLabs/superwitness/internal/auth"
-	"github.com/SuperJackfruitLabs/superwitness/internal/contracts"
 	"github.com/SuperJackfruitLabs/superwitness/internal/source"
+	"github.com/SuperJackfruitLabs/superwitness/internal/treaty"
 )
+
+// cases is one board-read operation's 200 cases, from the vendored treaty data.
+func cases(t *testing.T, operation string) treaty.Cases {
+	t.Helper()
+	c, err := treaty.Response(treaty.BoardReadCases, operation, "200")
+	if err != nil {
+		t.Fatal(err)
+	}
+	return c
+}
+
+// devRun is the case the dev run is: run_01 on brd_01, four gates, usage unreported.
+func devRun(t *testing.T) []byte {
+	t.Helper()
+	b, err := cases(t, "readRunEvidence").Case("gates resolved, decided by an unlinked person, pending and cancelled")
+	if err != nil {
+		t.Fatal(err)
+	}
+	return b
+}
+
+// runOf is the board and run a run-evidence body is about.
+func runOf(t *testing.T, body []byte) source.RunRef {
+	t.Helper()
+	type run struct {
+		ID      string `json:"id"`
+		BoardID string `json:"board_id"`
+	}
+	var b struct {
+		Run      run `json:"run"`
+		Pipeline struct {
+			Run run `json:"run"`
+		} `json:"pipeline"`
+	}
+	_ = json.Unmarshal(body, &b) // an invalid case may lack either; the ref then falls back below
+	r := b.Run
+	if r.ID == "" {
+		r = b.Pipeline.Run
+	}
+	ref, err := source.NewSuperpipelineRef(r.BoardID, r.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return ref
+}
 
 func ref(t *testing.T, run string) source.RunRef {
 	t.Helper()
@@ -29,7 +73,7 @@ func TestFetchDecodesC4(t *testing.T) {
 	var gotPath, gotAuth string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotPath, gotAuth = r.URL.Path, r.Header.Get("Authorization")
-		_, _ = w.Write(contracts.SuperpipelineEvidence)
+		_, _ = w.Write(devRun(t))
 	}))
 	defer srv.Close()
 	tokens := &auth.StaticTokenSource{Value: "tok-sp"}
@@ -108,7 +152,7 @@ func TestTokenFailureMakesNoRequest(t *testing.T) {
 
 func TestMismatchedRunIsUnavailable(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, _ = w.Write(contracts.SuperpipelineEvidence) // always run_01
+		_, _ = w.Write(devRun(t)) // always run_01
 	}))
 	defer srv.Close()
 	a := New(srv.URL, &auth.StaticTokenSource{Value: "t"}, srv.Client())
@@ -131,37 +175,136 @@ func TestTimeout(t *testing.T) {
 }
 
 func TestVersionedWorkEvidenceFetch(t *testing.T) {
-	b, err := os.ReadFile("../testdata/run-evidence-v1.json")
+	v1, err := cases(t, "readRunEvidenceV1").Case("superpipeline's run-evidence-v1 fixture")
 	if err != nil {
 		t.Fatal(err)
 	}
-	var work source.WorkEvidence
-	if err := json.Unmarshal(b, &work); err != nil {
+	var parts map[string]json.RawMessage
+	if err := json.Unmarshal(v1, &parts); err != nil {
 		t.Fatal(err)
 	}
+	served := v1
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasSuffix(r.URL.Path, "evidence-v1") {
-			if err := json.NewEncoder(w).Encode(work); err != nil {
-				t.Error(err)
-			}
+			_, _ = w.Write(served)
 			return
 		}
-		if err := json.NewEncoder(w).Encode(work.Pipeline); err != nil {
-			t.Error(err)
-		}
+		_, _ = w.Write(parts["pipeline"])
 	}))
 	defer srv.Close()
 	a := New(srv.URL, &auth.StaticTokenSource{Value: "test"}, srv.Client())
-	f, st := a.Fetch(context.Background(), ref(t, "run_01"))
+	ref := runOf(t, v1)
+	f, st := a.Fetch(context.Background(), ref)
 	if st != source.StatusOK || f.WorkStatus != source.StatusOK || f.Work == nil {
 		t.Fatalf("%s %+v", st, f)
 	}
 	if f.Work.Usage.CostProvenance != "agent-reported-not-provider-bill" {
 		t.Fatal("cost provenance lost")
 	}
-	work.ExecutorEvidence.ExternalRunID = "foreign"
-	f, st = a.Fetch(context.Background(), ref(t, "run_01"))
+	var work map[string]any
+	if err := json.Unmarshal(v1, &work); err != nil {
+		t.Fatal(err)
+	}
+	work["executor_evidence"].(map[string]any)["external_run_id"] = "foreign"
+	served, _ = json.Marshal(work)
+	f, st = a.Fetch(context.Background(), ref)
 	if st != source.StatusOK || f.Work != nil {
 		t.Fatal("foreign metadata accepted")
+	}
+}
+
+// Every run-evidence case of treaty's board-read cases is a run SuperWitness shows, and every
+// invalid one is unavailable: an answer outside the contract is not an answer.
+func TestFetchRunsEveryTreatyCase(t *testing.T) {
+	c := cases(t, "readRunEvidence")
+	serve := func(t *testing.T, body []byte) *Adapter {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if strings.HasSuffix(r.URL.Path, "evidence-v1") {
+				w.WriteHeader(404)
+				return
+			}
+			_, _ = w.Write(body)
+		}))
+		t.Cleanup(srv.Close)
+		return New(srv.URL, &auth.StaticTokenSource{Value: "t"}, srv.Client())
+	}
+	for name, body := range c.Valid {
+		t.Run(name, func(t *testing.T) {
+			f, st := serve(t, body).Fetch(context.Background(), runOf(t, body))
+			if st != source.StatusOK || f.Run == nil || f.Work != nil {
+				t.Fatalf("status %s, fragment %+v", st, f)
+			}
+		})
+	}
+	for _, inv := range c.Invalid {
+		t.Run(inv.Why, func(t *testing.T) {
+			if _, st := serve(t, inv.Body).Fetch(context.Background(), runOf(t, inv.Body)); st != source.StatusUnavailable {
+				t.Fatalf("status %s, want unavailable", st)
+			}
+		})
+	}
+}
+
+// Every evidence-v1 case rides along with its pipeline; every invalid one, an unknown
+// schema_version among them, leaves its versioned evidence unavailable, never read as v1 (and
+// the run too, when the case breaks the pipeline it nests).
+func TestFetchWorkEvidenceEveryTreatyCase(t *testing.T) {
+	c := cases(t, "readRunEvidenceV1")
+	fetch := func(t *testing.T, body []byte) source.Fragment {
+		var parts map[string]json.RawMessage
+		_ = json.Unmarshal(body, &parts)
+		pipeline := parts["pipeline"]
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if strings.HasSuffix(r.URL.Path, "evidence-v1") {
+				_, _ = w.Write(body)
+				return
+			}
+			_, _ = w.Write(pipeline)
+		}))
+		t.Cleanup(srv.Close)
+		f, _ := New(srv.URL, &auth.StaticTokenSource{Value: "t"}, srv.Client()).Fetch(context.Background(), runOf(t, body))
+		return f
+	}
+	for name, body := range c.Valid {
+		t.Run(name, func(t *testing.T) {
+			if f := fetch(t, body); f.Run == nil || f.WorkStatus != source.StatusOK || f.Work == nil {
+				t.Fatalf("work evidence: %s", f.WorkStatus)
+			}
+		})
+	}
+	for _, inv := range c.Invalid {
+		t.Run(inv.Why, func(t *testing.T) {
+			if f := fetch(t, inv.Body); f.Work != nil || (f.Run != nil && f.WorkStatus != source.StatusUnavailable) {
+				t.Fatalf("work evidence: %s", f.WorkStatus)
+			}
+		})
+	}
+}
+
+// The adapter's routes are the contract's: the run-evidence paths board-read names.
+func TestRoutesAreTheContracts(t *testing.T) {
+	ops, err := treaty.Operations(treaty.BoardRead)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var paths []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		paths = append(paths, r.Method+" "+r.URL.Path)
+		w.WriteHeader(404)
+	}))
+	defer srv.Close()
+	ref, _ := source.NewSuperpipelineRef("brd_B", "run_R")
+	_, _ = New(srv.URL, &auth.StaticTokenSource{Value: "t"}, srv.Client()).Fetch(context.Background(), ref)
+	want := []string{}
+	for _, op := range []string{"readRunEvidence"} {
+		o := ops[op]
+		want = append(want, o.Method+" "+strings.NewReplacer("{boardId}", "brd_B", "{runId}", "run_R").Replace(o.Path))
+	}
+	if strings.Join(paths, ",") != strings.Join(want, ",") {
+		t.Fatalf("requests %v, want %v", paths, want)
+	}
+	// evidence-v1 is read only once the legacy route answered; its path is the contract's too.
+	if v1 := ops["readRunEvidenceV1"].Path; v1 != ops["readRunEvidence"].Path+"-v1" {
+		t.Fatalf("evidence-v1 is %s", v1)
 	}
 }

@@ -8,13 +8,19 @@ import {
 const API = "/v1/runs/superpipeline/brd_01/run_01";
 const PAGE = "/runs/superpipeline/brd_01/run_01";
 const attempts = [{ id: "attempt_a1", session_id: "acps_a1", seq_from: 1, seq_to: 9 }, { id: "attempt_a2", session_id: "acps_a2", seq_from: 10, seq_to: null }];
-const span = (id: string, name: string, attributes: Record<string, string>, start = "2026-10-04T10:00:00Z", duration_ms = 1000): Span =>
+const span = (id: string, name: string, attributes: Span["attributes"], start = "2026-10-04T10:00:00Z", duration_ms = 1000): Span =>
   ({ trace_id: "t1", span_id: id, name, service: "hub", start, duration_ms, attributes });
 
 describe("spanRange", () => {
   it("reads a content span's seqs within its attempt", () => {
     expect(spanRange(span("s1", "tool_call", { "attempt.id": "attempt_a1", "acp.seq_from": "3", "acp.seq_to": "4" }), attempts))
       .toEqual({ attempt: "attempt_a1", session: "acps_a1", from: 3, to: 4 });
+  });
+  it("reads seqs served as numbers, as the telemetry conventions type them", () => {
+    expect(spanRange(span("s1", "tool_call", { "attempt.id": "attempt_a1", "acp.seq_from": 3, "acp.seq_to": 4 }), attempts))
+      .toEqual({ attempt: "attempt_a1", session: "acps_a1", from: 3, to: 4 });
+    expect(spanRange(span("s1", "turn", { "attempt.id": "attempt_a1", "acp.seq_from": 1.5 }), attempts)).toBeNull();
+    expect(spanRange(span("s1", "turn", { "attempt.id": "attempt_a1", "acp.seq_from": -1 }), attempts)).toBeNull();
   });
   it("falls back to the attempt's seqs where the span has none", () => {
     expect(spanRange(span("s1", "attempt", { "attempt.id": "attempt_a1" }), attempts)).toEqual({ attempt: "attempt_a1", session: "acps_a1", from: 1, to: 9 });
@@ -118,6 +124,7 @@ describe("spans' details", () => {
   it("reads a status from the attributes", () => {
     expect(spanStatus(span("s", "x", { "otel.status_code": "ERROR" }))).toBe("ERROR");
     expect(spanStatus(span("s", "x", { error: "true" }))).toBe("ERROR");
+    expect(spanStatus(span("s", "x", { error: true }))).toBe("ERROR");
     expect(spanStatus(span("s", "x", {}))).toBe("unset");
   });
   it("keeps the log lines in the span's window and trace", () => {

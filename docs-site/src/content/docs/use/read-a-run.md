@@ -84,7 +84,9 @@ first (by start time, then trace id, then span id):
 ```
 
 Each span has `trace_id`, `span_id`, `parent_span_id` (left out for a span with no parent),
-`name`, `service`, `start`, `duration_ms` and `attributes`, whose values are all strings.
+`name`, `service`, `start`, `duration_ms` and `attributes`. An attribute the telemetry conventions
+name has their type (`acp.seq_from` and `run.epoch` are numbers); any other is as the trace store
+sent it, often a string.
 `next_cursor` is left out on the last page. Which spans count as the run's is covered in
 [Sending telemetry](/use/telemetry/#spans).
 

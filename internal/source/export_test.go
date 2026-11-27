@@ -2,7 +2,6 @@ package source
 
 import (
 	"encoding/json"
-	"os"
 	"strings"
 	"testing"
 )
@@ -33,39 +32,25 @@ func TestMetadataExportReceiptStrictness(t *testing.T) {
 	}
 }
 
+// Every receipt of AgentPod's export corpus reads, and every one it refuses is refused here too,
+// an unknown schema_version among them.
 func TestSharedExportReceiptCorpus(t *testing.T) {
-	b, err := os.ReadFile("testdata/execution-export-v1.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	var corpus struct {
-		Success []struct {
-			Name  string
-			Value json.RawMessage
-		}
-		Rejection []struct {
-			Name  string
-			Value json.RawMessage
-		}
-	}
-	if err := json.Unmarshal(b, &corpus); err != nil {
-		t.Fatal(err)
-	}
-	if len(corpus.Success) != 2 || len(corpus.Rejection) != 5 {
+	corpus := examples(t, "execution-export.v1")
+	if len(corpus.Valid) != 2 || len(corpus.Invalid) != 5 {
 		t.Fatal("shared export corpus changed")
 	}
-	for _, c := range corpus.Success {
-		t.Run(c.Name, func(t *testing.T) {
+	for name, value := range corpus.Valid {
+		t.Run(name, func(t *testing.T) {
 			var r ExecutionExportReceipt
-			if err := json.Unmarshal(c.Value, &r); err != nil {
+			if err := json.Unmarshal(value, &r); err != nil {
 				t.Fatal(err)
 			}
 		})
 	}
-	for _, c := range corpus.Rejection {
-		t.Run(c.Name, func(t *testing.T) {
+	for _, c := range corpus.Invalid {
+		t.Run(c.Why, func(t *testing.T) {
 			var r ExecutionExportReceipt
-			if json.Unmarshal(c.Value, &r) == nil {
+			if json.Unmarshal(c.Body, &r) == nil {
 				t.Fatal("accepted rejected receipt")
 			}
 		})
@@ -73,17 +58,7 @@ func TestSharedExportReceiptCorpus(t *testing.T) {
 }
 
 func TestArtifactBundleReceiptRejectsFalseFileProof(t *testing.T) {
-	b, err := os.ReadFile("testdata/execution-export-v1.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	var corpus struct {
-		Success []struct{ Value json.RawMessage }
-	}
-	if err := json.Unmarshal(b, &corpus); err != nil {
-		t.Fatal(err)
-	}
-	valid := corpus.Success[1].Value
+	valid := validCase(t, examples(t, "execution-export.v1"), "committed-artifact-bundle")
 	for _, mutate := range []func(map[string]any){
 		func(m map[string]any) { delete(m, "artifact_files") },
 		func(m map[string]any) {

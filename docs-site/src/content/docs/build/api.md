@@ -69,7 +69,9 @@ is a 200 with that source's status in `sources`. [Read a run](/use/read-a-run/#t
 
 Answers `{"spans": [...], "next_cursor": "…"}`, oldest first; `next_cursor` is left out on the
 last page. Each span has `trace_id`, `span_id`, `parent_span_id` (left out for a root span),
-`name`, `service`, `start`, `duration_ms` and `attributes` (string values).
+`name`, `service`, `start`, `duration_ms` and `attributes`: a key the telemetry conventions name in
+their type (`acp.seq_from` is a number), any other as the trace store sent it ([Sending
+telemetry](/use/telemetry/#the-trace-shape-superwitness-expects)).
 
 ### GET /v1/runs/superpipeline/{board}/{run}/logs
 

@@ -1,7 +1,7 @@
-// Package contracts embeds the recorded payloads superwitness consumes (superpipeline's
-// run evidence route, the hub's evidence and principal routes, and VictoriaTraces' Jaeger
-// API), and the run report schema that sources validate their reports against.
-// Producers validate the same files in their own CI.
+// Package contracts embeds the recorded payloads superwitness reads that no suite contract
+// holds (VictoriaTraces' Jaeger API), and the run report schema that sources validate their
+// reports against. The suite's crossings (SuperPipeline's and AgentPod's evidence reads, the
+// telemetry conventions) are treaty's data, vendored in internal/treaty.
 package contracts
 
 import _ "embed"
@@ -12,14 +12,6 @@ const (
 )
 
 var (
-	//go:embed superpipeline_evidence.json
-	SuperpipelineEvidence []byte
-	//go:embed hub_evidence_run.json
-	HubEvidenceRun []byte
-	//go:embed hub_evidence_attempt.json
-	HubEvidenceAttempt []byte
-	//go:embed hub_principal.json
-	HubPrincipal []byte
 	//go:embed jaeger_trace_hub.json
 	JaegerTraceHub []byte
 	//go:embed jaeger_trace_workers.json

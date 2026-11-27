@@ -94,7 +94,9 @@ export function itemFirstSeq(it: TranscriptItem): number {
 
 export const holds = (r: { from: number; to: number }, seq: number) => seq >= r.from && seq <= r.to;
 
-const whole = (v: string | undefined) => (v !== undefined && /^\d+$/.test(v) ? Number(v) : null);
+// whole reads a seq the conventions type as an int; text is tolerated, as telemetry is best-effort.
+const whole = (v: string | number | boolean | undefined) =>
+  typeof v === "number" ? (Number.isSafeInteger(v) && v >= 0 ? v : null) : typeof v === "string" && /^\d+$/.test(v) ? Number(v) : null;
 
 // spanRange is the session range a span maps to: its acp.seq_from..acp.seq_to within its attempt.
 // An attempt span without seqs uses its attempt's; a span not yet ended runs to its attempt's end.
@@ -127,7 +129,9 @@ export function spanFor(spans: Span[], attempts: Doc[], attempt: string, from: n
 }
 
 export function spanStatus(span: Span): string {
-  return span.attributes["otel.status_code"] ?? (span.attributes.error === "true" ? "ERROR" : "unset");
+  const code = span.attributes["otel.status_code"];
+  if (code !== undefined) return String(code);
+  return String(span.attributes.error) === "true" ? "ERROR" : "unset";
 }
 
 // logsOf keeps the lines inside the span's time window that belong to its trace or name none.
